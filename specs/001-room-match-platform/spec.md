@@ -164,6 +164,7 @@ An administrator can search for users, freeze accounts of malicious players, vie
 - **FR-060**: System MUST validate all inputs server-side; no game logic decisions are made on the client.
 - **FR-061**: System MUST enforce rate limiting on player actions to prevent abuse.
 - **FR-062**: System MUST log all security-relevant events (failed logins, rejected actions, admin operations) for auditing.
+- **FR-063**: System MUST include replay attack protection (nonce) for game actions to prevent duplicate action submission.
 
 ### Key Entities
 

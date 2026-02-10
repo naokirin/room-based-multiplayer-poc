@@ -9,21 +9,56 @@
 
 ### Socket Connect
 
-Client connects to the Phoenix socket with JWT authentication.
+Client connects to the Phoenix socket with JWT authentication and protocol version.
 
 ```javascript
 import { Socket } from "phoenix"
 
 const socket = new Socket("ws://localhost:4000/socket", {
-  params: { token: accessToken }
+  params: { token: accessToken, protocol_version: "1.0" }
 })
 socket.connect()
 ```
 
-**Server validates**: JWT signature, expiration, user status (not frozen).
+**Parameters**:
+- `token`: JWT access_token
+- `protocol_version`: Client protocol version string (e.g., `"1.0"`). Server checks against its supported versions and rejects unsupported versions.
+
+**Server validates**: JWT signature, expiration, user status (not frozen), protocol version compatibility.
 
 **On success**: Socket connected, heartbeat begins.
-**On failure**: Socket error callback with `{ reason: "unauthorized" }`.
+**On failure**: Socket error callback with `{ reason: "unauthorized" }` or `{ reason: "unsupported_protocol_version", supported: ["1.0"] }`.
+
+### Protocol Versioning
+
+Phoenix maintains a list of supported protocol versions. When a client connects with an unsupported version, the connection is rejected with the list of supported versions so the client can prompt the user to update.
+
+| Version | Status | Notes |
+|---------|--------|-------|
+| 1.0 | Current | MVP initial version |
+
+## Security: Replay Attack Protection
+
+All client → server game actions include a `nonce` field to prevent replay attacks. The nonce is a client-generated unique string (e.g., UUID v4) per action.
+
+**Server-side validation**:
+1. Phoenix maintains a per-player nonce cache (in-memory, bounded set of recent nonces per room session)
+2. On receiving a `game:action`, the server checks whether the nonce has been seen before
+3. If duplicate nonce detected: action is rejected with `{ "reason": "duplicate_nonce" }`
+4. Nonces are scoped per player per room session and cleared when the room ends
+
+**Client implementation**:
+```javascript
+import { v4 as uuidv4 } from "uuid"
+
+channel.push("game:action", {
+  action: "play_card",
+  card_id: "card_1",
+  nonce: uuidv4()
+})
+```
+
+**Note**: Chat messages (`chat:send`) do not require nonces as they are idempotent broadcasts with server-assigned IDs.
 
 ## Channel: `room:{room_id}`
 
@@ -39,6 +74,18 @@ channel.join()
   .receive("ok", (response) => { /* joined */ })
   .receive("error", (response) => { /* rejected */ })
 ```
+
+**Room Token Verification Flow (Redis-based)**:
+
+When a client joins with a `room_token`, Phoenix performs the following verification against Redis:
+
+1. **Signature check**: Verify room_token JWT signature using shared secret (HS256)
+2. **Redis lookup**: Query `room_token:{token}` key in Redis
+3. **Validate**: Check `room_id` and `user_id` match, and status is `pending` (not already `used`)
+4. **Mark used**: On successful join, set status to `used` with a short TTL (10 seconds) instead of immediate deletion. This handles the case where the client disconnects before receiving the `joined` response — they can retry within the 10-second window.
+5. **Cleanup**: Redis TTL (5 minutes from creation) automatically removes expired tokens
+
+**Why not immediate deletion**: If the join succeeds on the server but the `joined` response doesn't reach the client (network cut), the token would already be deleted. The "used + short TTL" approach allows a brief retry window.
 
 **Join success response**:
 ```json
@@ -56,6 +103,12 @@ channel.join()
 ```json
 {
   "reason": "invalid_token"
+}
+```
+
+```json
+{
+  "reason": "token_already_used"
 }
 ```
 
@@ -108,13 +161,14 @@ channel.join()
 
 ### game:action
 
-Submit a game action during your turn.
+Submit a game action during your turn. Each action must include a unique `nonce` for replay protection (see Security section above).
 
 ```javascript
 channel.push("game:action", {
   action: "play_card",
   card_id: "card_1",
-  target: "opponent"  // optional, depends on card
+  target: "opponent",  // optional, depends on card
+  nonce: "uuid-v4"     // required, unique per action
 })
 ```
 
@@ -147,6 +201,14 @@ channel.push("game:action", {
   "accepted": false,
   "reason": "rate_limited",
   "message": "Too many actions"
+}
+```
+
+```json
+{
+  "accepted": false,
+  "reason": "duplicate_nonce",
+  "message": "Action already processed"
 }
 ```
 

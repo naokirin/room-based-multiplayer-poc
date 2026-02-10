@@ -133,6 +133,61 @@ infra/
 
 **Structure Decision**: Multi-service architecture with 3 independently deployable services (`client`, `api-server`, `game-server`) plus shared infrastructure configuration (`infra`). This mirrors the architectural design where Rails is the "office" (operations), Phoenix is the "field" (game runtime), and the Client is display-only.
 
+## Operational Considerations
+
+Design decisions and known trade-offs from the original design document (解消事項) that affect implementation and operations.
+
+### Reconnect SPOF Risk (解消3 追記)
+
+Reconnection requires Rails API (`GET /rooms/:room_id/ws_endpoint`) to resolve the Phoenix node. If Rails is down, players cannot reconnect to active games even if Phoenix is healthy.
+
+| Phase | Mitigation |
+|-------|------------|
+| MVP | Accept the risk. Prioritize Rails uptime (health checks, restart policies) |
+| Future | Client caches the last-connected node URL locally. On Rails failure, client attempts direct reconnect to cached node |
+
+### Persist Failed Recovery (解消4 追記)
+
+When Phoenix cannot persist game results to Rails after retries, results are written to Redis `persist_failed:{room_id}` with 7-day TTL.
+
+| Component | Responsibility |
+|-----------|---------------|
+| Phoenix | Write result JSON to `persist_failed:{room_id}` on persist failure. Emit structured log `persist_failed` event |
+| Rails | Background job polls `persist_failed:*` keys periodically (e.g., every 5 minutes) and imports results |
+| Monitoring | Alert on `persist_failed` log events exceeding threshold |
+
+### Supervisor / Crash Policy (解消8)
+
+For MVP, room process crashes are treated as unrecoverable:
+
+- Supervisor strategy: **do not restart** crashed room processes
+- On crash: notify players with `game:aborted`, report `room_aborted(reason: process_error)` to Rails
+- Future: periodic state snapshots to Redis for crash recovery
+
+> **Design principle**: "初期はプロセスクラッシュ = ゲーム終了。状態復元は将来の拡張とし、まずはクラッシュしないコードを書くことに集中する。"
+
+### Deploy Strategy (解消18)
+
+| Component | Strategy |
+|-----------|----------|
+| Rails | Rolling deploy. Run migrations before switching to new instances |
+| Phoenix | **Drain mode**: (1) Rails marks node as "no new rooms", (2) wait for existing rooms to finish (max 30 min), (3) force-abort remaining rooms, (4) stop/update/restart node, (5) Rails re-enables node |
+| Client | Version check API. No forced update during active game; prompt on next lobby transition |
+
+### Structured Logging (解消11)
+
+All services use structured JSON logging with consistent fields for observability:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `timestamp` | Yes | ISO 8601 |
+| `level` | Yes | debug/info/warn/error |
+| `service` | Yes | api-server / game-server / client |
+| `event` | Yes | Event name (e.g., `room_created`, `persist_failed`, `action_rejected`) |
+| `room_id` | When applicable | Room context |
+| `user_id` | When applicable | Actor context |
+| `metadata` | Optional | Additional event-specific data |
+
 ## Complexity Tracking
 
 No constitution violations to justify. The 3-service split is inherent to the architectural requirement of separating REST API management from real-time game server concerns, using different language ecosystems (Ruby vs Elixir) optimized for their respective roles.

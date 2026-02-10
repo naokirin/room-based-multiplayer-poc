@@ -111,6 +111,76 @@ Persisted outcomes for completed games.
 
 **Indexes**: `room_id` (unique), `winner_id`
 
+### matches
+
+Tracks matchmaking history. One match maps to one room.
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Match identifier |
+| game_type_id | UUID | FK → game_types.id, NOT NULL | Which game type |
+| room_id | UUID | FK → rooms.id, NULL | Created room (NULL if match expired/cancelled) |
+| status | ENUM('queued', 'matched', 'cancelled', 'timeout') | NOT NULL | Match lifecycle state |
+| matched_at | DATETIME | NULL | When the match was formed |
+| created_at | DATETIME | NOT NULL | |
+
+**Indexes**: `game_type_id`, `room_id` (unique, nullable), `status`
+
+### match_players
+
+Join table linking players to match queue entries.
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | |
+| match_id | UUID | FK → matches.id, NOT NULL | |
+| user_id | UUID | FK → users.id, NOT NULL | |
+| queued_at | DATETIME | NOT NULL | When the player entered the queue |
+| created_at | DATETIME | NOT NULL | |
+
+**Indexes**: `(match_id, user_id)` (unique), `user_id`
+
+### cards
+
+Card definitions for the MVP hardcoded game type. In the future, these will be managed by the DSL system.
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Card identifier |
+| game_type_id | UUID | FK → game_types.id, NOT NULL | Which game type this card belongs to |
+| name | VARCHAR(100) | NOT NULL | Card display name (e.g., "Fireball") |
+| effect | VARCHAR(50) | NOT NULL | Effect type (deal_damage, heal, draw_card) |
+| value | INTEGER | NOT NULL | Effect magnitude |
+| cost | INTEGER | NOT NULL, DEFAULT 0 | Resource cost to play (reserved for future use) |
+| active | BOOLEAN | NOT NULL, DEFAULT true | Whether this card is in the active pool |
+| created_at | DATETIME | NOT NULL | |
+| updated_at | DATETIME | NOT NULL | |
+
+**Indexes**: `game_type_id`, `(game_type_id, active)`
+
+**Note**: For MVP, cards are seeded from a hardcoded list. The card data in MySQL serves as the source of truth that Phoenix loads when creating a room.
+
+### card_dsl_versions (Future — MVP Stub)
+
+Version-controlled DSL definitions for cards. **Not actively used in MVP** (cards are hardcoded), but the table is created as a placeholder for the DSL system described in the original design (§7).
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Version identifier |
+| game_type_id | UUID | FK → game_types.id, NOT NULL | Which game type |
+| version | INTEGER | NOT NULL | Version number (monotonically increasing) |
+| dsl_text | TEXT | NOT NULL | Raw DSL source text |
+| compiled_ast | JSON | NULL | Compiled AST (cached) |
+| status | ENUM('draft', 'validated', 'active', 'archived') | NOT NULL, DEFAULT 'draft' | Version lifecycle |
+| created_by | UUID | FK → users.id, NOT NULL | Admin who created this version |
+| validated_at | DATETIME | NULL | When validation passed |
+| activated_at | DATETIME | NULL | When put into production |
+| created_at | DATETIME | NOT NULL | |
+
+**Indexes**: `(game_type_id, version)` (unique), `status`
+
+**Note**: This table supports the future DSL system (解消5, 解消9). Rooms reference a specific DSL version at creation time, ensuring version consistency during gameplay.
+
 ### announcements
 
 Admin-created notices for players.
@@ -230,9 +300,15 @@ Value: `room_id`
 
 ```
 users 1──N room_players N──1 rooms
+users 1──N match_players N──1 matches
 users 1──N game_results (as winner)
 rooms N──1 game_types
 rooms 1──1 game_results
+rooms 1──1 matches
+matches N──1 game_types
+cards N──1 game_types
+card_dsl_versions N──1 game_types
+card_dsl_versions N──1 users (as created_by)
 users 1──N announcements (as admin)
 users 1──N audit_logs (as actor)
 ```

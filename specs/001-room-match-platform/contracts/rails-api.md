@@ -167,6 +167,17 @@ Enter the matchmaking queue for a game type.
 }
 ```
 
+### Match Notification Mechanism
+
+When a player joins the matchmaking queue and a match is not found immediately, the client needs to know when a match is eventually found. The MVP uses a **polling approach**:
+
+1. Client calls `POST /matchmaking/join` and receives `status: "queued"`
+2. Client polls `GET /matchmaking/status` every 3-5 seconds
+3. When a match is found, the status response returns `status: "matched"` with `room_id`, `room_token`, and `ws_url`
+4. Client stops polling and connects to the WebSocket
+
+**Why polling over WebSocket push for MVP**: The WebSocket connection to Phoenix is not yet established at matchmaking time (it's established after receiving the `ws_url`). Adding a separate notification channel for matchmaking adds complexity. Polling at 3-5 second intervals is sufficient for MVP. A future enhancement could use Server-Sent Events (SSE) or establish the Phoenix WebSocket connection earlier (at login) to push match notifications.
+
 ### DELETE /matchmaking/cancel
 
 Cancel matchmaking and leave the queue.
@@ -279,6 +290,36 @@ Get active announcements for the current user.
   ]
 }
 ```
+
+## Health Check
+
+### GET /health
+
+Public health check endpoint for load balancer and monitoring.
+
+**Response 200** (healthy):
+```json
+{
+  "status": "ok",
+  "services": {
+    "database": "ok",
+    "redis": "ok"
+  }
+}
+```
+
+**Response 503** (unhealthy):
+```json
+{
+  "status": "degraded",
+  "services": {
+    "database": "ok",
+    "redis": "error"
+  }
+}
+```
+
+**Note**: This endpoint does not require authentication. It checks database and Redis connectivity and is used by Docker health checks, load balancers, and monitoring systems. Corresponds to 解消11 in the original design document.
 
 ## Common Error Responses
 
