@@ -5,6 +5,16 @@
 **Status**: Draft
 **Input**: User description: "Room-based multiplayer game platform with authentication, room matching, real-time turn-based gameplay, room chat, reconnection support, and admin management"
 
+### Platform Positioning
+
+This project is a **server-client game platform** — a reusable infrastructure for hosting room-based multiplayer games, not a specific game itself. Target game characteristics:
+
+- Room-match multiplayer as the primary play mode
+- Card games, board games, or other low-latency-insensitive genres with small player counts (2–10 players)
+- Optional chat or communication features per game
+- Designed for long-term operation with incremental feature additions and configuration-driven updates
+- **MVP client**: Web browser (PixiJS/TypeScript); **future extension**: Unity/C#
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Match and Play a Game (Priority: P1)
@@ -133,7 +143,7 @@ An administrator can search for users, freeze accounts of malicious players, vie
 - **FR-024**: System MUST validate all player actions server-side against game rules before applying them (server-authoritative).
 - **FR-025**: System MUST reject invalid actions and provide clear feedback to the player.
 - **FR-026**: System MUST detect game-end conditions and notify all players of the outcome.
-- **FR-027**: System MUST persist game results upon completion.
+- **FR-027**: System MUST persist game results upon completion. Individual game actions are held in-memory only during the game and are not persisted for MVP. Action replay/audit logging is a future enhancement.
 - **FR-028**: System MUST support 1 to approximately 12 players per room, depending on game type.
 - **FR-029**: System MUST enforce a per-turn time limit and automatically skip the turn if the player does not act in time.
 
@@ -142,7 +152,7 @@ An administrator can search for users, freeze accounts of malicious players, vie
 - **FR-030**: System MUST allow disconnected players to reconnect to their active game within a configurable time window.
 - **FR-031**: System MUST provide the full current game state to reconnecting players so they can resume seamlessly.
 - **FR-032**: System MUST notify other players in the room when a player disconnects and when they reconnect.
-- **FR-033**: System MUST treat a player as having left the game if they do not reconnect within the allowed window.
+- **FR-033**: System MUST treat a player as having left the game if they do not reconnect within the allowed window. The platform notifies the Behaviour module via a callback (e.g., `on_player_removed/2`); the game-type module decides whether the game continues with remaining players or aborts.
 - **FR-034**: System MUST prevent duplicate simultaneous connections for the same player in the same room (disconnect the older session).
 
 #### Room Chat
@@ -195,9 +205,9 @@ An administrator can search for users, freeze accounts of malicious players, vie
 
 - **A-001**: MVP targets web browser users only; native/mobile app clients are out of scope.
 - **A-002**: Global chat is deferred to post-MVP; only room-level chat is included.
-- **A-003**: Game configuration (cards, rules, balance) is managed via code and configuration files for MVP; a DSL-based dynamic configuration system is a future enhancement.
-- **A-004**: A single game type with hardcoded rules will be implemented for MVP to validate the platform architecture.
-- **A-005**: Standard email/password authentication is assumed for MVP; OAuth or SSO integration is a future enhancement.
+- **A-003**: This project is a **game-agnostic platform** (not a specific game implementation). Game rules and actions are abstracted behind an Elixir Behaviour (callback interface) — each game type implements a module with callbacks such as `init_state/1`, `validate_action/2`, `apply_action/2`, `check_end_condition/1`. The platform runtime is generic; game-specific logic is swapped in via the Behaviour module. Game configuration (cards, rules, balance) is managed via code and configuration files for MVP; a DSL-based dynamic configuration system is a future enhancement.
+- **A-004**: For MVP, a minimal sample game (e.g., simple turn-based card or board game) will be included solely to validate the platform architecture. The sample game is not the deliverable; the platform infrastructure is.
+- **A-005**: Standard email/password authentication is assumed for MVP; OAuth or SSO integration is a future enhancement. Cross-service auth strategy: Rails issues a JWT on login for **authentication** (identity verification); Phoenix validates the JWT signature independently. However, **authorization** (e.g., "is this player allowed to join this room?") requires Phoenix to call a Rails API endpoint on WebSocket connect to verify room assignment, account status (frozen), and other access rules.
 - **A-006**: The admin interface is a separate, authenticated web application accessible only to authorized operators.
 - **A-007**: The platform operates in a single region for MVP; multi-region deployment is out of scope.
 - **A-008**: Turn time limit defaults to 60 seconds per turn (configurable per game type in the future).
@@ -207,7 +217,7 @@ An administrator can search for users, freeze accounts of malicious players, vie
 
 - Global chat (lobby-wide messaging)
 - DSL-based game configuration system
-- Multiple game types (MVP ships with one)
+- Multiple game types in MVP (platform ships with one minimal sample game for validation only)
 - Native/mobile app clients
 - Leaderboards and ranking system
 - Friend lists and social features
@@ -215,3 +225,13 @@ An administrator can search for users, freeze accounts of malicious players, vie
 - Tournament / organized play support
 - Multi-region deployment
 - Automated content moderation for chat
+
+## Clarifications
+
+### Session 2026-02-11
+
+- Q: What is the MVP game type to implement? → A: No specific game. This is a game-agnostic platform for room-based multiplayer games (card games, board games, 2–10 player low-latency-insensitive genres). A minimal sample game is included only to validate the platform. Future client extension to Unity/C#.
+- Q: How should game logic be abstracted for pluggability? → A: Elixir Behaviour (callback interface) pattern. Each game type implements a module with defined callbacks (init_state, validate_action, apply_action, check_end_condition, etc.). Platform runtime is generic.
+- Q: What happens to the game when a disconnected player is permanently removed? → A: Game continues; the Behaviour module decides via `on_player_removed/2` callback (continue with fewer players or abort). Decision is game-type-specific, not platform-level.
+- Q: Should individual game actions be persisted for replay/audit? → A: MVP persists only final game results. Actions exist in-memory during the game only. Action replay/audit logging is a future enhancement.
+- Q: How does Phoenix authenticate and authorize WebSocket connections? → A: Hybrid — JWT for authentication (identity, validated by Phoenix independently via shared secret), plus Rails API call for authorization (room assignment, account status, access rules) on each WebSocket connect.
