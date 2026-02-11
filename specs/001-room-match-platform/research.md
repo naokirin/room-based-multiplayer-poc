@@ -27,6 +27,8 @@
 - gRPC: Better performance and type safety, but adds protobuf compilation step and learning curve. Rejected for MVP simplicity.
 - Direct Erlang distribution: Would tightly couple the services and prevent independent deployment. Rejected per architecture design.
 
+**Security note**: MVP uses a single shared API key (`INTERNAL_API_KEY` env var). This is acceptable because both services run on a private Docker network. The key must be rotatable via environment variable changes without code deployment. Production hardening: consider mTLS or per-service signed requests.
+
 ## R-003: JWT Token Strategy (Rails ↔ Phoenix shared secret)
 
 **Decision**: HMAC-SHA256 (HS256) JWT with a shared secret stored in environment variables.

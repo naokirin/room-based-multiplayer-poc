@@ -17,6 +17,8 @@ X-Internal-Api-Key: {shared_api_key}
 
 Rails validates the key matches the configured `INTERNAL_API_KEY` environment variable. Requests without a valid key receive `401 Unauthorized`.
 
+**Key management policy**: The internal API key is managed via environment variables (injected through Docker secrets or `.env` files) and MUST be rotatable without code changes. For MVP, a single shared key is used. Production hardening should consider: (1) key rotation procedure (deploy new key to both services simultaneously, support accepting both old and new keys during a transition window), (2) per-service keys if additional internal services are added, (3) short-lived tokens (e.g., mTLS or signed requests) as a future replacement for static keys.
+
 ## Room Lifecycle
 
 ### POST /internal/rooms
