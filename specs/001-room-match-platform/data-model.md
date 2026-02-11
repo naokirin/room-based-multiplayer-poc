@@ -253,7 +253,7 @@ Value: `room_id`
 
 | Key | Type | TTL | Description |
 |-----|------|-----|-------------|
-| `persist_failed:{room_id}` | String | 7 days | Game result JSON for post-failure recovery |
+| `persist_failed:{room_id}` | String | 7 days | Game result JSON for post-failure recovery. Rails background job scans every 5 min via `SCAN persist_failed:*` and imports results. Alert if key age > 30 min. |
 
 ## Elixir Process Memory (Runtime)
 

@@ -104,7 +104,14 @@ Called by Phoenix → Rails when the game ends normally.
 }
 ```
 
-**On failure (after retries)**: Phoenix writes result to Redis `persist_failed:{room_id}` key and terminates the room. Rails recovers via background job polling.
+**On failure (after retries)**: Phoenix writes result to Redis `persist_failed:{room_id}` key (TTL: 7 days) and terminates the room. Rails recovers via background job:
+
+- **Scan interval**: Every 5 minutes (configurable via `PERSIST_RECOVERY_INTERVAL_SECONDS` env var, default: 300)
+- **Scan method**: `SCAN` with `persist_failed:*` pattern (not `KEYS` — safe for production Redis)
+- **Per-key flow**: Read JSON → call `PUT /internal/rooms/:room_id/finished` internally → on success, delete key → on failure, log and retry next cycle
+- **Max recovery latency**: 5 minutes (one scan interval) under normal conditions
+- **Alert threshold**: If any `persist_failed:*` key exists for longer than 30 minutes (6 consecutive scan failures), emit a `persist_recovery_stalled` alert event
+- **Manual fallback**: Admin can view and manually import stalled results via the admin panel
 
 ### PUT /internal/rooms/:room_id/aborted
 
