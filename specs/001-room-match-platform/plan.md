@@ -16,7 +16,7 @@ A game-agnostic multiplayer platform enabling room-based matchmaking and turn-ba
 
 **Primary Dependencies**:
 - Client: React 18+, PixiJS 8+, Zustand (state), phoenix.js (WebSocket)
-- API Server: Rails 8.0+ (API mode + admin views), `jwt` gem, `rack-attack`, `redis` gem
+- API Server: Rails 8.0+ (full mode; API controllers inherit `ActionController::API`, Admin controllers inherit `ActionController::Base`), `jwt` gem, `rack-attack`, `redis` gem, `turbo-rails`, `stimulus-rails`
 - Game Server: Phoenix 1.7+, Phoenix Channels, `Joken` (JWT verification), Phoenix Presence, `plug_attack`
 
 **Storage**:
@@ -97,15 +97,15 @@ client/                          # TypeScript/React/PixiJS web client
 ├── biome.json
 └── vite.config.ts
 
-api-server/                      # Ruby on Rails API + Admin
+api-server/                      # Ruby on Rails (full mode) API + Admin
 ├── app/
 │   ├── controllers/
-│   │   ├── api/v1/              # Client-facing REST API
-│   │   ├── internal/            # Phoenix → Rails internal API
-│   │   └── admin/               # Admin web UI controllers
+│   │   ├── api/v1/              # REST API (inherits ActionController::API)
+│   │   ├── internal/            # Phoenix → Rails internal API (inherits ActionController::API)
+│   │   └── admin/               # Admin web UI (inherits ActionController::Base)
 │   ├── models/                  # ActiveRecord models
 │   ├── services/                # Matchmaking, JWT, room orchestration
-│   ├── views/admin/             # ERB admin templates
+│   ├── views/admin/             # ERB admin templates (layouts, CRUD views)
 │   └── jobs/                    # Background jobs (queue cleanup, persist recovery)
 ├── config/
 ├── db/migrate/
@@ -157,7 +157,8 @@ No constitution violations to justify. Architecture complexity is inherent to th
 | JWT library (Phoenix) | `Joken` | Flexible, Plug-based verification | Gemini research |
 | Client state | Zustand | Works with React + PixiJS, minimal boilerplate | R-005 |
 | Matchmaking queue | Redis List (BRPOPLPUSH) | Atomic operations, blocking pop | R-006 |
-| Admin UI | Rails server-rendered (ERB) | Sufficient for 5 CRUD screens | R-007 |
+| Rails mode | Full Rails (not --api) | API controllers use ActionController::API for lightweight JSON; Admin controllers use ActionController::Base for sessions, CSRF, ERB, Turbo/Stimulus | Architecture decision |
+| Admin UI | Rails server-rendered (ERB + Turbo/Stimulus) | Sufficient for 5 CRUD screens; requires sessions, cookies, CSRF protection | R-007 |
 | Rate limiting | rack-attack (Rails) + plug_attack (Phoenix) | Industry standard, Redis-backed | Gemini research |
 | Cross-node PubSub | Phoenix.PubSub + Redis adapter | Proven pattern for horizontal scaling | Gemini research |
 | MVP game | 2-player card battle | Validates all platform features with minimal rules | R-004 |
