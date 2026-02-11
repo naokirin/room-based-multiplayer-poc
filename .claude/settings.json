@@ -1,0 +1,39 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format-ruby.sh",
+            "timeout": 30,
+            "statusMessage": "Running RuboCop auto-correct..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format-elixir.sh",
+            "timeout": 30,
+            "statusMessage": "Running mix format..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format-typescript.sh",
+            "timeout": 30,
+            "statusMessage": "Running Biome..."
+          }
+        ]
+      }
+    ]
+  }
+}

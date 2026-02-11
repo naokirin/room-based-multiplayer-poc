@@ -1,0 +1,26 @@
+---
+description: Hotwire (Turbo and Stimulus) conventions for Rails 7+
+globs: "app/javascript/**/*.js,app/views/**/*.turbo_stream.erb,app/views/**/*.html.erb"
+alwaysApply: false
+---
+
+# Hotwire Style
+
+## Turbo
+
+- Prefer Turbo Frames (`<turbo-frame>`) for partial page updates over full-page reloads.
+- Use Turbo Streams (`.turbo_stream.erb`) for multi-target updates (append, prepend, replace, remove, update). Keep stream responses focused on the DOM changes needed.
+- Set `data-turbo-method` and `data-turbo-confirm` on links/buttons instead of writing custom JavaScript for simple actions.
+- Use `turbo_frame_tag` helper with a meaningful `id` (prefer `dom_id`). Set `src` for lazy-loaded frames; use `target: "_top"` to break out of a frame when needed.
+
+## Stimulus
+
+- One controller per concern. Name controllers after behavior, not DOM elements (e.g. `toggle` not `button`).
+- Use `data-controller`, `data-action`, `data-*-target` attributes in HTML. Keep controller JS files under `app/javascript/controllers/`.
+- Prefer Stimulus values and targets over querying the DOM directly. Use `connect()` / `disconnect()` lifecycle callbacks for setup and teardown.
+- Avoid putting business logic in Stimulus controllers; they should orchestrate DOM behavior only.
+
+## General
+
+- Minimize custom JavaScript. Favor Turbo + Stimulus over heavy JS frameworks for standard CRUD and navigation.
+- Use `broadcast_*` helpers (Turbo Streams over WebSocket) for real-time updates when applicable.

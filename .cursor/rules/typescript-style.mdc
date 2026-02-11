@@ -1,0 +1,14 @@
+---
+description: TypeScript style (naming, modules, formatting)
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# TypeScript Style
+
+- **Naming**: camelCase for variables and functions; PascalCase for types, interfaces, classes, and enums. Use descriptive names; avoid single-letter names except in short callbacks or loops.
+- **Imports**: Use ES module `import`/`export`. Prefer destructuring for named imports: `import { foo } from 'bar'`. Group imports: (1) external packages, (2) internal/aliased modules, (3) relative. No default exports for types when a named export is clearer.
+- **Types**: Prefer `interface` for object shapes; use `type` for unions, intersections, and mapped types. Export types that are part of the public API. Avoid `any`; use `unknown` and narrow with type guards when the type is truly unknown.
+- **Format**: Follow Biome formatter (project config or default). Use consistent quote style and semicolons per project. No trailing whitespace.
+- **Files**: One logical module per file; prefer co-locating related types in the same file or in a dedicated types file when shared. Use `.ts` for type-only modules when appropriate (e.g. `types.ts`).
+- **Async**: Prefer `async`/`await` over raw Promises; handle errors with try/catch or `.catch()` at boundaries. Do not leave floating promises; await or void as appropriate.

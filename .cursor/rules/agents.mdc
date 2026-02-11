@@ -1,0 +1,51 @@
+---
+description: When to use each sub-agent; immediate usage, parallel execution, multi-perspective analysis
+alwaysApply: false
+---
+
+# Agent Orchestration
+
+## Available Agents
+
+Located in `.claude/agents/` or `.cursor/agents/`:
+
+| Agent | Purpose | When to Use |
+|-------|---------|-------------|
+| planner | Implementation planning | Complex features, refactoring |
+| architect | System design | Architectural decisions |
+| tdd-guide | Test-driven development | New features, bug fixes |
+| code-reviewer | Code review | After writing code |
+| security-reviewer | Security analysis | Before commits, after auth/input changes |
+| build-error-resolver | Fix build errors | When build fails |
+| e2e-runner | E2E testing | Critical user flows |
+| refactor-cleaner | Dead code cleanup | Code maintenance |
+| doc-updater | Documentation | Updating docs and codemaps |
+
+## Immediate Agent Usage
+
+No user prompt needed:
+1. Complex feature requests → Use **planner** agent
+2. Code just written/modified → Use **code-reviewer** agent
+3. Bug fix or new feature → Use **tdd-guide** agent
+4. Architectural decision → Use **architect** agent
+5. Security-sensitive code (auth, input, API) → Use **security-reviewer** agent
+6. Build failing → Use **build-error-resolver** agent
+7. Critical user flows / E2E → Use **e2e-runner** agent
+8. Dead code / cleanup → Use **refactor-cleaner** agent
+9. Docs out of date → Use **doc-updater** agent
+
+## Parallel Task Execution
+
+ALWAYS use parallel task execution for independent operations:
+
+- **GOOD**: Launch agents in parallel (e.g. security analysis, performance review, type checking).
+- **BAD**: Run agents sequentially when they don’t depend on each other.
+
+## Multi-Perspective Analysis
+
+For complex problems, use split-role sub-agents:
+- Factual reviewer
+- Senior engineer
+- Security expert
+- Consistency reviewer
+- Redundancy checker

@@ -1,0 +1,15 @@
+---
+description: Phoenix and Elixir style (naming, modules, controllers, views)
+globs: "**/*.ex"
+alwaysApply: false
+---
+
+# Phoenix Style
+
+- **Naming**: Modules in PascalCase; functions and variables in snake_case. Contexts and schemas follow Phoenix conventions (e.g. `MyApp.Accounts`, `MyApp.Accounts.User`).
+- **Controllers**: One action per function; delegate to context; use `conn` only for params, session, and response. Put shared logic in plugs or context.
+- **Views**: Use for rendering only; avoid business logic. Prefer function components in `lib/my_app_web.ex` or LiveComponents for reusable UI.
+- **Modules**: One main concern per module; use `@moduledoc` and `@doc` for public APIs. Use `@spec` for public functions when types help.
+- **Pipe**: Use `|>` when it improves readability. Do not pipe into a single argument that is not the subject of the pipeline.
+- **Format**: Follow `.formatter.exs`; use `mix format`. Line length default 98; break long lines consistently.
+- **Imports**: Prefer explicit `import Module, only: [...]` or no import; group `alias`, `import`, `require` at the top.

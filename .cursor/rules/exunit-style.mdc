@@ -1,0 +1,16 @@
+---
+description: ExUnit test style and structure (unit, ConnCase, DataCase, LiveView)
+globs: "test/**/*.exs"
+alwaysApply: false
+---
+
+# ExUnit Style
+
+- **File layout**: Mirror source layout: `test/my_app/user_test.exs` for `lib/my_app/user.ex`; `test/my_app_web/live/dashboard_live_test.exs` for LiveView. Use `*_test.exs` suffix.
+- **Structure**: Use `describe` for grouping by function or behaviour; use `test "description" do` for each case. Descriptions should read clearly: "returns :ok when valid" not "test 1".
+- **ConnCase**: For HTTP requests; use `get`, `post`, etc. and assert on response status, body, and assigns. Set up auth/session in `setup` when needed.
+- **DataCase**: For repo and context tests; use `MyApp.Repo` and context functions. Use `setup` to insert fixtures; prefer factories or explicit inserts over shared global state.
+- **LiveView tests**: Use `Phoenix.LiveViewTest` (render, follow_redirect, element, etc.). Test mount, handle_params, and key handle_events; assert on rendered content and navigation.
+- **Assertions**: Prefer `assert`, `assert_raise`, `refute`; use `assert value == expected` with clear expected values. For pattern matching, `assert {:ok, x} = function()` is acceptable when the shape is the focus.
+- **Setup**: Use `setup` or `setup_all` for shared context; return a map that tests use. Use `@tag` (e.g. `@tag :integration`) for expensive or external tests; run with `mix test --only tag` when needed.
+- **Naming**: Test names should describe the scenario and expected outcome. Test behaviour and contracts, not implementation details.

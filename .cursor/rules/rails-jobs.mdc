@@ -1,0 +1,13 @@
+---
+description: Active Job conventions for background jobs
+globs: "app/jobs/**/*.rb"
+alwaysApply: false
+---
+
+# Rails Active Job
+
+- Keep `perform` idempotent (safe to retry).
+- Use `retry_on` / `discard_on` for error handling. Prefer `discard_on` for unrecoverable errors to avoid infinite retries.
+- Prefer keyword arguments in `perform(...)` for clarity.
+- Set the queue name explicitly with `queue_as`.
+- Enqueue from app code with `SomeJob.perform_later(...)`; use `perform_now` only in tests or when you need synchronous execution.

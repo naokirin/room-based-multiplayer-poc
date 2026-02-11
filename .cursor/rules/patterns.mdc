@@ -1,0 +1,31 @@
+---
+description: Skeleton projects, repository pattern, API response format
+alwaysApply: false
+---
+
+# Common Patterns
+
+## Skeleton Projects
+
+When implementing new functionality:
+1. Search for battle-tested skeleton projects
+2. Evaluate options (security, extensibility, relevance)
+3. Clone best match as foundation
+4. Iterate within proven structure
+
+## Design Patterns
+
+### Repository Pattern
+
+Encapsulate data access behind a consistent interface:
+- Standard operations: findAll, findById, create, update, delete
+- Business logic depends on the abstract interface, not storage
+- Enables swapping data sources and simplifies testing with mocks
+
+### API Response Format
+
+Use a consistent envelope for API responses:
+- Success/status indicator
+- Data payload (nullable on error)
+- Error message field (nullable on success)
+- Metadata for pagination (total, page, limit)

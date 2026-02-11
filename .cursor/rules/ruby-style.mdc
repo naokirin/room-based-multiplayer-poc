@@ -1,0 +1,21 @@
+---
+description: Ruby coding style (indentation, naming, expressions)
+globs: "**/*.rb"
+alwaysApply: false
+---
+
+# Ruby Style
+
+- Use two spaces for indentation. Limit line length to 80 characters (up to 120 with team agreement).
+- One blank line between methods and classes. No blank line after `end`.
+- Space around operators. Space after `{` and before `}` in hash literals.
+- Do not terminate statements with `;`. One expression per line.
+- Method names: `snake_case`. Classes/modules: `CamelCase`. Constants: `SCREAMING_SNAKE_CASE`.
+- Use `:symbol` for symbols. Prefer `key: value` style for hash keys when using symbols.
+- Prefer single-quoted strings; use double quotes only when interpolation or `\` is needed.
+- Use `&&` / `||` instead of `and` / `or`. No space after `!`.
+- Avoid long `&.` chains; consider delegation or explicit nil checks.
+- `# frozen_string_literal: true` magic comment: required on Ruby < 3.4 (all strings frozen by default from Ruby 3.4+). On Ruby 3.4+ the comment is optional but harmless.
+- Use `%w[]` for word arrays and `%i[]` for symbol arrays instead of literal arrays of strings/symbols.
+- Use `do...end` for multi-line blocks; use `{ ... }` for single-line blocks and method chains.
+- Group method visibility: place `private` / `protected` once, then list all private/protected methods below. Do not sprinkle `private` before each method.

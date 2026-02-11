@@ -1,0 +1,12 @@
+---
+description: I18n and locale file organization
+globs: "config/locales/**/*.yml"
+alwaysApply: false
+---
+
+# Rails I18n
+
+- Use `t()` (or `I18n.t`) and `l()` for all user-facing strings; avoid hard-coded text in views, models, and flash messages.
+- Organize locale files under `config/locales/` by model or feature (e.g. `config/locales/models/user.en.yml`).
+- Use lazy lookup in views (`t('.title')`) where possible. Use interpolation in keys when needed: `t('.greeting', name: @user.name)` with `greeting: "Hello, %{name}"` in YAML.
+- Keep key structure shallow and consistent; use nested hashes for scoping (e.g. `activerecord.attributes.user.email`).

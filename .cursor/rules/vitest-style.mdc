@@ -1,0 +1,14 @@
+---
+description: Vitest/Jest test style and structure
+globs: "**/*.test.ts"
+alwaysApply: false
+---
+
+# Vitest / Jest Test Style
+
+- **Structure**: Use `describe` for grouping and `it` or `test` for cases. Match project convention (Vitest: `it`/`test`; Jest: same). Nest `describe` only when it clarifies scope; avoid deep nesting.
+- **Naming**: Describe behaviour, not implementation. Prefer "should ..." or "when ... then ..." style per project. Use clear, unique names so failures are easy to locate.
+- **Assertions**: Prefer explicit expectations (e.g. `expect(x).toBe(y)`). Use the most specific matcher available (`toEqual`, `toStrictEqual`, `toThrow`). Keep expected values as literals or named constants when they aid readability.
+- **Setup**: Use `beforeEach`/`beforeAll` for shared setup; clean up in `afterEach`/`afterAll` when needed. Prefer fresh state per test to avoid order-dependent failures. Mock only when necessary; prefer real dependencies for integration-style tests when fast enough.
+- **Async**: Use `async`/`await` in tests; avoid raw `.then()`. For async assertions, await the result or use `expect(...).resolves`/`rejects` as appropriate.
+- **Coverage**: Focus tests on behaviour and boundaries; avoid testing implementation details. Run the test script to verify; use `/run-tests-typescript` when available.

@@ -1,0 +1,15 @@
+---
+description: Rails controller conventions and skinny controller pattern
+globs: "app/controllers/**/*.rb"
+alwaysApply: false
+---
+
+# Rails Controllers
+
+- Keep controllers skinny. Move business logic to models or service objects.
+- One method call per action besides find/new. Minimize instance variables.
+- **Strong parameters**: Do not pass `params` (or unpermitted hashes) to the model at all. Permit in the controller and pass only the permitted hash or explicit attributes/values to model methods. This applies to any model API—e.g. `new`, `create`, `update`, `assign_attributes`, or custom class/instance methods that may internally perform assignment or persistence.
+- Prefer `before_action` with lexical scope. Use `only`/`except` when the filter does not apply to all actions.
+- Use `respond_to` blocks when serving multiple formats (HTML, JSON, etc.); use symbol HTTP status (e.g. `redirect_to path, status: :see_other`).
+- Prefer `render plain:` over `render text:` (deprecated). Prefer symbol status (`:forbidden`, `:unprocessable_entity`).
+- **Concerns**: Use `ActiveSupport::Concern` for shared controller logic. Keep each concern focused. Place in `app/controllers/concerns/`.

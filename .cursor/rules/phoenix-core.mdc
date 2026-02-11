@@ -1,0 +1,38 @@
+---
+description: Phoenix project defaults, layout, contexts, and reference
+alwaysApply: true
+---
+
+# Phoenix Project
+
+## Principles
+
+- **Idiomatic Elixir**: Prefer pipe `|>`, pattern matching, and immutable data. Use `with` for multi-step success/failure; avoid deep nesting. Keep functions small and single-purpose.
+- **Context boundaries**: Business logic lives in contexts under `lib/my_app/` (application name may vary). Web layer (`lib/my_app_web/`) is thin: controllers and LiveViews call context functions and handle HTTP/LiveView concerns only.
+- **Error handling**: Return `{:ok, result}` / `{:error, reason}` from context functions; use `raise` only for exceptional cases. Handle errors at the controller/LiveView boundary (flash, redirect, or assign).
+
+## Standard Layout
+
+| Path | Purpose |
+|------|---------|
+| `lib/my_app/` | Contexts, domain logic, Ecto schemas |
+| `lib/my_app_web/` | Controllers, LiveView, components, router, views |
+| `test/` | ExUnit tests; `test/support/` for ConnCase, DataCase |
+| `priv/repo/migrations/` | Ecto migrations (do not edit after running in prod) |
+| `mix.exs`, `config/`, `.formatter.exs` | Project manifest, config, format |
+
+## Tooling
+
+- **Format**: Use `mix format`. Run before committing.
+- **Lint**: Use `mix credo` when available. Fix or allow with justification.
+- **Tests**: `mix test`; use path or `--only tag` for scoped runs. Use ConnCase, DataCase, and LiveView test helpers from `test/support/`.
+- **Verification**: After code changes, run `mix test` and `mix credo`. Use `/run-tests-phoenix` and `/run-credo-phoenix` when available.
+
+## Planning (Cursor)
+
+For large or multi-file changes (new context, new LiveView flow, schema changes), use Plan Mode to create an implementation plan and get approval before coding.
+
+## Reference
+
+- [Phoenix Guides](https://hexdocs.pm/phoenix/overview.html)
+- [Elixir Style Guide](https://hexdocs.pm/elixir/style-guide.html)

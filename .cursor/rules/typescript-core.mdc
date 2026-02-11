@@ -1,0 +1,40 @@
+---
+description: TypeScript project defaults, layout, and reference guides
+alwaysApply: true
+---
+
+# TypeScript Project
+
+## Principles
+
+- **Strict TypeScript**: Prefer strict mode; avoid `any`; use explicit types for public APIs and boundaries. Let the type system catch errors at compile time.
+- **ES Modules**: Use `import`/`export` syntax; prefer destructuring when importing named exports (e.g. `import { foo } from 'bar'`). Do not use `require()` unless integrating with CommonJS.
+- **Single Responsibility**: Keep functions and modules focused; prefer small, testable units.
+
+## Standard Layout
+
+| Path | Purpose |
+|------|---------|
+| `src/` | Application source (`.ts`, `.tsx`) |
+| `test/` or `__tests__/` or `*.test.ts` | Unit/integration tests |
+| `package.json` | Dependencies and scripts |
+| `tsconfig.json` | TypeScript compiler options; recommend `compilerOptions.strict: true` |
+| `biome.json` | Biome configuration (linter and formatter) |
+
+## Tooling
+
+- **Format**: Use Biome formatter (project config or default). Run before committing.
+- **Lint**: Use Biome linter; fix or allow with justification when necessary.
+- **Typecheck**: Run `npm run typecheck` or `tsc --noEmit` (or equivalent) after code changes.
+- **Tests**: Use Vitest, Jest, or project test runner; keep tests per project convention.
+- **Verification**: After code changes, run typecheck, tests, and lint to confirm no regressions. Use `/run-typecheck-typescript`, `/run-tests-typescript`, and `/run-lint-typescript` when available.
+
+## Planning (Cursor)
+
+For large or multi-file changes, use Plan Mode to create an implementation plan and get approval before coding. This reduces wrong-direction work and keeps changes focused.
+
+## Reference
+
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/)
+- [Biome](https://biomejs.dev/)
+- [Vitest](https://vitest.dev/) / [Jest](https://jestjs.io/)

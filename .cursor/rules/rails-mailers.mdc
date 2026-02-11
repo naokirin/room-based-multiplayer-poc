@@ -1,0 +1,13 @@
+---
+description: Action Mailer conventions for email
+globs: "app/mailers/**/*.rb"
+alwaysApply: false
+---
+
+# Rails Action Mailer
+
+- Use the mailer only for building the email; keep business logic outside.
+- Set default `from` in `ApplicationMailer`; override per-mailer or per-message when needed.
+- Name methods after the notification (e.g. `welcome_email`).
+- Use `deliver_later` over `deliver_now` for non-blocking delivery.
+- Provide both HTML and text templates when possible. Use mailer previews (`test/mailers/previews/` or `spec/mailers/previews/`) to verify in development.

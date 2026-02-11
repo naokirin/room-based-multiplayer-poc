@@ -1,0 +1,16 @@
+---
+description: Rails model conventions, associations, validations, and queries
+globs: "app/models/**/*.rb"
+alwaysApply: false
+---
+
+# Rails Models
+
+- Group macros (`has_many`, `validates`, `enum`, etc.) at the top.
+- Prefer `has_many :through` over `has_and_belongs_to_many`. Use hash syntax for `enum` with explicit values.
+- Specify `dependent` on associations where the parent can be destroyed (e.g. `has_many :comments, dependent: :destroy`; use `:nullify` when children should remain).
+- Use new-style validations (`validates :email, presence: true`).
+- Use `create!` / `save!` or check return value for persistence.
+- **Queries**: Avoid string interpolation; use placeholders or hash conditions. Use `find` (by id), `find_by` (by attributes), `where` / `where.not` (hash). For large record sets: `find_each` for per-record processing, `find_in_batches` for batch-array processing, `in_batches` for batch-level SQL (e.g. `in_batches.update_all`). Use `pluck` / `pick` / `ids` where appropriate. Use symbol arguments for `order` (e.g. `order(created_at: :desc)`).
+- **N+1**: When loading associations in a loop or view, use `includes` (or `eager_load`/`preload`) to avoid N+1 queries.
+- **Concerns**: Use `ActiveSupport::Concern` for shared model logic. Keep each concern focused. Place in `app/models/concerns/`.

@@ -1,0 +1,14 @@
+---
+description: Phoenix LiveView and LiveComponent conventions
+globs: "lib/**/live/**/*.ex"
+alwaysApply: false
+---
+
+# LiveView Style
+
+- **State**: Keep UI state in assigns; avoid storing large or redundant data. Use `socket.assigns` for what the template needs; derive in the template or in `mount`/`handle_params`/`handle_event` when possible.
+- **Thin LiveView**: Delegate business logic to context functions. In `handle_event`, call context, then `assign`/`push_navigate`/`push_patch` as needed. Avoid long blocks of logic in callbacks.
+- **Async work**: Use `send(self(), {:result, ...})` and `handle_info` for async work (e.g. Task.await or external calls). Show loading state in assigns when appropriate.
+- **Components**: Extract repeated markup into function components (in `lib/my_app_web.ex`) or LiveComponents. Use slots and attributes for configuration; keep components presentational when possible.
+- **Security**: Never assign user-controlled data that is rendered as raw HTML without sanitization. Use Phoenix.HTML and helpers for escaping; use `allow_upload` and validate uploads.
+- **Testing**: Use `Phoenix.LiveViewTest` in `test/support/`; test mount, params, and key events. Prefer testing behaviour (what the user sees and can do) over implementation details.

@@ -1,0 +1,14 @@
+---
+description: RSpec layout, describe/context, and let/subject conventions
+globs: "**/*_spec.rb,spec/**/*.rb"
+alwaysApply: false
+---
+
+# RSpec Style
+
+- **Layout**: No blank line immediately after `describe` / `context`. One blank line between sibling blocks. One blank line after `let` / `subject` / `before` / `after`. One blank line around each `it`.
+- **Order**: `subject` first, then `let` / `let!`, then `before` / `after`, then nested `describe` / `context`.
+- **context**: Use `context` for conditions. Include a matching negative case when relevant. Use `before(:context)` instead of `before(:all)`. Omit scope for `before` / `after` (default is `:example`).
+- **let / subject**: Use `let` / `let!` for data shared across examples. Use `subject` for the object under test. Prefer named `subject(:name)`. Prefer `let` over instance variables. Guard `find_by` memoization with `defined?` instead of `||=`.
+- **Example**: One expectation per example by default. Use `aggregate_failures` for multiple assertions when it improves readability. Use `shared_examples` / `it_behaves_like` to reduce duplication.
+- **FactoryBot** (when used): Define factories in `spec/factories/`. Use `build` / `build_stubbed` over `create` when persistence is not needed. Use traits for variations. Avoid deeply nested associations in factory definitions; compose with explicit overrides in tests.

@@ -1,0 +1,13 @@
+---
+description: Rails database migration conventions
+globs: "db/migrate/**/*.rb,db/schema.rb"
+alwaysApply: false
+---
+
+# Rails Migrations
+
+- Prefer `change` (reversible) over `up`/`down` when possible. Avoid `change_column` in `change` (not reversible); use `reversible` or `up`/`down` if you must.
+- Use `t.references :other, foreign_key: true` (or `add_reference`); this adds the column, index, and foreign key. Add indexes for other frequently queried columns with `add_index`.
+- Add `default` and `null: false` for booleans and required columns where appropriate.
+- Initialize empty DB with `db:schema:load` (not by replaying migrations).
+- After migration, run `bin/rails db:migrate:status` to confirm.

@@ -1,0 +1,13 @@
+---
+description: Ecto schemas, changesets, queries, and migrations
+globs: "lib/**/*.ex"
+alwaysApply: false
+---
+
+# Ecto Style
+
+- **Schemas**: Define in `lib/my_app/` under the context (e.g. `lib/my_app/accounts/user.ex`). Use `@primary_key`, `@foreign_key_type`, `@timestamps`; prefer `@enforce_keys` for required fields.
+- **Changesets**: Use `Ecto.Changeset` for validation and casting; keep changeset functions in the schema module or context. Return `{:ok, struct}` / `{:error, changeset}` from context functions that persist.
+- **Queries**: Prefer context functions that wrap `Repo` calls; use `from` for readability. For complex queries, consider a dedicated query module (e.g. `MyApp.Accounts.User.Query`). Avoid N+1; use `preload` or `join` as appropriate.
+- **Migrations**: Create with `mix ecto.gen.migration name`. **Do not edit migration files after they have been run in production.** Add new migrations for further schema changes.
+- **Repo**: Use `MyApp.Repo` for all DB access; do not bypass the repo. Use transactions for multi-step writes when consistency is required.

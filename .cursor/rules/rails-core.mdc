@@ -1,0 +1,47 @@
+---
+description: Ruby on Rails project defaults and reference guides
+alwaysApply: true
+---
+
+# Ruby on Rails Project
+
+## Principles
+
+- **Convention over Configuration**: Follow Rails conventions for file placement, naming, and structure. Do not invent custom patterns when Rails provides a standard way.
+- **DRY**: Extract shared logic into concerns, helpers, services, or base classes. Avoid copy-pasting code across controllers or models.
+- **Fat Model, Skinny Controller**: Keep business logic in models (or service objects); controllers should only coordinate request/response flow.
+- **I18n**: Use `t()` / `l()` for user-facing strings; keep locale files under `config/locales/`. See `rails-i18n.mdc` when editing views or locale files.
+
+## Standard Directory Layout
+
+| Directory | Purpose |
+|-----------|---------|
+| `app/models/` | ActiveRecord models and concerns |
+| `app/controllers/` | Request handling; keep actions thin |
+| `app/views/` | ERB/HTML templates and partials |
+| `app/helpers/` | View helper methods |
+| `app/services/` | Service objects for complex business logic |
+| `app/jobs/` | Active Job classes for async processing |
+| `app/mailers/` | Action Mailer classes |
+| `app/channels/` | Action Cable channels for WebSocket |
+| `app/javascript/controllers/` | Stimulus controllers (Rails 7+) |
+| `config/routes.rb` | Route definitions |
+| `config/locales/` | I18n locale files |
+| `db/migrate/` | Database migrations |
+| `spec/` or `test/` | Test suite |
+
+## Style and Linting
+
+- **Style**: Follow [Ruby Style Guide](https://rubystyle.guide), [Rails Style Guide](https://rails.rubystyle.guide), and [RSpec Style Guide](https://rspec.rubystyle.guide).
+- **Linter**: Use RuboCop (`rubocop`, `rubocop-rails`, `rubocop-rspec`) to enforce style. Run before committing.
+- **Tests**: Follow RSpec conventions when using RSpec; for Minitest use `test/` and the Rails Testing Guide.
+- **Verification**: After code changes, run the relevant tests (`bundle exec rspec` or `bin/rails test`) and RuboCop (`bundle exec rubocop`) to confirm no regressions or new offenses.
+
+## Planning (Cursor)
+
+For large or multi-file changes, use Plan Mode to create an implementation plan and get approval before coding. This reduces wrong-direction work and keeps changes focused.
+
+## Reference
+
+- [Rails Guides](https://guides.rubyonrails.org) for implementation details.
+- [Rails API docs](https://api.rubyonrails.org) for class and method references.

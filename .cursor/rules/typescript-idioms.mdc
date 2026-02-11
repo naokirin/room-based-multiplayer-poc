@@ -1,0 +1,15 @@
+---
+description: TypeScript idioms (types, modules, async, errors)
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# TypeScript Idioms
+
+- **Arguments and returns**: Prefer explicit return types for public functions. Use readonly for array/object parameters when the function does not mutate. Use optional parameters (`?`) or union with `undefined` for optional args; avoid `| undefined` in return types when the value is intentionally absent (use optional return or throw).
+- **Nullability**: Use strict null checks; prefer `T | null` or optional `T?` explicitly. Use optional chaining (`?.`) and nullish coalescing (`??`) where they simplify code.
+- **Generics**: Use descriptive names (e.g. `TData`, `TKey`) when a single letter is unclear. Prefer constraints (`extends`) when the generic is used in a constrained way. Avoid over-genericizing; use concrete types when only one type is ever used.
+- **Error handling**: Prefer throwing typed errors (e.g. `Error` subclasses) or returning `Result`-like types when the API is explicit about failures. Catch at boundaries; avoid swallowing errors without logging or rethrowing.
+- **Objects and arrays**: Prefer `const` and immutable patterns where possible. Use `as const` for literal types when you need narrow inference. Prefer spread for shallow copies; avoid mutating input parameters.
+- **Modules**: Prefer barrel exports (index.ts) only when they simplify imports; avoid re-exporting everything. Use path aliases (e.g. `@/`) consistently when configured in tsconfig.
+- **Testing**: Place tests next to source (`*.test.ts`) or in a dedicated directory per project convention. Use descriptive test names; prefer one assertion focus per test when it improves clarity.

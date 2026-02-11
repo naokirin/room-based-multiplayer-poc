@@ -1,0 +1,29 @@
+---
+description: Mandatory security checks, secret management
+alwaysApply: true
+---
+
+# Security Guidelines
+
+## Mandatory Security Checks
+
+Before ANY commit:
+- [ ] No hardcoded secrets (API keys, passwords, tokens)
+- [ ] All user inputs validated
+- [ ] SQL injection prevention (parameterized queries)
+- [ ] XSS prevention (sanitized output)
+- [ ] CSRF protection enabled where applicable
+- [ ] Authentication/authorization verified
+- [ ] Rate limiting on endpoints where applicable
+- [ ] Error messages don't leak sensitive data
+
+## Secret Management
+
+- NEVER hardcode secrets in source code
+- ALWAYS use environment variables or a secret manager
+- Validate that required secrets are present at startup
+- Rotate any secrets that may have been exposed
+
+## Security Response
+
+If a security issue is found: stop immediately, fix CRITICAL issues before continuing, rotate exposed secrets, review codebase for similar issues.

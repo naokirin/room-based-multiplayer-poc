@@ -1,0 +1,13 @@
+---
+description: Rails routing conventions (config/routes.rb)
+globs: "config/routes.rb,**/routes.rb"
+alwaysApply: false
+---
+
+# Rails Routing
+
+- Prefer `resources` for RESTful routes. Use `member` for actions on a single resource (e.g. `archive`), `collection` for actions on the collection (e.g. `search`).
+- Use `namespace` for admin or API (e.g. `namespace :admin`, `namespace :api, path: 'api', defaults: { format: :json }`).
+- Nest at most one level; use `shallow: true` when nesting deeper to avoid long URLs.
+- Use `match` only when mapping multiple HTTP verbs to one action; prefer `get`/`post`/etc. when the verb is single.
+- After changing routes, run `bin/rails routes` to verify.

@@ -1,0 +1,22 @@
+---
+description: Hook types, TodoWrite best practices
+alwaysApply: false
+---
+
+# Hooks System
+
+## Hook Types
+
+- **PreToolUse**: Before tool execution (validation, parameter modification)
+- **PostToolUse**: After tool execution (auto-format, checks)
+- **Stop**: When session ends (final verification)
+
+## TodoWrite Best Practices
+
+Use TodoWrite tool to:
+- Track progress on multi-step tasks
+- Verify understanding of instructions
+- Enable real-time steering
+- Show granular implementation steps
+
+Todo list helps reveal: out-of-order steps, missing items, wrong granularity, misinterpreted requirements.

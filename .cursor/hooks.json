@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "pattern": "**/*.rb",
+        "command": ".cursor/hooks/format-ruby.sh"
+      },
+      {
+        "pattern": "**/*.ex",
+        "command": ".cursor/hooks/format-elixir.sh"
+      },
+      {
+        "pattern": "**/*.exs",
+        "command": ".cursor/hooks/format-elixir.sh"
+      },
+      {
+        "pattern": "**/*.ts",
+        "command": ".cursor/hooks/format-typescript.sh"
+      },
+      {
+        "pattern": "**/*.tsx",
+        "command": ".cursor/hooks/format-typescript.sh"
+      },
+      {
+        "pattern": "**/*.js",
+        "command": ".cursor/hooks/format-typescript.sh"
+      },
+      {
+        "pattern": "**/*.jsx",
+        "command": ".cursor/hooks/format-typescript.sh"
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+---
+description: ERB template conventions for views, layouts, and partials
+globs: "**/*.erb"
+alwaysApply: false
+---
+
+# ERB Style
+
+- Use two-space indentation for both HTML and ERB tags.
+- Keep logic minimal in templates. Move complex conditionals and loops into helpers, partials, or presenters/decorators.
+- Prefer partials (`render 'form'`) over duplicating markup. Use locals instead of instance variables in partials.
+- Use `<%= link_to ..., path_helper %>` and route/path helpers instead of hard-coded URLs.
+- Escape output by default (`<%= %>`). Only use `raw` / `html_safe` when the content is explicitly sanitized.
+- Prefer `content_for` / `yield` for layout sections over deeply nested conditionals.
+- Use `dom_id` / `dom_class` helpers for HTML id/class attributes tied to ActiveRecord objects.
+- Avoid inline `<style>` and `<script>` tags; place styles in stylesheets and JavaScript in dedicated files or Stimulus controllers.

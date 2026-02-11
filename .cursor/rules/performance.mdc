@@ -1,0 +1,24 @@
+---
+description: Model selection, context window, extended thinking
+alwaysApply: false
+---
+
+# Performance Optimization
+
+## Model Selection Strategy
+
+- **Haiku**: Lightweight agents, pair programming, worker agents (cost-effective).
+- **Sonnet**: Main development work, orchestrating workflows, complex coding.
+- **Opus**: Complex architectural decisions, maximum reasoning, research.
+
+## Context Window Management
+
+Avoid last 20% of context for large refactors and multi-file features. Prefer smaller context for single-file edits, utilities, docs, simple bug fixes.
+
+## Extended Thinking and Plan Mode
+
+For complex tasks: enable extended thinking, use Plan Mode for structured approach, use multiple critique rounds, consider split-role sub-agents.
+
+## Build Troubleshooting
+
+If build fails: use build-error-resolver agent (if available), analyze error messages, fix incrementally, verify after each fix.
