@@ -29,6 +29,8 @@ socket.connect()
 **On success**: Socket connected, heartbeat begins.
 **On failure**: Socket error callback with `{ reason: "unauthorized" }` or `{ reason: "unsupported_protocol_version", supported: ["1.0"] }`.
 
+**Note on frozen accounts**: User status (frozen) is checked only at connection time (socket connect) and channel join/rejoin. If a user is frozen by an admin while already connected and in a game, the existing session is NOT actively terminated. The freeze takes effect at the next authentication boundary (reconnect, new matchmaking, or re-login). See spec Edge Cases for rationale.
+
 ### Protocol Versioning
 
 Phoenix maintains a list of supported protocol versions. When a client connects with an unsupported version, the connection is rejected with the list of supported versions so the client can prompt the user to update.
