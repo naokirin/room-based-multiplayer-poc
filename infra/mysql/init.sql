@@ -1,0 +1,2 @@
+CREATE DATABASE IF NOT EXISTS game_platform_dev;
+CREATE DATABASE IF NOT EXISTS game_platform_test;

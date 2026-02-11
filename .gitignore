@@ -1,2 +1,44 @@
 # Claude Code
 /.claude/settings.local.json
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
+# IDE
+.vscode/
+.idea/
+
+# Node.js / TypeScript (client)
+client/node_modules/
+client/dist/
+client/build/
+client/*.log
+
+# Ruby / Rails (api-server)
+api-server/.bundle/
+api-server/log/
+api-server/tmp/
+api-server/vendor/bundle/
+api-server/storage/
+api-server/public/assets/
+api-server/public/packs/
+api-server/config/master.key
+api-server/config/credentials.yml.enc
+api-server/.kamal/secrets
+
+# Elixir / Phoenix (game-server)
+game-server/_build/
+game-server/deps/
+game-server/.elixir_ls/
+game-server/cover/
+
+# Docker
+*.log
