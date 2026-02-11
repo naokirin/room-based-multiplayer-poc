@@ -206,6 +206,23 @@ Called by Rails → Phoenix when matchmaking produces a room.
 }
 ```
 
+**Room creation timeout policy**: Rails enforces a total deadline of 15 seconds for room creation (covering up to 3 retry attempts at 5s each). If the deadline is exceeded:
+
+1. Rails marks the match as `failed` and the room record as `failed`
+2. Rails removes `active_game:{user_id}` keys from Redis for all matched players
+3. Rails returns the match failure to clients polling `GET /matchmaking/status`:
+   ```json
+   {
+     "status": "error",
+     "message": "Failed to create game room. Please try again.",
+     "can_rejoin_queue": true
+   }
+   ```
+4. Players are free to re-enter the matchmaking queue immediately
+5. Rails logs the failure as a structured event (`room_creation_failed`) with room_id, node_name, and error details for operational monitoring
+
+This corresponds to the spec Edge Case: "What happens when the system cannot create a game room after matching succeeds?"
+
 ## Admin Operations (Rails → Phoenix)
 
 ### POST http://game-server:4000/internal/rooms/:room_id/terminate

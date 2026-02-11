@@ -230,6 +230,15 @@ Check current matchmaking status (polling fallback).
 }
 ```
 
+**Response 200** (room creation failed after match):
+```json
+{
+  "status": "error",
+  "message": "Failed to create game room. Please try again.",
+  "can_rejoin_queue": true
+}
+```
+
 ## Rooms
 
 ### GET /rooms/:room_id/ws_endpoint
