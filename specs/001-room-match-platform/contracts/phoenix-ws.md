@@ -44,10 +44,11 @@ Phoenix maintains a list of supported protocol versions. When a client connects 
 All client → server game actions include a `nonce` field to prevent replay attacks. The nonce is a client-generated unique string (e.g., UUID v4) per action.
 
 **Server-side validation**:
-1. Phoenix maintains a per-player nonce cache (in-memory, bounded set of recent nonces per room session)
+1. Phoenix maintains a per-player nonce cache (in-memory, max 50 nonces per player per room session, LRU eviction when full)
 2. On receiving a `game:action`, the server checks whether the nonce has been seen before
 3. If duplicate nonce detected: action is rejected with `{ "reason": "duplicate_nonce" }`
 4. Nonces are scoped per player per room session and cleared when the room ends
+5. With a max of 50 nonces and game:action rate limit of 1/sec, the cache covers the last ~50 seconds of actions — sufficient for replay protection
 
 **Client implementation**:
 ```javascript
@@ -459,3 +460,12 @@ All push operations return replies with `"ok"` or `"error"` status. Channel-leve
 | chat:send | 5 per 10 seconds per user |
 | chat message length | 500 characters max (configurable per game type in future) |
 | channel join | 3 attempts per minute |
+
+## In-Memory Buffer Limits
+
+Per-room limits enforced by the Room GenServer process. All values are hardcoded for MVP; future enhancement may make them configurable per game type.
+
+| Buffer | Max Size | Eviction | Rationale |
+|--------|----------|----------|-----------|
+| Chat message buffer | 100 messages per room | Ring buffer (oldest dropped) | At 5 msg/10s per user × 12 players = 6 msg/s max; 100 msgs covers ~17s of peak chat. Sufficient for active conversation context without unbounded growth. |
+| Nonce cache | 50 nonces per player per room | LRU eviction | At 1 action/s rate limit, covers ~50s of actions. Replay attacks beyond this window are irrelevant as game state has advanced. |

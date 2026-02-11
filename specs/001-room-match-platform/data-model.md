@@ -280,7 +280,8 @@ Value: `room_id`
   turn_started_at: DateTime,
   turn_timer_ref: reference,
   join_timer_ref: reference,
-  chat_messages: [%{sender_id, content, sent_at}],  # ephemeral, limited buffer
+  chat_messages: [%{sender_id, content, sent_at}],  # ephemeral, ring buffer (max 100 messages)
+  nonce_cache: %{user_id => MapSet},                # per-player, max 50 nonces each (LRU eviction)
   created_at: DateTime
 }
 ```
