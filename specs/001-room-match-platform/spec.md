@@ -125,7 +125,7 @@ An administrator can search for users, freeze accounts of malicious players, vie
 
 - **FR-001**: System MUST allow users to register and create accounts with unique credentials.
 - **FR-002**: System MUST authenticate users before allowing access to any game features.
-- **FR-003**: System MUST maintain user sessions and handle session expiration gracefully, prompting re-authentication when needed. JWT access token lifetime is 1 hour. Clients MUST refresh tokens in the background during gameplay via `POST /auth/refresh` before expiration to maintain the WebSocket session.
+- **FR-003**: System MUST maintain user sessions and handle session expiration gracefully, prompting re-authentication when needed. JWT access token lifetime is 1 hour. Clients MUST refresh tokens in the background during gameplay via `POST /auth/refresh` before expiration to maintain the WebSocket session. **WebSocket strategy**: Phoenix validates the JWT only at socket connect time; an already-established WebSocket connection is NOT terminated when the JWT expires. If the connection drops, the client must use a refreshed token to reconnect. This avoids mid-game disruption from token rotation.
 - **FR-004**: System MUST prevent frozen accounts from logging in or accessing any features.
 
 #### Matchmaking
@@ -146,7 +146,7 @@ An administrator can search for users, freeze accounts of malicious players, vie
 - **FR-025**: System MUST reject invalid actions and provide clear feedback to the player.
 - **FR-026**: System MUST detect game-end conditions and notify all players of the outcome.
 - **FR-027**: System MUST persist game results upon completion. Individual game actions are held in-memory only during the game and are not persisted for MVP. Action replay/audit logging is a future enhancement.
-- **FR-028**: System MUST support 1 to approximately 12 players per room, depending on game type.
+- **FR-028**: System MUST support 2 to 12 players per room, depending on game type. The platform MUST reject game type configurations with player_count outside this range.
 - **FR-029**: System MUST enforce a per-turn time limit and automatically skip the turn if the player does not act in time.
 
 #### Reconnection

@@ -3,7 +3,7 @@
 **Input**: Design documents from `/specs/001-room-match-platform/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/
 
-**Tests**: Not explicitly requested in the feature specification. Test tasks are NOT included. Tests should be added per-service as needed during implementation.
+**Tests**: Per Constitution Principle IV (Test-First for Contracts and Critical Paths), test tasks are included for API contracts, WebSocket channels, and critical game flows. Tests MUST be written before or alongside implementation.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -121,7 +121,14 @@
 - [ ] T049 Define shared TypeScript types (User, Room, GameType, GameState, ChatMessage, API responses) in client/src/types/index.ts
 - [ ] T050 Implement API client service (axios/fetch wrapper with JWT handling) in client/src/services/api.ts
 
-**Checkpoint**: Foundation ready — all services can build, connect to DB/Redis, authenticate users. User story implementation can now begin.
+### Foundation Tests
+
+- [ ] T050a [P] Write RSpec request specs for auth endpoints (register, login, refresh, profile) verifying contracts/rails-api.md shapes in api-server/spec/requests/api/v1/auth_spec.rb
+- [ ] T050b [P] Write RSpec request specs for internal auth/verify endpoint verifying contracts/internal-api.md in api-server/spec/requests/internal/auth_spec.rb
+- [ ] T050c [P] Write RSpec model specs for User, GameType, Room, RoomPlayer models (validations, associations, enums) in api-server/spec/models/
+- [ ] T050d [P] Write ExUnit tests for JWT verification module in game-server/test/game_server/auth/jwt_test.exs
+
+**Checkpoint**: Foundation ready — all services can build, connect to DB/Redis, authenticate users. Contract tests pass. User story implementation can now begin.
 
 ---
 
@@ -167,7 +174,7 @@
 
 - [ ] T065 [US1] Implement Room GenServer (state management, player tracking, join/leave, status transitions) in game-server/lib/game_server/rooms/room.ex
 - [ ] T066 [US1] Implement Room DynamicSupervisor in game-server/lib/game_server/rooms/room_supervisor.ex
-- [ ] T067 [US1] Implement turn management (turn timer, auto-skip on timeout, turn progression) in game-server/lib/game_server/rooms/room.ex
+- [ ] T067 [US1] Implement turn management (turn timer, auto-skip on timeout with game:turn_skipped broadcast, turn progression) in game-server/lib/game_server/rooms/room.ex
 - [ ] T068 [US1] Implement nonce cache for replay attack protection (per-player, max 50, LRU eviction) in game-server/lib/game_server/rooms/room.ex
 - [ ] T069 [US1] Implement game end detection and result persistence callback (POST /internal/rooms/:room_id/finished with retry and persist_failed fallback) in game-server/lib/game_server/rooms/room.ex
 
@@ -208,7 +215,15 @@
 
 - [ ] T085 [US1] Implement App.tsx with screen routing (auth → lobby → matchmaking → game) in client/src/App.tsx
 
-**Checkpoint**: User Story 1 complete — 2 players can log in, match, play a full card battle game, and see results. This is the MVP.
+### US1 Tests
+
+- [ ] T085a [P] [US1] Write RSpec request specs for matchmaking endpoints (join, status, contracts verification) in api-server/spec/requests/api/v1/matchmaking_spec.rb
+- [ ] T085b [P] [US1] Write RSpec request specs for internal room callbacks (ready, started, finished, aborted) in api-server/spec/requests/internal/rooms_spec.rb
+- [ ] T085c [P] [US1] Write ExUnit tests for Game Behaviour (SimpleCardBattle: init, validate, apply, end condition) in game-server/test/game_server/games/simple_card_battle_test.exs
+- [ ] T085d [P] [US1] Write ExUnit tests for Room GenServer (join, turn management, turn skip, game end) in game-server/test/game_server/rooms/room_test.exs
+- [ ] T085e [US1] Write ExUnit channel tests for RoomChannel (join with token, game:action, broadcasts) in game-server/test/game_server_web/channels/room_channel_test.exs
+
+**Checkpoint**: User Story 1 complete — 2 players can log in, match, play a full card battle game, and see results. Contract and unit tests pass. This is the MVP.
 
 ---
 
@@ -238,7 +253,12 @@
 - [ ] T095 [US2] Implement reconnection UI (disconnected indicator, reconnecting status, state restoration) in client/src/components/Game.tsx
 - [ ] T096 [US2] Persist reconnect_token and room_id in localStorage for page-refresh reconnection in client/src/stores/gameStore.ts
 
-**Checkpoint**: User Story 2 complete — players can disconnect and reconnect seamlessly during gameplay.
+### US2 Tests
+
+- [ ] T096a [P] [US2] Write ExUnit tests for reconnection flow (rejoin with token, full state delivery, duplicate connection, timeout removal) in game-server/test/game_server/rooms/room_reconnect_test.exs
+- [ ] T096b [P] [US2] Write RSpec request spec for GET /api/v1/rooms/:room_id/ws_endpoint in api-server/spec/requests/api/v1/rooms_spec.rb
+
+**Checkpoint**: User Story 2 complete — players can disconnect and reconnect seamlessly during gameplay. Reconnection tests pass.
 
 ---
 
@@ -260,7 +280,11 @@
 - [ ] T101 [US3] Implement Chat UI component (message list, input field, send button) in client/src/components/Chat.tsx
 - [ ] T102 [US3] Integrate chat component into Game screen in client/src/components/Game.tsx
 
-**Checkpoint**: User Story 3 complete — players can chat in real-time during gameplay.
+### US3 Tests
+
+- [ ] T102a [US3] Write ExUnit channel tests for chat:send (validation, rate limit, broadcast) in game-server/test/game_server_web/channels/room_channel_chat_test.exs
+
+**Checkpoint**: User Story 3 complete — players can chat in real-time during gameplay. Chat tests pass.
 
 ---
 
@@ -280,7 +304,11 @@
 - [ ] T105 [US4] Add cancel matchmaking action to lobby store in client/src/stores/lobbyStore.ts
 - [ ] T106 [US4] Add cancel button and timeout handling to matchmaking UI in client/src/components/Lobby.tsx
 
-**Checkpoint**: User Story 4 complete — players can cancel matchmaking.
+### US4 Tests
+
+- [ ] T106a [US4] Write RSpec request spec for DELETE /api/v1/matchmaking/cancel in api-server/spec/requests/api/v1/matchmaking_cancel_spec.rb
+
+**Checkpoint**: User Story 4 complete — players can cancel matchmaking. Cancel tests pass.
 
 ---
 
@@ -319,7 +347,12 @@
 
 - [ ] T117 [US5] Implement PersistRecoveryJob (SCAN persist_failed:*, import results, alert on stale) in api-server/app/jobs/persist_recovery_job.rb
 
-**Checkpoint**: User Story 5 complete — admin panel is functional with all management capabilities.
+### US5 Tests
+
+- [ ] T117a [P] [US5] Write RSpec request specs for admin controllers (users search/freeze, rooms list/terminate, announcements CRUD) in api-server/spec/requests/admin/
+- [ ] T117b [P] [US5] Write RSpec request spec for GET /api/v1/announcements in api-server/spec/requests/api/v1/announcements_spec.rb
+
+**Checkpoint**: User Story 5 complete — admin panel is functional with all management capabilities. Admin tests pass.
 
 ---
 
@@ -331,8 +364,7 @@
 - [ ] T119 [P] Add error handling middleware for consistent JSON error responses in api-server/app/controllers/application_controller.rb
 - [ ] T120 [P] Add plug_attack rate limiting to Phoenix socket in game-server/lib/game_server_web/channels/user_socket.ex
 - [ ] T121 Run quickstart.md full flow validation (Docker up, seed, 2-player login, match, play, reconnect, chat, admin)
-- [ ] T122 [P] Add card_dsl_versions migration stub (future placeholder) in api-server/db/migrate/
-- [ ] T123 Final Docker Compose integration test (all services start, health checks pass)
+- [ ] T122 Final Docker Compose integration test (all services start, health checks pass)
 
 ---
 
@@ -435,18 +467,19 @@ Task T080: "Lobby UI in client/src/components/Lobby.tsx"
 
 | Metric | Value |
 |--------|-------|
-| Total tasks | 123 |
+| Total tasks | 137 |
 | Phase 1 (Setup) | 8 tasks |
-| Phase 2 (Foundational) | 42 tasks (T009–T050, incl. 3 base controllers) |
-| Phase 3 (US1: Match & Play) | 35 tasks |
-| Phase 4 (US2: Reconnect) | 11 tasks |
-| Phase 5 (US3: Chat) | 6 tasks |
-| Phase 6 (US4: Cancel Match) | 4 tasks |
-| Phase 7 (US5: Admin) | 11 tasks |
-| Phase 8 (Polish) | 6 tasks |
+| Phase 2 (Foundational) | 46 tasks (T009–T050d, incl. 3 base controllers + 4 foundation tests) |
+| Phase 3 (US1: Match & Play) | 40 tasks (incl. 5 test tasks) |
+| Phase 4 (US2: Reconnect) | 13 tasks (incl. 2 test tasks) |
+| Phase 5 (US3: Chat) | 7 tasks (incl. 1 test task) |
+| Phase 6 (US4: Cancel Match) | 5 tasks (incl. 1 test task) |
+| Phase 7 (US5: Admin) | 13 tasks (incl. 2 test tasks) |
+| Phase 8 (Polish) | 5 tasks |
+| Test tasks total | 15 tasks |
 | Parallel opportunities | 30+ tasks marked [P] |
-| MVP scope | Phase 1 + Phase 2 + Phase 3 (85 tasks) |
-| Format validated | All 123 tasks follow `- [ ] [ID] [P?] [Story?] Description with file path` |
+| MVP scope | Phase 1 + Phase 2 + Phase 3 (94 tasks) |
+| Format validated | All 137 tasks follow `- [ ] [ID] [P?] [Story?] Description with file path` |
 
 ---
 
@@ -457,4 +490,5 @@ Task T080: "Lobby UI in client/src/components/Lobby.tsx"
 - Each user story is independently completable and testable after Phase 2
 - Commit after each task or logical group
 - Stop at any checkpoint to validate the story independently
-- Tests are not included (not explicitly requested) — add as needed during implementation
+- Test tasks are included per Constitution Principle IV (Test-First for Contracts and Critical Paths)
+- Test tasks use suffix IDs (e.g., T050a, T085c) to maintain original task numbering stability

@@ -80,6 +80,17 @@ playing → finished (game completed normally)
 playing → aborted  (admin force-terminate, or all players left)
 ```
 
+**Status mapping across layers**:
+
+| Rails DB (rooms.status) | Elixir Process (%RoomState.status) | Notes |
+|-------------------------|------------------------------------|-------|
+| preparing | — (process not yet spawned) | Room record created, awaiting Phoenix |
+| ready | :waiting | Process spawned, awaiting player joins |
+| playing | :active | Game in progress |
+| finished | :ending → process terminates | Game completed normally |
+| aborted | :ending → process terminates | Force-terminated or all players left |
+| failed | — (process spawn failed) | Phoenix could not create room |
+
 ### room_players
 
 Join table linking players to rooms.
@@ -159,27 +170,6 @@ Card definitions for the MVP hardcoded game type. In the future, these will be m
 **Indexes**: `game_type_id`, `(game_type_id, active)`
 
 **Note**: For MVP, cards are seeded from a hardcoded list. The card data in MySQL serves as the source of truth that Phoenix loads when creating a room.
-
-### card_dsl_versions (Future — MVP Stub)
-
-Version-controlled DSL definitions for cards. **Not actively used in MVP** (cards are hardcoded), but the table is created as a placeholder for the DSL system described in the original design (§7).
-
-| Field | Type | Constraints | Description |
-|-------|------|-------------|-------------|
-| id | UUID | PK | Version identifier |
-| game_type_id | UUID | FK → game_types.id, NOT NULL | Which game type |
-| version | INTEGER | NOT NULL | Version number (monotonically increasing) |
-| dsl_text | TEXT | NOT NULL | Raw DSL source text |
-| compiled_ast | JSON | NULL | Compiled AST (cached) |
-| status | ENUM('draft', 'validated', 'active', 'archived') | NOT NULL, DEFAULT 'draft' | Version lifecycle |
-| created_by | UUID | FK → users.id, NOT NULL | Admin who created this version |
-| validated_at | DATETIME | NULL | When validation passed |
-| activated_at | DATETIME | NULL | When put into production |
-| created_at | DATETIME | NOT NULL | |
-
-**Indexes**: `(game_type_id, version)` (unique), `status`
-
-**Note**: This table supports the future DSL system (解消5, 解消9). Rooms reference a specific DSL version at creation time, ensuring version consistency during gameplay.
 
 ### announcements
 
@@ -350,8 +340,6 @@ rooms 1──1 game_results
 rooms 1──1 matches
 matches N──1 game_types
 cards N──1 game_types
-card_dsl_versions N──1 game_types
-card_dsl_versions N──1 users (as created_by)
 users 1──N announcements (as admin)
 users 1──N audit_logs (as actor)
 ```
