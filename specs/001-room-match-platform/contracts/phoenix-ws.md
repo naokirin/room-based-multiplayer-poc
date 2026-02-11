@@ -240,6 +240,22 @@ channel.push("chat:send", {
 }
 ```
 
+```json
+{
+  "sent": false,
+  "reason": "content_too_long",
+  "message": "Message exceeds maximum length of 500 characters"
+}
+```
+
+```json
+{
+  "sent": false,
+  "reason": "content_empty",
+  "message": "Message content is required"
+}
+```
+
 ## Server → Client Messages (broadcast)
 
 ### game:started
@@ -441,4 +457,5 @@ All push operations return replies with `"ok"` or `"error"` status. Channel-leve
 |--------|-------|
 | game:action | 1 per second per user |
 | chat:send | 5 per 10 seconds per user |
+| chat message length | 500 characters max (configurable per game type in future) |
 | channel join | 3 attempts per minute |

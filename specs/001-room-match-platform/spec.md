@@ -161,6 +161,7 @@ An administrator can search for users, freeze accounts of malicious players, vie
 - **FR-040**: System MUST allow players in a game room to send and receive text messages in real-time.
 - **FR-041**: System MUST deliver chat messages only to players within the same room.
 - **FR-042**: Room chat MUST be ephemeral - messages are not persisted after the room ends.
+- **FR-043**: System MUST enforce a maximum chat message length of 500 characters and reject empty messages. This limit is hardcoded for MVP; future enhancement may make it configurable per game type.
 
 #### Administration
 
