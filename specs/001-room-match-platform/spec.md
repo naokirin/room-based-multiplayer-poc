@@ -115,6 +115,7 @@ An administrator can search for users, freeze accounts of malicious players, vie
 - What happens when the admin force-terminates a room mid-game? All players receive a game-aborted notification and the game result is not recorded as a normal outcome.
 - What happens when a frozen user attempts to log in? The system denies access and displays a message indicating the account is suspended.
 - What happens when a user is frozen while already connected to a game via WebSocket? For MVP, the platform does NOT actively disconnect the player mid-game. The freeze takes effect at the next authentication boundary (login, matchmaking join, WebSocket reconnect). Active game sessions are allowed to complete naturally. Rationale: active session disconnection behavior is game-type-specific (some games may forfeit, others may pause), and implementing a cross-service push mechanism (Rails → Phoenix) adds significant complexity for a rare operational scenario. This is a deliberate MVP scope decision; game-type-specific freeze behavior can be added as a future Behaviour callback (e.g., `on_player_frozen/2`).
+- What happens when a Phoenix node crashes with active games? All in-progress games on that node are lost (in-memory state is not recoverable). When clients attempt to reconnect, they receive `game_aborted` with reason `server_error`. Rails detects stale rooms via periodic health checks and marks them as aborted. Periodic state snapshots for crash recovery are a future enhancement.
 
 ## Requirements *(mandatory)*
 
@@ -124,12 +125,12 @@ An administrator can search for users, freeze accounts of malicious players, vie
 
 - **FR-001**: System MUST allow users to register and create accounts with unique credentials.
 - **FR-002**: System MUST authenticate users before allowing access to any game features.
-- **FR-003**: System MUST maintain user sessions and handle session expiration gracefully, prompting re-authentication when needed.
+- **FR-003**: System MUST maintain user sessions and handle session expiration gracefully, prompting re-authentication when needed. JWT access token lifetime is 1 hour. Clients MUST refresh tokens in the background during gameplay via `POST /auth/refresh` before expiration to maintain the WebSocket session.
 - **FR-004**: System MUST prevent frozen accounts from logging in or accessing any features.
 
 #### Matchmaking
 
-- **FR-010**: System MUST provide a queue-based matchmaking system that automatically groups players by game type and required player count.
+- **FR-010**: System MUST provide a queue-based matchmaking system that automatically groups players by game type and required player count. Matchmaking MUST use a Redis Lua script to atomically pop N players from the queue, preventing race conditions when multiple Rails workers process the queue concurrently.
 - **FR-011**: System MUST notify players of their queue status (searching, match found, timeout).
 - **FR-012**: System MUST allow players to cancel matchmaking while in the queue.
 - **FR-013**: System MUST timeout matchmaking after a configurable period (default: 60 seconds) and inform the player.
@@ -180,7 +181,7 @@ An administrator can search for users, freeze accounts of malicious players, vie
 
 ### Key Entities
 
-- **User**: A registered player with an account, profile information, and account status (active/frozen). Identified uniquely. Can participate in games.
+- **User**: A registered player with an account, profile information, and account status (active/frozen). Identified uniquely by email and display_name (both UNIQUE). Can participate in games.
 - **Game Room**: A temporary space where matched players play a game together. Has a lifecycle (preparing, ready, playing, finished/aborted). Belongs to a game type.
 - **Game Type**: A configuration defining the rules of a specific game variant, including required player count, turn structure, and win conditions.
 - **Match Queue Entry**: A temporary record of a player waiting to be matched, associated with a game type and entry timestamp.
@@ -210,7 +211,7 @@ An administrator can search for users, freeze accounts of malicious players, vie
 - **A-003**: This project is a **game-agnostic platform** (not a specific game implementation). Game rules and actions are abstracted behind an Elixir Behaviour (callback interface) — each game type implements a module with callbacks such as `init_state/1`, `validate_action/2`, `apply_action/2`, `check_end_condition/1`. The platform runtime is generic; game-specific logic is swapped in via the Behaviour module. Game configuration (cards, rules, balance) is managed via code and configuration files for MVP; a DSL-based dynamic configuration system is a future enhancement.
 - **A-004**: For MVP, a minimal sample game (e.g., simple turn-based card or board game) will be included solely to validate the platform architecture. The sample game is not the deliverable; the platform infrastructure is.
 - **A-005**: Standard email/password authentication is assumed for MVP; OAuth or SSO integration is a future enhancement. Cross-service auth strategy: Rails issues a JWT on login for **authentication** (identity verification); Phoenix validates the JWT signature independently. However, **authorization** (e.g., "is this player allowed to join this room?") requires Phoenix to call a Rails API endpoint on WebSocket connect to verify room assignment, account status (frozen), and other access rules.
-- **A-006**: The admin interface is a separate, authenticated web application accessible only to authorized operators.
+- **A-006**: The admin interface is implemented as Rails server-rendered views (ERB + Turbo/Stimulus) within the api-server application, under a namespaced route (e.g., `/admin`). It is accessible only to authorized operators (role: admin). No separate SPA or deployment is needed for MVP.
 - **A-007**: The platform operates in a single region for MVP; multi-region deployment is out of scope.
 - **A-008**: Turn time limit defaults to 60 seconds per turn (configurable per game type in the future).
 - **A-009**: Reconnection window defaults to the duration of the game session (a disconnected player can reconnect as long as the game is still active).
@@ -238,3 +239,11 @@ An administrator can search for users, freeze accounts of malicious players, vie
 - Q: Should individual game actions be persisted for replay/audit? → A: MVP persists only final game results. Actions exist in-memory during the game only. Action replay/audit logging is a future enhancement.
 - Q: How does Phoenix authenticate and authorize WebSocket connections? → A: Hybrid — JWT for authentication (identity, validated by Phoenix independently via shared secret), plus Rails API call for authorization (room assignment, account status, access rules) on each WebSocket connect.
 - Q: What happens to an active WebSocket session when a user is frozen by an admin? → A: MVP does NOT actively disconnect frozen users mid-game. The freeze takes effect at the next authentication boundary (login, matchmaking, reconnect). Active sessions complete naturally. Rationale: (1) the appropriate response to mid-game freeze is game-type-specific (forfeit vs pause vs continue), so the platform should not impose a single policy; (2) implementing Rails→Phoenix push notification for freeze events adds cross-service complexity for a rare admin operation. Future enhancement: Behaviour callback `on_player_frozen/2` to let each game type decide.
+
+### Session 2026-02-12
+
+- Q: What happens to in-progress games when a Phoenix node crashes? → A: Games are aborted on node crash. Clients receive `game_aborted` (reason: `server_error`) on reconnect attempt. No in-memory state recovery for MVP; periodic state snapshots are a future enhancement.
+- Q: What is the JWT access token lifetime and mid-game expiration strategy? → A: 1 hour TTL. Clients refresh tokens in the background during gameplay via `POST /auth/refresh` before expiration.
+- Q: Should display_name be unique across the platform? → A: Yes. UNIQUE constraint on `users.display_name`. Prevents confusion in admin search and in-game player identification. No discriminator suffix needed for MVP.
+- Q: How does matchmaking prevent race conditions under concurrent Rails workers? → A: Redis Lua script for atomic pop of N players from the queue. Guarantees each player is assigned to exactly one match regardless of worker concurrency.
+- Q: What is the admin panel implementation approach? → A: Rails server-rendered views (ERB + Turbo/Stimulus) within the api-server app, under `/admin` namespace. Leverages existing Rails auth and session infrastructure. No separate SPA or deployment for MVP.

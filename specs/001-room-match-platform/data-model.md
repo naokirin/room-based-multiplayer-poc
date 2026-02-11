@@ -21,7 +21,7 @@ The core account entity for all players and administrators.
 | id | UUID | PK | Unique user identifier |
 | email | VARCHAR(255) | UNIQUE, NOT NULL | Login email |
 | password_digest | VARCHAR(255) | NOT NULL | bcrypt hashed password |
-| display_name | VARCHAR(50) | NOT NULL | Player display name |
+| display_name | VARCHAR(50) | UNIQUE, NOT NULL | Player display name |
 | role | ENUM('player', 'admin') | NOT NULL, DEFAULT 'player' | Account role |
 | status | ENUM('active', 'frozen') | NOT NULL, DEFAULT 'active' | Account status |
 | frozen_at | DATETIME | NULL | When the account was frozen |
@@ -29,7 +29,7 @@ The core account entity for all players and administrators.
 | created_at | DATETIME | NOT NULL | Account creation timestamp |
 | updated_at | DATETIME | NOT NULL | Last update timestamp |
 
-**Indexes**: `email` (unique), `display_name`, `status`
+**Indexes**: `email` (unique), `display_name` (unique), `status`
 
 **State transitions**:
 ```
