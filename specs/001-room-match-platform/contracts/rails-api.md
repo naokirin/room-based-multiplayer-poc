@@ -245,6 +245,10 @@ Check current matchmaking status (polling fallback).
 
 Get WebSocket endpoint for reconnection.
 
+> **MVP Note**: In MVP, a single game-server returns a fixed `ws_url`.
+> For multi-node deployments, return a node-specific URL based on `node_name`,
+> or route by room ID at the gateway layer.
+
 **Response 200**:
 ```json
 {
