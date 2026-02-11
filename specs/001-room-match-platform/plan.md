@@ -1,69 +1,65 @@
 # Implementation Plan: Room-Based Multiplayer Game Platform (MVP)
 
-**Branch**: `001-room-match-platform` | **Date**: 2026-02-10 | **Spec**: [spec.md](spec.md)
+**Branch**: `001-room-match-platform` | **Date**: 2026-02-11 | **Spec**: [spec.md](spec.md)
 **Input**: Feature specification from `/specs/001-room-match-platform/spec.md`
 
 ## Summary
 
-Build a room-based multiplayer game platform MVP consisting of three services: a Rails API server for authentication, matchmaking, and administration; an Elixir/Phoenix game server for real-time room management, game state, chat, and reconnection via WebSocket; and a TypeScript/React web client with PixiJS for game rendering. The architecture follows a strict responsibility separation: client handles display only, Rails manages operations and persistence, Phoenix manages game logic and real-time state. A single hardcoded card game type validates the platform.
+A game-agnostic multiplayer platform enabling room-based matchmaking and turn-based gameplay. Three-service architecture: Rails API (auth, matchmaking, persistence, admin), Phoenix game server (real-time rooms, game state, chat, reconnection), TypeScript/React/PixiJS web client (display only). JWT-based cross-service auth, Phoenix Channels for WebSocket communication, Redis for ephemeral data (queues, tokens, presence), MySQL for persistence. A minimal 2-player card battle game validates the platform.
 
 ## Technical Context
 
-**Language/Version**:
-- Client: TypeScript 5.x
-- API Server: Ruby 3.3+, Rails 7.2+
-- Game Server: Elixir 1.17+, Phoenix 1.7+
+**Languages/Versions**:
+- TypeScript 5.x (client)
+- Ruby 3.3+ (api-server)
+- Elixir 1.17+ / Erlang 26+ (game-server)
 
 **Primary Dependencies**:
-- Client: React 18+, PixiJS 8+, phoenix.js (WebSocket client)
-- API Server: Rails (API mode), bcrypt (auth), jwt gem, redis-rb
-- Game Server: Phoenix, Phoenix.PubSub, Jason (JSON)
+- Client: React 18+, PixiJS 8+, Zustand (state), phoenix.js (WebSocket)
+- API Server: Rails 7.2+ (API mode + admin views), `jwt` gem, `rack-attack`, `redis` gem
+- Game Server: Phoenix 1.7+, Phoenix Channels, `Joken` (JWT verification), Phoenix Presence, `plug_attack`
 
 **Storage**:
-- MySQL 8.0+ (Rails - users, rooms, matches, game results, audit logs)
-- Redis 7+ (shared - matchmaking queue, room tokens, reconnect tokens, cache)
-- Elixir Process memory (game state, player state during active games)
+- MySQL 8.0+ — persistent entities (users, rooms, game results, admin data)
+- Redis 7+ — ephemeral data (matchmaking queues, tokens, active player tracking, PubSub)
+- Elixir process memory — runtime game state (GenServer per room)
 
 **Testing**:
-- Client: Vitest + React Testing Library
-- API Server: RSpec + FactoryBot
+- Client: Vitest
+- API Server: RSpec
 - Game Server: ExUnit
 
-**Target Platform**: Web browser (desktop/mobile), Docker containers for all services
+**Target Platform**: Web browser (MVP); future: Unity/C#
 
-**Project Type**: Multi-service web application (3 services + infra)
+**Project Type**: Multi-service web application (3 services + 2 datastores)
 
-**Performance Goals**:
-- Login to game start: < 90 seconds
-- Player action response: < 2 seconds (95th percentile)
-- Chat message delivery: < 1 second
-- Reconnection with state sync: < 5 seconds
-- 100 concurrent game rooms with 4 players each
+**Performance Goals** (from Success Criteria):
+- Login-to-playing: < 90 seconds (SC-001)
+- Concurrent rooms: ≥ 100 rooms × 4 players (SC-002)
+- Reconnect state delivery: < 5 seconds (SC-003)
+- Chat delivery: < 1 second (SC-004)
+- Action response: < 2 seconds at 95th percentile (SC-005)
 
 **Constraints**:
-- Server-authoritative: zero game logic on client
-- Single Phoenix node for MVP (cluster design deferred)
-- Single Redis instance for MVP
-- One hardcoded game type for MVP
+- Server-authoritative: zero game logic on client (SC-006)
+- Single region deployment for MVP (A-007)
+- One hardcoded game type only (A-004)
 
-**Scale/Scope**:
-- MVP: ~400 concurrent users, 100 concurrent rooms
-- 3 services + 2 datastores in Docker
+**Scale/Scope**: ~400 concurrent players, 100 concurrent rooms, 5 admin CRUD screens
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-The project constitution has not been configured (template placeholders only). No project-specific gates apply. Proceeding with standard engineering practices:
+Constitution is not yet ratified (template placeholders only). No gates to enforce. Proceeding with standard engineering best practices as defined in CLAUDE.md:
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| Separation of concerns | PASS | 3-service architecture with clear responsibility boundaries |
-| Server-authoritative security | PASS | All game logic validated server-side |
-| Test coverage | PASS | Testing frameworks specified for all 3 services |
-| Infrastructure reproducibility | PASS | Docker-based, all services containerized |
+- **Immutability**: Game state transitions are pure (Elixir GenServer pattern) ✅
+- **Small units**: Service separation enforces bounded modules ✅
+- **Error handling**: Each service handles errors at boundaries (API responses, Channel replies) ✅
+- **Input validation**: All game actions validated server-side (FR-060) ✅
+- **Security**: JWT auth, rate limiting, audit logging, no client-side logic ✅
 
-**Recommendation**: Run `/speckit.constitution` to define project-specific principles before starting implementation.
+**Post-Phase 1 re-check**: All design artifacts (data-model, contracts, quickstart) align with these principles. No violations detected.
 
 ## Project Structure
 
@@ -72,122 +68,109 @@ The project constitution has not been configured (template placeholders only). N
 ```text
 specs/001-room-match-platform/
 ├── plan.md              # This file
-├── research.md          # Phase 0 output
-├── data-model.md        # Phase 1 output
-├── quickstart.md        # Phase 1 output
-├── contracts/           # Phase 1 output
+├── research.md          # Phase 0 output (completed)
+├── data-model.md        # Phase 1 output (completed)
+├── quickstart.md        # Phase 1 output (completed)
+├── contracts/
 │   ├── rails-api.md     # Client ↔ Rails REST API
-│   ├── phoenix-ws.md    # Client ↔ Phoenix WebSocket protocol
+│   ├── phoenix-ws.md    # Client ↔ Phoenix WebSocket Protocol
 │   └── internal-api.md  # Phoenix ↔ Rails Internal API
-└── tasks.md             # Phase 2 output (/speckit.tasks)
+├── checklists/
+│   └── requirements.md  # Requirements checklist
+└── tasks.md             # Phase 2 output (via /speckit.tasks)
 ```
 
 ### Source Code (repository root)
 
 ```text
-client/
+client/                          # TypeScript/React/PixiJS web client
 ├── src/
-│   ├── components/      # React UI components (lobby, chat, admin)
-│   ├── game/            # PixiJS game rendering
-│   ├── services/        # API client, WebSocket client
-│   ├── stores/          # State management
-│   └── types/           # Shared TypeScript types
+│   ├── components/              # React UI components
+│   ├── game/                    # PixiJS game renderer
+│   ├── stores/                  # Zustand state stores
+│   ├── services/                # API client, WebSocket manager
+│   ├── types/                   # Shared TypeScript types
+│   └── App.tsx
 ├── public/
-└── tests/
+├── package.json
+├── tsconfig.json
+├── biome.json
+└── vite.config.ts
 
-api-server/
+api-server/                      # Ruby on Rails API + Admin
 ├── app/
-│   ├── models/          # User, Room, Match, GameResult, etc.
 │   ├── controllers/
-│   │   ├── api/v1/      # External API (auth, match, profile)
-│   │   ├── internal/    # Internal API (Phoenix → Rails)
-│   │   └── admin/       # Admin UI controllers
-│   ├── services/        # Matchmaking, token management
-│   └── views/           # Admin UI views
+│   │   ├── api/v1/              # Client-facing REST API
+│   │   ├── internal/            # Phoenix → Rails internal API
+│   │   └── admin/               # Admin web UI controllers
+│   ├── models/                  # ActiveRecord models
+│   ├── services/                # Matchmaking, JWT, room orchestration
+│   ├── views/admin/             # ERB admin templates
+│   └── jobs/                    # Background jobs (queue cleanup, persist recovery)
 ├── config/
-├── db/
-│   └── migrate/
-└── spec/
+├── db/migrate/
+├── spec/                        # RSpec tests
+├── Gemfile
+└── Dockerfile
 
-game-server/
+game-server/                     # Elixir/Phoenix game server
 ├── lib/
 │   ├── game_server/
-│   │   ├── room/        # Room GenServer, supervisor, state
-│   │   ├── game/        # Game logic, turn management, validation
-│   │   ├── chat/        # Room chat handler
-│   │   └── auth/        # Token verification
-│   └── game_server_web/
-│       ├── channels/    # Phoenix channels (room, chat)
-│       └── controllers/ # Health check
+│   │   ├── rooms/               # Room GenServer, supervisor
+│   │   ├── games/               # Game Behaviour + sample game module
+│   │   ├── chat/                # Room chat logic
+│   │   └── auth/                # JWT verification, token validation
+│   ├── game_server_web/
+│   │   ├── channels/            # Room channel, socket
+│   │   ├── controllers/         # Internal API controllers
+│   │   └── router.ex
+│   └── game_server.ex
+├── test/                        # ExUnit tests
 ├── config/
-└── test/
+├── mix.exs
+└── Dockerfile
 
-infra/
+infra/                           # Infrastructure
 ├── docker-compose.yml
-├── docker-compose.dev.yml
 ├── mysql/
 │   └── init.sql
 └── redis/
     └── redis.conf
 ```
 
-**Structure Decision**: Multi-service architecture with 3 independently deployable services (`client`, `api-server`, `game-server`) plus shared infrastructure configuration (`infra`). This mirrors the architectural design where Rails is the "office" (operations), Phoenix is the "field" (game runtime), and the Client is display-only.
-
-## Operational Considerations
-
-Design decisions and known trade-offs from the original design document (解消事項) that affect implementation and operations.
-
-### Reconnect SPOF Risk (解消3 追記)
-
-Reconnection requires Rails API (`GET /rooms/:room_id/ws_endpoint`) to resolve the Phoenix node. If Rails is down, players cannot reconnect to active games even if Phoenix is healthy.
-
-| Phase | Mitigation |
-|-------|------------|
-| MVP | Accept the risk. Prioritize Rails uptime (health checks, restart policies) |
-| Future | Client caches the last-connected node URL locally. On Rails failure, client attempts direct reconnect to cached node |
-
-### Persist Failed Recovery (解消4 追記)
-
-When Phoenix cannot persist game results to Rails after retries, results are written to Redis `persist_failed:{room_id}` with 7-day TTL.
-
-| Component | Responsibility |
-|-----------|---------------|
-| Phoenix | Write result JSON to `persist_failed:{room_id}` on persist failure. Emit structured log `persist_failed` event |
-| Rails | Background job polls `persist_failed:*` keys periodically (e.g., every 5 minutes) and imports results |
-| Monitoring | Alert on `persist_failed` log events exceeding threshold |
-
-### Supervisor / Crash Policy (解消8)
-
-For MVP, room process crashes are treated as unrecoverable:
-
-- Supervisor strategy: **do not restart** crashed room processes
-- On crash: notify players with `game:aborted`, report `room_aborted(reason: process_error)` to Rails
-- Future: periodic state snapshots to Redis for crash recovery
-
-> **Design principle**: "初期はプロセスクラッシュ = ゲーム終了。状態復元は将来の拡張とし、まずはクラッシュしないコードを書くことに集中する。"
-
-### Deploy Strategy (解消18)
-
-| Component | Strategy |
-|-----------|----------|
-| Rails | Rolling deploy. Run migrations before switching to new instances |
-| Phoenix | **Drain mode**: (1) Rails marks node as "no new rooms", (2) wait for existing rooms to finish (max 30 min), (3) force-abort remaining rooms, (4) stop/update/restart node, (5) Rails re-enables node |
-| Client | Version check API. No forced update during active game; prompt on next lobby transition |
-
-### Structured Logging (解消11)
-
-All services use structured JSON logging with consistent fields for observability:
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| `timestamp` | Yes | ISO 8601 |
-| `level` | Yes | debug/info/warn/error |
-| `service` | Yes | api-server / game-server / client |
-| `event` | Yes | Event name (e.g., `room_created`, `persist_failed`, `action_rejected`) |
-| `room_id` | When applicable | Room context |
-| `user_id` | When applicable | Actor context |
-| `metadata` | Optional | Additional event-specific data |
+**Structure Decision**: Multi-service architecture with `client/`, `api-server/`, `game-server/`, and `infra/` at the repository root. Each service is independently buildable and deployable via Docker. This matches the spec's architectural principles (client=display, Rails=operations, Phoenix=game runtime).
 
 ## Complexity Tracking
 
-No constitution violations to justify. The 3-service split is inherent to the architectural requirement of separating REST API management from real-time game server concerns, using different language ecosystems (Ruby vs Elixir) optimized for their respective roles.
+No constitution violations to justify. Architecture complexity is inherent to the multi-service requirement (spec mandates Rails + Phoenix separation for operational vs game concerns).
+
+## Key Technology Decisions
+
+| Decision | Choice | Rationale | Reference |
+|----------|--------|-----------|-----------|
+| WebSocket protocol | Phoenix Channels | Built-in topic routing, heartbeat, reconnection, presence | R-001 |
+| Internal API | REST/JSON + API key | Simple, debuggable, low call frequency | R-002 |
+| JWT strategy | HS256 shared secret | Simple cross-service verification | R-003 |
+| JWT library (Rails) | `jwt` gem | Lightweight, framework-agnostic | Gemini research |
+| JWT library (Phoenix) | `Joken` | Flexible, Plug-based verification | Gemini research |
+| Client state | Zustand | Works with React + PixiJS, minimal boilerplate | R-005 |
+| Matchmaking queue | Redis List (BRPOPLPUSH) | Atomic operations, blocking pop | R-006 |
+| Admin UI | Rails server-rendered (ERB) | Sufficient for 5 CRUD screens | R-007 |
+| Rate limiting | rack-attack (Rails) + plug_attack (Phoenix) | Industry standard, Redis-backed | Gemini research |
+| Cross-node PubSub | Phoenix.PubSub + Redis adapter | Proven pattern for horizontal scaling | Gemini research |
+| MVP game | 2-player card battle | Validates all platform features with minimal rules | R-004 |
+
+## Artifact Summary
+
+| Artifact | Status | Description |
+|----------|--------|-------------|
+| [research.md](research.md) | ✅ Complete | 8 research decisions covering all unknowns |
+| [data-model.md](data-model.md) | ✅ Complete | MySQL (11 tables), Redis (5 key patterns), Elixir process state |
+| [contracts/rails-api.md](contracts/rails-api.md) | ✅ Complete | 11 REST endpoints (auth, matchmaking, rooms, game types, announcements, health) |
+| [contracts/phoenix-ws.md](contracts/phoenix-ws.md) | ✅ Complete | Socket connect, channel join/rejoin, 3 push events, 8 broadcast events, rate limits |
+| [contracts/internal-api.md](contracts/internal-api.md) | ✅ Complete | 7 internal endpoints (room lifecycle, auth verify, room creation, admin ops, health) |
+| [quickstart.md](quickstart.md) | ✅ Complete | Docker setup, per-service dev setup, seed data, full flow test, admin panel |
+
+## Next Step
+
+Run `/speckit.tasks` to generate the implementation task breakdown (Phase 2).
