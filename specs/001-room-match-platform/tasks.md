@@ -67,9 +67,9 @@
 
 ### Base Controllers (Rails)
 
-- [ ] T028 [P] Implement Api::V1::BaseController inheriting ActionController::API (JSON-only, JWT auth) in api-server/app/controllers/api/v1/base_controller.rb
-- [ ] T029 [P] Implement Internal::BaseController inheriting ActionController::API (JSON-only, API key auth) in api-server/app/controllers/internal/base_controller.rb
-- [ ] T030 [P] Implement Admin::BaseController inheriting ActionController::Base (sessions, CSRF, ERB, Turbo) in api-server/app/controllers/admin/base_controller.rb
+- [ ] T028 [P] Implement Api::V1::ApplicationController inheriting ActionController::API (JSON-only, JWT auth) in api-server/app/controllers/api/v1/application_controller.rb
+- [ ] T029 [P] Implement Internal::ApplicationController inheriting ActionController::API (JSON-only, API key auth) in api-server/app/controllers/internal/application_controller.rb
+- [ ] T030 [P] Implement Admin::ApplicationController inheriting ActionController::Base (sessions, CSRF, ERB, Turbo) in api-server/app/controllers/admin/application_controller.rb
 
 ### Authentication (Rails)
 
