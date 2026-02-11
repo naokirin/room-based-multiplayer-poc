@@ -7,7 +7,7 @@
 
 Data is split across three storage layers per the architectural design:
 - **MySQL (Rails)**: Persistent entities — users, rooms, matches, game results, admin data
-- **Redis (shared)**: Ephemeral/temporal data — tokens, queues, caches
+- **Redis (shared)**: Ephemeral/temporal data — tokens, queues, caches, inter-service messaging (List + PubSub)
 - **Elixir Process Memory**: Runtime game state — active room state, player state, chat
 
 ## MySQL Entities (Rails)
@@ -248,6 +248,48 @@ Value: `{ "token": "uuid", "node_name": "...", "created_at": "ISO8601" }`
 | `active_game:{user_id}` | String | None (deleted on room end) | Prevents double-matching |
 
 Value: `room_id`
+
+### Room Creation Queue (Rails → Phoenix)
+
+| Key | Type | TTL | Description |
+|-----|------|-----|-------------|
+| `room_creation_queue` | List | None | Shared queue for room creation commands. Rails pushes (LPUSH), Phoenix nodes consume (BRPOP). |
+
+Entry format:
+```json
+{
+  "room_id": "uuid",
+  "game_type_id": "uuid",
+  "player_ids": ["uuid1", "uuid2"],
+  "config": {
+    "player_count": 2,
+    "turn_time_limit": 60,
+    "game_rules": "simple_card_battle"
+  },
+  "enqueued_at": "ISO8601"
+}
+```
+
+**Consumer**: Each Phoenix node runs a `RoomCreationConsumer` GenServer that calls `BRPOP room_creation_queue 5` in a loop. Redis guarantees exactly-once delivery across competing consumers.
+
+### Room Commands PubSub (Rails → Phoenix)
+
+| Channel | Type | Description |
+|---------|------|-------------|
+| `room_commands` | PubSub | Broadcast channel for room-targeted commands. All Phoenix nodes subscribe; only the owner of the target room acts. |
+
+Message format:
+```json
+{
+  "command": "terminate",
+  "room_id": "uuid",
+  "reason": "admin_terminated",
+  "admin_id": "uuid",
+  "issued_at": "ISO8601"
+}
+```
+
+**Note**: Redis PubSub is fire-and-forget (no persistence). This is acceptable for admin operations which are infrequent and retriable.
 
 ### Persist Failed Recovery
 

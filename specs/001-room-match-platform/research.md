@@ -110,3 +110,44 @@
 - Game Server: exposed port 4000 (Phoenix)
 - MySQL: internal only (port 3306)
 - Redis: internal only (port 6379)
+
+## R-009: Rails → Phoenix Communication Architecture
+
+**Decision**: Redis-mediated one-directional communication (E-pure pattern). Rails never calls Phoenix directly via HTTP. All Rails → Phoenix communication goes through Redis.
+
+**Communication patterns**:
+| Direction | Method | Mechanism |
+|-----------|--------|-----------|
+| Room creation (Rails → Phoenix) | Redis List + BRPOP | Phoenix nodes compete as consumers; natural load balancing |
+| Room operations (Rails → Phoenix) | Redis PubSub | All nodes receive; only the node hosting the room acts |
+| Room state callbacks (Phoenix → Rails) | HTTP POST (Internal API) | Unchanged from original design |
+
+**Rationale**: Two fundamental problems with direct HTTP (Rails → Phoenix):
+
+1. **Node routing**: When Phoenix scales horizontally, Rails must know which node hosts which room. Direct HTTP requires a service registry or load balancer with sticky routing.
+2. **Synchronous blocking**: Rails calling Phoenix HTTP during a client request (e.g., matchmaking) blocks the Rails process until Phoenix responds, coupling availability.
+
+The Redis-mediated approach solves both:
+- **Room creation**: Rails pushes a command to a shared Redis List. Each Phoenix node runs a BRPOP consumer GenServer that competes for commands. Redis guarantees exactly-once delivery. Adding Phoenix nodes automatically adds consumers — horizontal scaling is natural.
+- **Room operations** (terminate, etc.): Rails publishes to a Redis PubSub channel. All Phoenix nodes subscribe and receive the message, but only the node hosting the target room's GenServer process acts on it. No routing lookup needed.
+- **No Phoenix HTTP API**: Phoenix does not expose any HTTP endpoints for Rails to call, keeping the communication topology simple (Rails → Redis → Phoenix, Phoenix → Rails HTTP).
+
+**BRPOP consumer scalability**:
+- Each Phoenix node runs its own independent BRPOP consumer (GenServer)
+- Multiple consumers on the same Redis List is a standard, well-tested pattern
+- Adding nodes = adding consumers = automatic load distribution
+- A busy node naturally slows its BRPOP re-poll, shifting work to idle nodes
+- The true SPOF is Redis itself, but Redis is already a critical dependency for matchmaking, tokens, and player tracking
+
+**PubSub fan-out consideration**:
+- Redis PubSub delivers messages to all subscribers (all Phoenix nodes)
+- For MVP scale (< 10 nodes), the overhead is negligible
+- At large scale (dozens of nodes), consider migrating to per-node Redis Lists or Redis Streams with consumer groups
+- Room operations (admin terminate) are infrequent, so fan-out overhead is minimal even at scale
+
+**Alternatives considered**:
+- **Direct HTTP (original)**: Simple but breaks on multi-node Phoenix. Requires service registry for routing and couples Rails availability to Phoenix.
+- **Erlang cluster (libcluster)**: Transparent inter-node routing via Erlang distribution. Powerful but tightly couples services and prevents independent deployment. Rejected per architecture principle.
+- **Async job + callback (Sidekiq → Redis → Phoenix poll)**: Adds job framework overhead for what is essentially a message passing problem.
+- **Redis Streams with consumer groups**: More robust than List+BRPOP (acknowledgment, replay), but adds complexity. Deferred as a production hardening option.
+- **Hybrid E + E-1 (BRPOP for creation, direct HTTP for operations)**: Requires Phoenix Internal API endpoints, adding bidirectional HTTP complexity. Rejected in favor of the pure Redis approach.

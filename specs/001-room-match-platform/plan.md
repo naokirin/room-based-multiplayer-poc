@@ -122,7 +122,8 @@ game-server/                     # Elixir/Phoenix game server
 │   │   └── auth/                # JWT verification, token validation
 │   ├── game_server_web/
 │   │   ├── channels/            # Room channel, socket
-│   │   ├── controllers/         # Internal API controllers
+│   │   ├── consumers/           # Redis BRPOP consumers (room creation)
+│   │   ├── subscribers/         # Redis PubSub subscribers (room commands)
 │   │   └── router.ex
 │   └── game_server.ex
 ├── test/                        # ExUnit tests
@@ -149,7 +150,8 @@ No constitution violations to justify. Architecture complexity is inherent to th
 | Decision | Choice | Rationale | Reference |
 |----------|--------|-----------|-----------|
 | WebSocket protocol | Phoenix Channels | Built-in topic routing, heartbeat, reconnection, presence | R-001 |
-| Internal API | REST/JSON + API key | Simple, debuggable, low call frequency | R-002 |
+| Internal API (Phoenix→Rails) | REST/JSON + API key | Simple, debuggable, low call frequency | R-002 |
+| Rails→Phoenix communication | Redis List (BRPOP) + PubSub | No Phoenix HTTP API; solves multi-node routing naturally | R-009 |
 | JWT strategy | HS256 shared secret | Simple cross-service verification | R-003 |
 | JWT library (Rails) | `jwt` gem | Lightweight, framework-agnostic | Gemini research |
 | JWT library (Phoenix) | `Joken` | Flexible, Plug-based verification | Gemini research |
@@ -164,11 +166,11 @@ No constitution violations to justify. Architecture complexity is inherent to th
 
 | Artifact | Status | Description |
 |----------|--------|-------------|
-| [research.md](research.md) | ✅ Complete | 8 research decisions covering all unknowns |
+| [research.md](research.md) | ✅ Complete | 9 research decisions covering all unknowns |
 | [data-model.md](data-model.md) | ✅ Complete | MySQL (11 tables), Redis (5 key patterns), Elixir process state |
 | [contracts/rails-api.md](contracts/rails-api.md) | ✅ Complete | 11 REST endpoints (auth, matchmaking, rooms, game types, announcements, health) |
 | [contracts/phoenix-ws.md](contracts/phoenix-ws.md) | ✅ Complete | Socket connect, channel join/rejoin, 3 push events, 8 broadcast events, rate limits |
-| [contracts/internal-api.md](contracts/internal-api.md) | ✅ Complete | 7 internal endpoints (room lifecycle, auth verify, room creation, admin ops, health) |
+| [contracts/internal-api.md](contracts/internal-api.md) | ✅ Complete | Phoenix→Rails HTTP callbacks (4 endpoints), Rails→Phoenix via Redis (List+PubSub), health check |
 | [quickstart.md](quickstart.md) | ✅ Complete | Docker setup, per-service dev setup, seed data, full flow test, admin panel |
 
 ## Next Step
