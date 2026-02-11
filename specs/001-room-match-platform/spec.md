@@ -181,7 +181,7 @@ An administrator can search for users, freeze accounts of malicious players, vie
 
 ### Key Entities
 
-- **User**: A registered player with an account, profile information, and account status (active/frozen). Identified uniquely by email and display_name (both UNIQUE). Can participate in games.
+- **User**: A registered player with an account, profile information, and account status (active/frozen). Identified uniquely by email. display_name is not unique (duplicates allowed); admin searches primarily by ID. Can participate in games.
 - **Game Room**: A temporary space where matched players play a game together. Has a lifecycle (preparing, ready, playing, finished/aborted). Belongs to a game type.
 - **Game Type**: A configuration defining the rules of a specific game variant, including required player count, turn structure, and win conditions.
 - **Match Queue Entry**: A temporary record of a player waiting to be matched, associated with a game type and entry timestamp.
@@ -244,6 +244,6 @@ An administrator can search for users, freeze accounts of malicious players, vie
 
 - Q: What happens to in-progress games when a Phoenix node crashes? → A: Games are aborted on node crash. Clients receive `game_aborted` (reason: `server_error`) on reconnect attempt. No in-memory state recovery for MVP; periodic state snapshots are a future enhancement.
 - Q: What is the JWT access token lifetime and mid-game expiration strategy? → A: 1 hour TTL. Clients refresh tokens in the background during gameplay via `POST /auth/refresh` before expiration.
-- Q: Should display_name be unique across the platform? → A: Yes. UNIQUE constraint on `users.display_name`. Prevents confusion in admin search and in-game player identification. No discriminator suffix needed for MVP.
+- Q: Should display_name be unique across the platform? → A: No. Duplicates allowed. Admin searches primarily by user ID; display_name is a secondary search field. UNIQUE constraint is too restrictive for a game platform.
 - Q: How does matchmaking prevent race conditions under concurrent Rails workers? → A: Redis Lua script for atomic pop of N players from the queue. Guarantees each player is assigned to exactly one match regardless of worker concurrency.
 - Q: What is the admin panel implementation approach? → A: Rails server-rendered views (ERB + Turbo/Stimulus) within the api-server app, under `/admin` namespace. Leverages existing Rails auth and session infrastructure. No separate SPA or deployment for MVP.
