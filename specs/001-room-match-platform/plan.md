@@ -16,7 +16,7 @@ A game-agnostic multiplayer platform enabling room-based matchmaking and turn-ba
 
 **Primary Dependencies**:
 - Client: React 18+, PixiJS 8+, Zustand (state), phoenix.js (WebSocket)
-- API Server: Rails 7.2+ (API mode + admin views), `jwt` gem, `rack-attack`, `redis` gem
+- API Server: Rails 8.0+ (API mode + admin views), `jwt` gem, `rack-attack`, `redis` gem
 - Game Server: Phoenix 1.7+, Phoenix Channels, `Joken` (JWT verification), Phoenix Presence, `plug_attack`
 
 **Storage**:

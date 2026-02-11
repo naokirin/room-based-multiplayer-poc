@@ -5,7 +5,7 @@ Auto-generated from all feature plans. Last updated: 2026-02-10
 ## Active Technologies
 
 - TypeScript 5.x, React 18+, PixiJS 8+ (client)
-- Ruby 3.3+, Rails 7.2+ (api-server)
+- Ruby 3.3+, Rails 8.0+ (api-server)
 - Elixir 1.17+, Phoenix 1.7+ (game-server)
 - MySQL 8.0+, Redis 7+ (datastores)
 - Docker / Docker Compose (infra)
