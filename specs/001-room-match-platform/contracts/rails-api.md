@@ -178,6 +178,8 @@ When a player joins the matchmaking queue and a match is not found immediately, 
 
 **Why polling over WebSocket push for MVP**: The WebSocket connection to Phoenix is not yet established at matchmaking time (it's established after receiving the `ws_url`). Adding a separate notification channel for matchmaking adds complexity. Polling at 3-5 second intervals is sufficient for MVP. A future enhancement could use Server-Sent Events (SSE) or establish the Phoenix WebSocket connection earlier (at login) to push match notifications.
 
+**Rate limit**: This endpoint is rate limited to 20 requests per minute per user. Client should poll at 3–5 second intervals (12–20 req/min), staying within the limit. If the client receives 429, it should back off and retry after the `retry_after` value in the response.
+
 ### DELETE /matchmaking/cancel
 
 Cancel matchmaking and leave the queue.
@@ -343,9 +345,28 @@ Public health check endpoint for load balancer and monitoring.
 ```json
 {
   "error": "rate_limited",
-  "message": "Too many requests, please try again later"
+  "message": "Too many requests, please try again later",
+  "retry_after": 5
 }
 ```
+
+## Rate Limits
+
+Per-user rate limits enforced by `rack-attack` via Redis. Unauthenticated endpoints use per-IP limits.
+
+| Endpoint | Limit | Notes |
+|----------|-------|-------|
+| POST /auth/register | 5 per minute per IP | Prevent mass registration |
+| POST /auth/login | 10 per minute per IP | Prevent brute force |
+| POST /auth/refresh | 10 per minute per user | |
+| POST /matchmaking/join | 3 per minute per user | Prevent queue spam |
+| DELETE /matchmaking/cancel | 10 per minute per user | |
+| GET /matchmaking/status | 20 per minute per user | Polling endpoint; client should poll at 3–5s intervals (12–20 req/min) |
+| GET /rooms/:id/ws_endpoint | 10 per minute per user | Reconnection lookup |
+| GET /game_types | 10 per minute per user | Rarely changes |
+| GET /announcements | 10 per minute per user | |
+| GET /health | No limit | Monitoring endpoint |
+| Admin endpoints | 60 per minute per user | Higher limit for admin operations |
 
 **500 Internal Server Error**:
 ```json
