@@ -1,0 +1,29 @@
+# room-based-multiplayer-poc Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2026-02-12
+
+## Active Technologies
+
+- No new application language; orchestration uses Docker Compose (Compose Spec v3). Existing services: Ruby 3.3+ (Rails), Elixir 1.17+ (Phoenix), Node 20+ (Vite/React client). + Docker Engine, Docker Compose v2; existing stack (Rails, Phoenix, Vite) unchanged. (002-docker-compose-apps)
+
+## Project Structure
+
+```text
+src/
+tests/
+```
+
+## Commands
+
+# Add commands for No new application language; orchestration uses Docker Compose (Compose Spec v3). Existing services: Ruby 3.3+ (Rails), Elixir 1.17+ (Phoenix), Node 20+ (Vite/React client).
+
+## Code Style
+
+No new application language; orchestration uses Docker Compose (Compose Spec v3). Existing services: Ruby 3.3+ (Rails), Elixir 1.17+ (Phoenix), Node 20+ (Vite/React client).: Follow standard conventions
+
+## Recent Changes
+
+- 002-docker-compose-apps: Added No new application language; orchestration uses Docker Compose (Compose Spec v3). Existing services: Ruby 3.3+ (Rails), Elixir 1.17+ (Phoenix), Node 20+ (Vite/React client). + Docker Engine, Docker Compose v2; existing stack (Rails, Phoenix, Vite) unchanged.
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->
