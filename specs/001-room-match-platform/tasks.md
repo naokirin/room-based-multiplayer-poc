@@ -26,14 +26,14 @@
 
 **Purpose**: Project initialization, Docker infrastructure, and scaffolding for all 3 services
 
-- [ ] T001 Create Docker Compose configuration with 5 services (client, api-server, game-server, mysql, redis) in infra/docker-compose.yml
-- [ ] T002 [P] Create MySQL init script with database creation in infra/mysql/init.sql
-- [ ] T003 [P] Create Redis configuration in infra/redis/redis.conf
-- [ ] T004 [P] Initialize Rails 8 project (full mode, not --api) in api-server/ with Gemfile (jwt, rack-attack, redis, bcrypt, mysql2, uuid, turbo-rails, stimulus-rails)
-- [ ] T005 [P] Initialize Phoenix 1.7 project (no Ecto, no HTML) in game-server/ with mix.exs (joken, plug_attack, redix)
-- [ ] T006 [P] Initialize Vite + React + TypeScript project in client/ with package.json (react, pixi.js, zustand, phoenix, uuid)
-- [ ] T007 [P] Configure Biome linting/formatting in client/biome.json
-- [ ] T008 Create shared environment variable template in .env.example with JWT_SECRET, INTERNAL_API_KEY, DATABASE_URL, REDIS_URL
+- [x] T001 Create Docker Compose configuration with 5 services (client, api-server, game-server, mysql, redis) in infra/docker-compose.yml
+- [x] T002 [P] Create MySQL init script with database creation in infra/mysql/init.sql
+- [x] T003 [P] Create Redis configuration in infra/redis/redis.conf
+- [x] T004 [P] Initialize Rails 8 project (full mode, not --api) in api-server/ with Gemfile (jwt, rack-attack, redis, bcrypt, mysql2, uuid, turbo-rails, stimulus-rails)
+- [x] T005 [P] Initialize Phoenix 1.7 project (no Ecto, no HTML) in game-server/ with mix.exs (joken, plug_attack, redix)
+- [x] T006 [P] Initialize Vite + React + TypeScript project in client/ with package.json (react, pixi.js, zustand, phoenix, uuid)
+- [x] T007 [P] Configure Biome linting/formatting in client/biome.json
+- [x] T008 Create shared environment variable template in .env.example with JWT_SECRET, INTERNAL_API_KEY, DATABASE_URL, REDIS_URL
 
 ---
 

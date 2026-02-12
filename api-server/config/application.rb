@@ -38,5 +38,10 @@ module GamePlatform
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    # Use string UUID as default primary key type (MySQL 8.0 has no native UUID)
+    config.generators do |g|
+      g.orm :active_record, primary_key_type: :string
+    end
   end
 end
