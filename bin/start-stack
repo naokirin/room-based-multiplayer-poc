@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Start full stack (infra + api-server + game-server + client) and tee output to infra/logs/compose.log
+set -e
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+mkdir -p infra/logs
+exec docker compose -f infra/docker-compose.yml up 2>&1 | tee infra/logs/compose.log

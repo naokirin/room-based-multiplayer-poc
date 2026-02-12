@@ -24,12 +24,13 @@ cp infra/.env.example infra/.env
 docker compose -f infra/docker-compose.yml up
 ```
 
-To run in background and write output to the documented log path:
+To run and write output to the documented log path:
 
 ```bash
-docker compose -f infra/docker-compose.yml up > infra/logs/compose.log 2>&1 &
-# Or use a wrapper script if provided (e.g. bin/start-stack)
+bin/start-stack
 ```
+
+Or redirect manually: `docker compose -f infra/docker-compose.yml up > infra/logs/compose.log 2>&1 &`
 
 Ensure `infra/logs/` exists (e.g. `mkdir -p infra/logs`) so the log file can be written.
 

@@ -34,12 +34,35 @@ Client (React/PixiJS)  <--WebSocket-->  Game Server (Phoenix)
 
 ### Prerequisites
 
-- Docker & Docker Compose
-- Ruby 3.3+ (rbenv)
-- Elixir 1.17+ / Erlang 27+ (asdf)
-- Node.js 20+ (for client)
+- Docker & Docker Compose (for one-command stack), or
+- Ruby 3.3+ (rbenv), Elixir 1.17+ / Erlang 27+ (asdf), Node.js 20+ (for running services locally)
 
-### Start Infrastructure
+### Start full stack with one command (recommended)
+
+From the **repository root**:
+
+```bash
+cp infra/.env.example infra/.env   # optional: set JWT_SECRET, INTERNAL_API_KEY if not using defaults
+docker compose -f infra/docker-compose.yml up
+```
+
+- **Client**: http://localhost:3000  
+- **API**: http://localhost:3001  
+- **Game Server (WebSocket)**: ws://localhost:4000/socket  
+
+Startup failure or partial service failure is visible on CLI (stdout/stderr, exit code). To also capture output to a log file, run `bin/start-stack` (writes to `infra/logs/compose.log`), or `docker compose -f infra/docker-compose.yml up 2>&1 | tee infra/logs/compose.log` (ensure `infra/logs/` exists). Required env vars: see `infra/.env.example` (JWT_SECRET, INTERNAL_API_KEY). Startup order: MySQL/Redis start first (with healthchecks); then API server and game server; then client. Connection targets and ports are documented in [specs/002-docker-compose-apps/quickstart.md](specs/002-docker-compose-apps/quickstart.md) and in the Ports table below.
+
+### Ports (service → host)
+
+| Service      | Host port | Purpose              |
+|-------------|-----------|----------------------|
+| Client      | 3000      | Web UI (Vite dev)    |
+| API Server  | 3001      | REST API, admin     |
+| Game Server | 4000      | WebSocket (Phoenix)  |
+| MySQL       | 3306      | DB (internal)        |
+| Redis       | 6379      | Cache/queue (internal) |
+
+### Start Infrastructure only (then run apps locally)
 
 ```bash
 cd infra && docker compose up -d

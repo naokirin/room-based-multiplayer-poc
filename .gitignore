@@ -42,3 +42,6 @@ game-server/cover/
 
 # Docker
 *.log
+
+# Compose startup log (documented path for FR-008)
+infra/logs/

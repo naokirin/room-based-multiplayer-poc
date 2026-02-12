@@ -25,8 +25,8 @@
 
 **Purpose**: Config and log path so one-command startup and failure visibility are possible.
 
-- [ ] T001 Create `infra/logs/` directory and add `infra/logs/*.log` to `.gitignore` (or create `infra/.gitignore` with `logs/*.log`)
-- [ ] T002 [P] Add `infra/.env.example` with key-only entries: `JWT_SECRET`, `INTERNAL_API_KEY` (no values; document in README/quickstart)
+- [x] T001 Create `infra/logs/` directory and add `infra/logs/*.log` to `.gitignore` (or create `infra/.gitignore` with `logs/*.log`)
+- [x] T002 [P] Add `infra/.env.example` with key-only entries: `JWT_SECRET`, `INTERNAL_API_KEY` (no values; document in README/quickstart)
 
 ---
 
@@ -36,10 +36,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 Ensure `infra/docker-compose.yml` defines mysql, redis, api-server, game-server, client with shared network and correct `depends_on` and healthchecks (API after mysql/redis; game-server after redis; client after api-server, game-server)
-- [ ] T004 [P] Add or verify `game-server/Dockerfile` so `docker compose -f infra/docker-compose.yml build game-server` succeeds
-- [ ] T005 [P] Add `client/Dockerfile` that runs Vite dev server (`npm run dev`) and exposes port 3000, with working directory and install step per plan/research
-- [ ] T006 Update `infra/docker-compose.yml` client service: use build context `../client`, Dockerfile, volume mount for `../client/src` (and any other source needed for hot reload) so changes on host apply in container without rebuild; ensure port 3000 and env VITE_API_URL / VITE_WS_URL point to host-accessible URLs (e.g. localhost) for browser
+- [x] T003 Ensure `infra/docker-compose.yml` defines mysql, redis, api-server, game-server, client with shared network and correct `depends_on` and healthchecks (API after mysql/redis; game-server after redis; client after api-server, game-server)
+- [x] T004 [P] Add or verify `game-server/Dockerfile` so `docker compose -f infra/docker-compose.yml build game-server` succeeds
+- [x] T005 [P] Add `client/Dockerfile` that runs Vite dev server (`npm run dev`) and exposes port 3000, with working directory and install step per plan/research
+- [x] T006 Update `infra/docker-compose.yml` client service: use build context `../client`, Dockerfile, volume mount for `../client/src` (and any other source needed for hot reload) so changes on host apply in container without rebuild; ensure port 3000 and env VITE_API_URL / VITE_WS_URL point to host-accessible URLs (e.g. localhost) for browser
 
 **Checkpoint**: `docker compose -f infra/docker-compose.yml up` from repo root brings up all services; client is dev server with hot reload.
 
@@ -53,9 +53,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Document in `README.md` the single start command from repo root: `docker compose -f infra/docker-compose.yml up` and document log file path `infra/logs/compose.log` for startup failure visibility (FR-006, FR-008)
-- [ ] T008 [US1] Add short comments in `infra/docker-compose.yml` per service for host port (e.g. `# Host port 3001` for api-server) (FR-004)
-- [ ] T009 [US1] Add a "Ports" table in `README.md` (service name, host port, purpose) matching quickstart and compose (FR-004)
+- [x] T007 [US1] Document in `README.md` the single start command from repo root: `docker compose -f infra/docker-compose.yml up` and document log file path `infra/logs/compose.log` for startup failure visibility (FR-006, FR-008)
+- [x] T008 [US1] Add short comments in `infra/docker-compose.yml` per service for host port (e.g. `# Host port 3001` for api-server) (FR-004)
+- [x] T009 [US1] Add a "Ports" table in `README.md` (service name, host port, purpose) matching quickstart and compose (FR-004)
 
 **Checkpoint**: User Story 1 is done; one command starts full stack; ports documented in compose and README; log path documented.
 
@@ -69,8 +69,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Verify in `infra/docker-compose.yml` that `depends_on` and healthchecks enforce order (mysql/redis healthy before api-server; redis before game-server; api-server and game-server before client) and add brief comments if needed (FR-003)
-- [ ] T011 [US2] Document connection targets (host names and ports) and startup order in `README.md` or link to `specs/002-docker-compose-apps/quickstart.md` so both orchestration and docs describe ports (FR-004)
+- [x] T010 [US2] Verify in `infra/docker-compose.yml` that `depends_on` and healthchecks enforce order (mysql/redis healthy before api-server; redis before game-server; api-server and game-server before client) and add brief comments if needed (FR-003)
+- [x] T011 [US2] Document connection targets (host names and ports) and startup order in `README.md` or link to `specs/002-docker-compose-apps/quickstart.md` so both orchestration and docs describe ports (FR-004)
 
 **Checkpoint**: User Story 2 is done; dependency order and connection targets are clear in compose and docs.
 
@@ -84,9 +84,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T012 [US3] Ensure `infra/.env.example` lists all required variables (JWT_SECRET, INTERNAL_API_KEY) and that `README.md` documents required configuration and procedure (copy env example, set values, then run compose) (FR-005, SC-003)
-- [ ] T013 [US3] Add optional wrapper script at repo root (e.g. `bin/start-stack` or `script/start-stack`) that runs `docker compose -f infra/docker-compose.yml up` and tees output to `infra/logs/compose.log` so FR-008 is satisfied; document script in README and quickstart
-- [ ] T014 [US3] Update README "Quick Start" (or equivalent) to use the one-command flow and reference `specs/002-docker-compose-apps/quickstart.md` for full procedure (FR-006)
+- [x] T012 [US3] Ensure `infra/.env.example` lists all required variables (JWT_SECRET, INTERNAL_API_KEY) and that `README.md` documents required configuration and procedure (copy env example, set values, then run compose) (FR-005, SC-003)
+- [x] T013 [US3] Add optional wrapper script at repo root (e.g. `bin/start-stack` or `script/start-stack`) that runs `docker compose -f infra/docker-compose.yml up` and tees output to `infra/logs/compose.log` so FR-008 is satisfied; document script in README and quickstart
+- [x] T014 [US3] Update README "Quick Start" (or equivalent) to use the one-command flow and reference `specs/002-docker-compose-apps/quickstart.md` for full procedure (FR-006)
 
 **Checkpoint**: User Story 3 is done; config and procedure are documented; optional script supports log file at documented path.
 
@@ -96,8 +96,8 @@
 
 **Purpose**: Final hygiene and validation.
 
-- [ ] T015 [P] Ensure `infra/logs/` is ignored by git (e.g. `infra/logs/*.log` or `infra/logs/` in `.gitignore` or `infra/.gitignore`) so log files are not committed
-- [ ] T016 Run quickstart validation: from clean clone, follow `specs/002-docker-compose-apps/quickstart.md` and confirm full stack up within 5 minutes and login possible (SC-001)
+- [x] T015 [P] Ensure `infra/logs/` is ignored by git (e.g. `infra/logs/*.log` or `infra/logs/` in `.gitignore` or `infra/.gitignore`) so log files are not committed
+- [ ] T016 Run quickstart validation: from clean clone, follow `specs/002-docker-compose-apps/quickstart.md` and confirm full stack up within 5 minutes and login possible (SC-001). *Manual step: run `docker compose -f infra/docker-compose.yml up` and verify client login.*
 
 ---
 

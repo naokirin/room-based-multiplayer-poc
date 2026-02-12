@@ -1,4 +1,9 @@
+# One-command full stack (infra + api-server + game-server + client). From repo root: docker compose -f infra/docker-compose.yml up
+# Log file path for startup failure visibility: infra/logs/compose.log (redirect or use bin/start-stack)
+# Startup order: mysql/redis (healthcheck) → api-server, game-server → client. All on app-network.
+
 services:
+  # Host port 3306
   mysql:
     image: mysql:8.0
     environment:
@@ -17,6 +22,7 @@ services:
     networks:
       - app-network
 
+  # Host port 6379
   redis:
     image: redis:7-alpine
     ports:
@@ -33,10 +39,12 @@ services:
     networks:
       - app-network
 
+  # Host port 3001
   api-server:
     build:
       context: ../api-server
       dockerfile: Dockerfile
+    command: ["./bin/rails", "server", "-b", "0.0.0.0", "-p", "3001"]
     ports:
       - "3001:3001"
     environment:
@@ -53,6 +61,7 @@ services:
     networks:
       - app-network
 
+  # Host port 4000
   game-server:
     build:
       context: ../game-server
@@ -73,6 +82,7 @@ services:
     networks:
       - app-network
 
+  # Host port 3000 (Vite dev server with hot reload)
   client:
     build:
       context: ../client
@@ -82,6 +92,11 @@ services:
     environment:
       VITE_API_URL: http://localhost:3001/api/v1
       VITE_WS_URL: ws://localhost:4000/socket
+    volumes:
+      - ../client/src:/app/src
+      - ../client/public:/app/public
+      - ../client/index.html:/app/index.html
+      - ../client/vite.config.ts:/app/vite.config.ts
     depends_on:
       - api-server
       - game-server
