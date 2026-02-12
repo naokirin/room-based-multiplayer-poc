@@ -143,7 +143,7 @@ export class GameRenderer {
     container.addChild(nameText);
 
     // HP Bar
-    const hpBar = this.createHPBar(player.hp, 100, 200, 20);
+    const hpBar = this.createHPBar(player.hp, 20, 200, 20);
     hpBar.x = 20;
     hpBar.y = 35;
     container.addChild(hpBar);
@@ -188,7 +188,7 @@ export class GameRenderer {
     container.addChild(nameText);
 
     // HP Bar
-    const hpBar = this.createHPBar(player.hp, 100, 200, 20);
+    const hpBar = this.createHPBar(player.hp, 20, 200, 20);
     hpBar.x = 20;
     hpBar.y = 35;
     container.addChild(hpBar);

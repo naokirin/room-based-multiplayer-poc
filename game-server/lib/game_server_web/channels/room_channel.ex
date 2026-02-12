@@ -44,8 +44,8 @@ defmodule GameServerWeb.RoomChannel do
     # Rate limit check
     case check_rate_limit(socket) do
       :ok ->
-        action = Map.get(payload, "action")
         nonce = Map.get(payload, "nonce")
+        action = Map.drop(payload, ["nonce"])
 
         if nonce do
           case Room.handle_action(room_id, user_id, action, nonce) do

@@ -258,7 +258,7 @@ defmodule GameServer.Rooms.Room do
             room_id: state.room_id,
             status: state.status,
             players: players_state,
-            your_hand: player_game_state[:hand],
+            your_hand: flatten_cards(player_game_state[:hand]),
             current_turn: state.game_state.current_turn,
             turn_number: state.game_state.turn_number,
             turn_time_remaining: @turn_time_limit,
@@ -525,15 +525,25 @@ defmodule GameServer.Rooms.Room do
         end
 
         # Broadcast game started with each player's hand
-        Enum.each(state.players, fn {user_id, _player_info} ->
+        Enum.each(state.players, fn {user_id, pinfo} ->
           player_state = get_in(game_state, [:players, user_id])
+          opponent_id = get_room_opponent_id(game_state, user_id)
+          opponent_game_state = get_in(game_state, [:players, opponent_id])
+          opponent_info = Map.get(state.players, opponent_id)
 
           send_to_player(state, user_id, "game:started", %{
-            your_hand: player_state.hand,
+            your_hand: flatten_cards(player_state.hand),
             your_hp: player_state.hp,
-            opponent_hp: get_opponent_hp(game_state, user_id),
+            your_deck_count: length(player_state.deck),
+            your_display_name: pinfo.display_name,
+            opponent_id: opponent_id,
+            opponent_display_name: opponent_info.display_name,
+            opponent_hp: opponent_game_state.hp,
+            opponent_hand_count: length(opponent_game_state.hand),
+            opponent_deck_count: length(opponent_game_state.deck),
             current_turn: game_state.current_turn,
-            turn_number: game_state.turn_number
+            turn_number: game_state.turn_number,
+            turn_time_remaining: @turn_time_limit
           })
         end)
 
@@ -554,9 +564,33 @@ defmodule GameServer.Rooms.Room do
          {:ok, new_game_state, effects} <- game_module.apply_action(game_state, user_id, action) do
       state = %{state | game_state: new_game_state}
 
-      # Broadcast effects
-      Enum.each(effects, fn effect ->
-        broadcast_to_room(state, "game:action_applied", effect)
+      # Broadcast per-player action_applied with full state view
+      Enum.each(state.players, fn {pid, pinfo} ->
+        player_game_state = get_in(new_game_state, [:players, pid])
+        opp_id = get_room_opponent_id(new_game_state, pid)
+        opp_game_state = get_in(new_game_state, [:players, opp_id])
+        opp_info = Map.get(state.players, opp_id)
+
+        send_to_player(state, pid, "game:action_applied", %{
+          actor_id: user_id,
+          effects: effects,
+          players: %{
+            pid => %{
+              display_name: pinfo.display_name,
+              connected: pinfo.connected,
+              hp: player_game_state.hp,
+              hand_count: length(player_game_state.hand),
+              deck_count: length(player_game_state.deck)
+            },
+            opp_id => %{
+              display_name: opp_info.display_name,
+              connected: opp_info.connected,
+              hp: opp_game_state.hp,
+              hand_count: length(opp_game_state.hand),
+              deck_count: length(opp_game_state.deck)
+            }
+          }
+        })
       end)
 
       # Check for game end
@@ -570,7 +604,7 @@ defmodule GameServer.Rooms.Room do
           player_state = get_in(new_game_state, [:players, user_id])
 
           send_to_player(state, user_id, "game:hand_updated", %{
-            hand: player_state.hand,
+            hand: flatten_cards(player_state.hand),
             deck_count: length(player_state.deck)
           })
 
@@ -599,7 +633,8 @@ defmodule GameServer.Rooms.Room do
 
     broadcast_to_room(state, "game:turn_changed", %{
       current_turn: next_player_id,
-      turn_number: new_turn_number
+      turn_number: new_turn_number,
+      turn_time_remaining: @turn_time_limit
     })
 
     # Cancel old timer and start new one
@@ -702,13 +737,6 @@ defmodule GameServer.Rooms.Room do
     Enum.at(player_order, next_index)
   end
 
-  defp get_opponent_hp(game_state, user_id) do
-    opponent_id =
-      Enum.find(game_state.player_order, &(&1 != user_id))
-
-    get_in(game_state, [:players, opponent_id, :hp])
-  end
-
   defp check_and_store_nonce(cache_name, user_id, nonce) do
     key = "#{user_id}:#{nonce}"
 
@@ -751,4 +779,22 @@ defmodule GameServer.Rooms.Room do
       nil -> :not_found
     end
   end
+
+  defp get_room_opponent_id(game_state, user_id) do
+    Enum.find(game_state.player_order, &(&1 != user_id))
+  end
+
+  defp flatten_card(card) do
+    first_effect = List.first(card["effects"] || []) || %{}
+
+    %{
+      "id" => card["id"],
+      "name" => card["name"],
+      "effect" => first_effect["effect"],
+      "value" => first_effect["value"] || 0
+    }
+  end
+
+  defp flatten_cards(nil), do: []
+  defp flatten_cards(cards), do: Enum.map(cards, &flatten_card/1)
 end

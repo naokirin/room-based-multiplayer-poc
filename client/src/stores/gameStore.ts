@@ -33,6 +33,7 @@ interface GameStoreActions {
   playCard: (cardId: string, target?: string) => void;
   handleGameStarted: (payload: unknown) => void;
   handleActionApplied: (payload: unknown) => void;
+  handleHandUpdated: (payload: unknown) => void;
   handleTurnChanged: (payload: unknown) => void;
   handleGameEnded: (payload: unknown) => void;
   handleGameAborted: (payload: unknown) => void;
@@ -103,6 +104,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       socketManager.onEvent("game:action_applied", (payload) => {
         get().handleActionApplied(payload);
+      });
+
+      socketManager.onEvent("game:hand_updated", (payload) => {
+        get().handleHandUpdated(payload);
       });
 
       socketManager.onEvent("game:turn_changed", (payload) => {
@@ -256,13 +261,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   handleGameStarted: (payload: unknown) => {
-    // Server sends flat payload: your_hand, your_hp, opponent_hp, current_turn, turn_number (no nested game_state)
     const data = payload as {
       your_hand?: Card[];
       your_hp?: number;
+      your_deck_count?: number;
+      your_display_name?: string;
+      opponent_id?: string;
+      opponent_display_name?: string;
       opponent_hp?: number;
+      opponent_hand_count?: number;
+      opponent_deck_count?: number;
       current_turn?: string;
       turn_number?: number;
+      turn_time_remaining?: number;
     };
 
     if (!data || data.current_turn === undefined) {
@@ -270,28 +281,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     const myUserId = useAuthStore.getState().user?.id ?? "";
-    const user = useAuthStore.getState().user;
     const myHand = data.your_hand ?? [];
     const currentTurn = data.current_turn;
-    const turnNumber = data.turn_number ?? 0;
-    const turnTimeRemaining = 30; // default until server sends it
+    const turnNumber = data.turn_number ?? 1;
+    const turnTimeRemaining = data.turn_time_remaining ?? 30;
     const isMyTurn = currentTurn === myUserId;
+    const opponentId = data.opponent_id ?? "opponent";
 
-    // Build minimal GameState for renderer (server does not send full game_state on game:started)
     const players: Record<string, PlayerState> = {
       [myUserId]: {
-        display_name: user?.display_name ?? "You",
+        display_name: data.your_display_name ?? "You",
         connected: true,
-        hp: data.your_hp ?? 100,
+        hp: data.your_hp ?? 20,
         hand_count: myHand.length,
-        deck_count: 0,
+        deck_count: data.your_deck_count ?? 0,
       },
-      opponent: {
-        display_name: "Opponent",
+      [opponentId]: {
+        display_name: data.opponent_display_name ?? "Opponent",
         connected: true,
-        hp: data.opponent_hp ?? 100,
-        hand_count: 0,
-        deck_count: 0,
+        hp: data.opponent_hp ?? 20,
+        hand_count: data.opponent_hand_count ?? 0,
+        deck_count: data.opponent_deck_count ?? 0,
       },
     };
 
@@ -326,40 +336,79 @@ export const useGameStore = create<GameStore>((set, get) => ({
   handleActionApplied: (payload: unknown) => {
     const data = payload as {
       actor_id: string;
-      card_played: Card;
-      effects: Array<{ type: string; target_id: string; value: number }>;
-      game_state: GameState;
+      effects: Array<{ type: string; [key: string]: unknown }>;
+      players: Record<string, PlayerState>;
     };
 
-    const myUserId = useAuthStore.getState().user?.id;
-    const isMyTurn = data.game_state.current_turn === myUserId;
+    if (!data.players) return;
+
+    // Merge updated player states into existing gameState
+    const currentGameState = get().gameState;
+    if (!currentGameState) return;
+
+    const updatedPlayers = { ...currentGameState.players, ...data.players };
+    const updatedGameState: GameState = {
+      ...currentGameState,
+      players: updatedPlayers,
+    };
 
     set({
-      gameState: data.game_state,
-      myHand: data.game_state.your_hand,
-      currentTurn: data.game_state.current_turn,
-      turnNumber: data.game_state.turn_number,
-      turnTimeRemaining: data.game_state.turn_time_remaining,
-      players: data.game_state.players,
-      isMyTurn,
+      gameState: updatedGameState,
+      players: updatedPlayers,
     });
+  },
+
+  handleHandUpdated: (payload: unknown) => {
+    const data = payload as {
+      hand: Card[];
+      deck_count: number;
+    };
+
+    if (!data.hand) return;
+
+    const myUserId = useAuthStore.getState().user?.id ?? "";
+    const currentGameState = get().gameState;
+
+    // Update my hand and deck count in game state
+    if (currentGameState) {
+      const myPlayer = currentGameState.players[myUserId];
+      if (myPlayer) {
+        const updatedPlayers = {
+          ...currentGameState.players,
+          [myUserId]: {
+            ...myPlayer,
+            hand_count: data.hand.length,
+            deck_count: data.deck_count ?? myPlayer.deck_count,
+          },
+        };
+        set({
+          myHand: data.hand,
+          gameState: { ...currentGameState, players: updatedPlayers },
+          players: updatedPlayers,
+        });
+        return;
+      }
+    }
+
+    set({ myHand: data.hand });
   },
 
   handleTurnChanged: (payload: unknown) => {
     const data = payload as {
       current_turn: string;
       turn_number: number;
-      turn_time_remaining: number;
+      turn_time_remaining?: number;
       drawn_card?: Card;
     };
 
     const myUserId = useAuthStore.getState().user?.id;
     const isMyTurn = data.current_turn === myUserId;
+    const turnTimeRemaining = data.turn_time_remaining ?? 30;
 
     const updates: Partial<GameStoreState> = {
       currentTurn: data.current_turn,
       turnNumber: data.turn_number,
-      turnTimeRemaining: data.turn_time_remaining,
+      turnTimeRemaining,
       isMyTurn,
     };
 
@@ -367,6 +416,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (data.drawn_card) {
       const currentHand = get().myHand;
       updates.myHand = [...currentHand, data.drawn_card];
+    }
+
+    // Keep gameState in sync
+    const currentGameState = get().gameState;
+    if (currentGameState) {
+      updates.gameState = {
+        ...currentGameState,
+        current_turn: data.current_turn,
+        turn_number: data.turn_number,
+        turn_time_remaining: turnTimeRemaining,
+      };
     }
 
     set(updates);

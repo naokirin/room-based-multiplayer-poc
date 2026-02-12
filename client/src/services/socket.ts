@@ -97,7 +97,7 @@ class SocketManager {
   joinRoom(
     roomId: string,
     params: { room_token?: string; reconnect_token?: string }
-  ): Promise<Channel> {
+  ): Promise<Record<string, unknown>> {
     if (!this.socket) {
       throw new Error("Socket not connected");
     }
@@ -117,7 +117,7 @@ class SocketManager {
         .join()
         .receive("ok", (response) => {
           console.log("Joined room successfully", response);
-          resolve(this.channel!);
+          resolve(response as Record<string, unknown>);
         })
         .receive("error", (response) => {
           console.error("Failed to join room", response);
