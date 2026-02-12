@@ -10,6 +10,12 @@ defmodule GameServerWeb.Router do
     # Internal API key auth will be added later
   end
 
+  # Public health check (e.g. Docker, load balancers). No auth.
+  scope "/", GameServerWeb do
+    pipe_through :api
+    get "/health", HealthController, :show
+  end
+
   scope "/internal", GameServerWeb do
     pipe_through :api
     get "/health", HealthController, :show

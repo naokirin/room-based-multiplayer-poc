@@ -168,7 +168,8 @@ defmodule GameServerWeb.RoomChannel do
             {:error, %{reason: "invalid_token_data"}}
         end
 
-      {:error, _reason} ->
+      {:error, reason} ->
+        Logger.error("RoomChannel room_token Redis GET failed: #{inspect(reason)}")
         {:error, %{reason: "redis_error"}}
     end
   end
@@ -202,7 +203,8 @@ defmodule GameServerWeb.RoomChannel do
           {:error, %{reason: "reconnect_token_mismatch"}}
         end
 
-      {:error, _reason} ->
+      {:error, reason} ->
+        Logger.error("RoomChannel reconnect_token Redis GET failed: #{inspect(reason)}")
         {:error, %{reason: "redis_error"}}
     end
   end

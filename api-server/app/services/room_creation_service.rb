@@ -28,11 +28,9 @@ class RoomCreationService
         )
         room_tokens[user_id] = token
 
-        # Store room token in Redis
-        REDIS.hset("room_token:#{token}", "room_id", room.id)
-        REDIS.hset("room_token:#{token}", "user_id", user_id)
-        REDIS.hset("room_token:#{token}", "status", "pending")
-        REDIS.expire("room_token:#{token}", ROOM_TOKEN_TTL)
+        # Store room token in Redis as a string (game-server reads with GET and expects JSON)
+        token_data = { room_id: room.id, user_id: user_id, status: "pending" }.to_json
+        REDIS.setex("room_token:#{token}", ROOM_TOKEN_TTL, token_data)
 
         # Set active game for user
         ws_url = ENV.fetch("GAME_SERVER_WS_URL", "ws://localhost:4000/socket")
