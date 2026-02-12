@@ -178,15 +178,22 @@ defmodule GameServer.Api.RailsClient do
     end
   end
 
-  # Plug that sets base URL and X-Internal-Api-Key at request time (runtime env).
+  # Tesla middleware: sets base URL and X-Internal-Api-Key at request time (runtime env).
   defmodule RuntimeHeaders do
     @moduledoc false
-    def call(env, next) do
-      base = System.get_env("RAILS_INTERNAL_URL", "http://localhost:3001") |> String.trim_trailing("/")
+    @behaviour Tesla.Middleware
+
+    @impl true
+    def call(env, next, _opts) do
+      base =
+        System.get_env("RAILS_INTERNAL_URL", "http://localhost:3001")
+        |> String.trim_trailing("/")
+
       key = System.get_env("INTERNAL_API_KEY", "")
       url = if String.starts_with?(env.url, "http"), do: env.url, else: base <> env.url
       headers = [{"x-internal-api-key", key} | env.headers]
-      next.(%{env | url: url, headers: headers})
+      modified = %{env | url: url, headers: headers}
+      Tesla.run(modified, next)
     end
   end
 end
