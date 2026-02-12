@@ -8,6 +8,8 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  /** True when profile/API failed due to network (server not reachable). User stays logged in from cache. */
+  serverUnreachable: boolean;
 }
 
 interface AuthActions {
@@ -20,6 +22,9 @@ interface AuthActions {
   logout: () => void;
   refreshToken: () => Promise<void>;
   initializeFromStorage: () => Promise<void>;
+  clearServerUnreachable: () => void;
+  /** Retry profile fetch; clears serverUnreachable on success. */
+  retryConnection: () => Promise<boolean>;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -53,6 +58,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  serverUnreachable: false,
 
   // Actions
   login: async (email: string, password: string) => {
@@ -74,6 +80,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
         error: null,
+        serverUnreachable: false,
       });
 
       // Schedule auto-refresh
@@ -107,6 +114,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
         error: null,
+        serverUnreachable: false,
       });
 
       // Schedule auto-refresh
@@ -138,7 +146,30 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      serverUnreachable: false,
     });
+  },
+
+  clearServerUnreachable: () => set({ serverUnreachable: false }),
+
+  retryConnection: async () => {
+    const { token } = get();
+    if (!token) return false;
+    try {
+      api.setToken(token);
+      const { user: freshUser } = await api.getProfile();
+      localStorage.setItem(USER_KEY, JSON.stringify(freshUser));
+      set({ user: freshUser, serverUnreachable: false });
+      scheduleRefresh(get().refreshToken);
+      return true;
+    } catch (err) {
+      if (api.isNetworkError(err)) {
+        set({ serverUnreachable: true });
+      } else {
+        get().logout();
+      }
+      return false;
+    }
   },
 
   refreshToken: async () => {
@@ -187,14 +218,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         try {
           const { user: freshUser } = await api.getProfile();
           localStorage.setItem(USER_KEY, JSON.stringify(freshUser));
-          set({ user: freshUser });
+          set({ user: freshUser, serverUnreachable: false });
 
           // Schedule auto-refresh
           scheduleRefresh(get().refreshToken);
         } catch (err) {
-          // Token invalid, logout
-          console.error("Token validation failed:", err);
-          get().logout();
+          if (api.isNetworkError(err)) {
+            // Server not reachable (e.g. API not running); keep user from cache, show banner
+            console.warn("Server unreachable:", err.message);
+            set({ serverUnreachable: true });
+          } else {
+            // Token invalid or other error, logout
+            console.error("Token validation failed:", err);
+            get().logout();
+          }
         }
       } catch (err) {
         console.error("Failed to restore session:", err);

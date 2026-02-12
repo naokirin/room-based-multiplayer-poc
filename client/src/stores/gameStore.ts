@@ -80,21 +80,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // Actions
   joinRoom: async (roomId: string, roomToken: string, wsUrl: string) => {
+    set({ error: null });
     try {
       const token = useAuthStore.getState().token;
       if (!token) {
         throw new Error("Not authenticated");
       }
 
-      // Connect WebSocket
-      socketManager.connect(wsUrl, token);
-
-      // Set up disconnect callback (T094)
+      // Connect WebSocket and wait for connection to open before joining channel
       socketManager.setDisconnectCallback(() => {
         get().handleDisconnected();
       });
+      await socketManager.connect(wsUrl, token);
 
-      // Join room channel
+      // Join room channel (socket is already open)
       const response = await socketManager.joinRoom(roomId, { room_token: roomToken });
 
       // Set up event listeners
@@ -147,9 +146,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       localStorage.setItem(ROOM_ID_KEY, roomId);
     } catch (err: unknown) {
       const error = err as { message?: string };
-      set({
-        error: error.message || "Failed to join room",
-      });
+      const msg = error.message || "Failed to join room";
+      const friendlyMessage =
+        msg.includes("WebSocket") || msg.includes("connection")
+          ? "Could not connect to the game server. Please ensure the game server is running (e.g. port 4000)."
+          : msg;
+      set({ error: friendlyMessage });
       throw err;
     }
   },
@@ -181,13 +183,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const data = await response.json();
       const wsUrl = data.ws_url;
 
-      // Reconnect WebSocket
-      socketManager.connect(wsUrl, token);
-
-      // Set up disconnect callback
+      // Reconnect WebSocket and wait for connection
       socketManager.setDisconnectCallback(() => {
         get().handleDisconnected();
       });
+      await socketManager.connect(wsUrl, token);
 
       // Rejoin room with reconnect token
       const rejoinResponse = await socketManager.joinRoom(roomId, {

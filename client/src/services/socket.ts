@@ -10,13 +10,17 @@ class SocketManager {
   private roomId: string | null = null;
   private disconnectCallback: DisconnectCallback | null = null;
   private reconnectedCallback: ReconnectedCallback | null = null;
+  private connectPromise: Promise<void> | null = null;
 
-  connect(wsUrl: string, token: string): void {
+  /**
+   * Connect to the WebSocket. Returns a promise that resolves when the
+   * connection is open, or rejects on error/close before open.
+   */
+  connect(wsUrl: string, token: string): Promise<void> {
     if (this.socket) {
       this.disconnect();
     }
 
-    // Parse WebSocket URL and create Socket
     this.socket = new Socket(wsUrl, {
       params: {
         token,
@@ -24,26 +28,54 @@ class SocketManager {
       },
     });
 
+    this.connectPromise = new Promise((resolve, reject) => {
+      let settled = false;
+      const cleanup = (refs: string[]) => {
+        if (this.socket) this.socket.off(refs);
+      };
+
+      const openRef = this.socket.onOpen(() => {
+        if (settled) return;
+        settled = true;
+        cleanup([openRef, errorRef, closeRef]);
+        console.log("WebSocket connected");
+        // Re-register persistent callbacks for disconnect after connection is open
+        this.socket?.onError((error: unknown) => {
+          console.error("WebSocket error:", error);
+          if (this.disconnectCallback) this.disconnectCallback();
+        });
+        this.socket?.onClose(() => {
+          console.log("WebSocket closed");
+          if (this.disconnectCallback) this.disconnectCallback();
+        });
+        resolve();
+      });
+
+      const errorRef = this.socket.onError((error: unknown) => {
+        if (settled) return;
+        settled = true;
+        cleanup([openRef, errorRef, closeRef]);
+        console.error("WebSocket error:", error);
+        if (this.disconnectCallback) {
+          this.disconnectCallback();
+        }
+        reject(new Error("WebSocket connection failed"));
+      });
+
+      const closeRef = this.socket.onClose(() => {
+        if (settled) return;
+        settled = true;
+        cleanup([openRef, errorRef, closeRef]);
+        console.log("WebSocket closed");
+        if (this.disconnectCallback) {
+          this.disconnectCallback();
+        }
+        reject(new Error("WebSocket closed before connection opened"));
+      });
+    });
+
     this.socket.connect();
-
-    // Listen for connection events
-    this.socket.onOpen(() => {
-      console.log("WebSocket connected");
-    });
-
-    this.socket.onError((error) => {
-      console.error("WebSocket error:", error);
-      if (this.disconnectCallback) {
-        this.disconnectCallback();
-      }
-    });
-
-    this.socket.onClose(() => {
-      console.log("WebSocket closed");
-      if (this.disconnectCallback) {
-        this.disconnectCallback();
-      }
-    });
+    return this.connectPromise;
   }
 
   setDisconnectCallback(callback: DisconnectCallback): void {

@@ -67,11 +67,11 @@ export function Game() {
     };
   }, []);
 
-  // Update renderer when game state changes
+  // Update renderer when game state changes (guard: user may be null briefly)
   useEffect(() => {
-    if (rendererRef.current && user) {
-      rendererRef.current.updateState(gameState, myHand, isMyTurn, user.id);
-    }
+    if (!rendererRef.current) return;
+    const myUserId = user?.id ?? "";
+    rendererRef.current.updateState(gameState, myHand, isMyTurn, myUserId);
   }, [gameState, myHand, isMyTurn, user]);
 
   // Show result modal when game ends
@@ -255,7 +255,7 @@ export function Game() {
             {status === "finished" && (
               <>
                 <h2 style={{ margin: "0 0 20px 0" }}>
-                  {gameResult.winner_id === user?.id ? "🎉 You Win!" : "😔 You Lose"}
+                  {user && gameResult.winner_id === user.id ? "🎉 You Win!" : "😔 You Lose"}
                 </h2>
                 <p style={{ fontSize: "16px", color: "#666", margin: "0 0 30px 0" }}>
                   {gameResult.reason}

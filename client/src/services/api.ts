@@ -23,6 +23,20 @@ class ApiClient {
     return this.accessToken;
   }
 
+  /**
+   * Thrown when the request could not reach the server (e.g. connection refused/reset).
+   * Callers can check `err.isNetworkError` to show a "server unreachable" message
+   * instead of treating as auth failure.
+   */
+  static isNetworkError(err: unknown): err is { isNetworkError: true; message: string } {
+    return (
+      typeof err === "object" &&
+      err !== null &&
+      "isNetworkError" in err &&
+      (err as { isNetworkError?: boolean }).isNetworkError === true
+    );
+  }
+
   private async request<T>(
     path: string,
     options: RequestInit = {}
@@ -36,10 +50,19 @@ class ApiClient {
       headers.Authorization = `Bearer ${this.accessToken}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers,
+      });
+    } catch (e) {
+      throw {
+        isNetworkError: true,
+        message: "Cannot reach server. Please check that the API is running.",
+        cause: e,
+      };
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({

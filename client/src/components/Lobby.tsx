@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLobbyStore } from "../stores/lobbyStore";
 import { useAuthStore } from "../stores/authStore";
+import { useGameStore } from "../stores/gameStore";
 import { api } from "../services/api";
 import type { Announcement } from "../types";
 
@@ -14,6 +15,8 @@ export function Lobby() {
     joinQueue,
     cancelQueue,
   } = useLobbyStore();
+
+  const { error: gameError } = useGameStore();
 
   const { user, logout } = useAuthStore();
 
@@ -202,7 +205,7 @@ export function Lobby() {
         </div>
       )}
 
-      {error && (
+      {(error || gameError) && (
         <div
           style={{
             padding: "15px",
@@ -213,7 +216,7 @@ export function Lobby() {
             borderRadius: "4px",
           }}
         >
-          {error}
+          {error || gameError}
         </div>
       )}
 
