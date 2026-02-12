@@ -1,8 +1,13 @@
 class Rack::Attack
+  # Disable rate limiting in test environment
+  Rack::Attack.enabled = false if Rails.env.test?
+
   # Use Redis for rate limiting
-  Rack::Attack.cache.store = ActiveSupport::Cache::RedisCacheStore.new(
-    url: ENV.fetch("REDIS_URL", "redis://localhost:6379/0")
-  )
+  unless Rails.env.test?
+    Rack::Attack.cache.store = ActiveSupport::Cache::RedisCacheStore.new(
+      url: ENV.fetch("REDIS_URL", "redis://localhost:6379/0")
+    )
+  end
 
   # Auth endpoints - per IP
   throttle("auth/register", limit: 5, period: 60) do |req|
