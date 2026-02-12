@@ -16,6 +16,9 @@ defmodule GameServerWeb.RoomChannel do
   alias GameServer.Redis
 
   @rate_limit_window 1_000
+  @chat_rate_limit_window 10_000
+  @chat_rate_limit_count 5
+  @max_chat_length 500
 
   @impl true
   def join("room:" <> room_id, params, socket) do
@@ -62,19 +65,46 @@ defmodule GameServerWeb.RoomChannel do
   end
 
   @impl true
-  def handle_in("chat:send", %{"message" => message}, socket) do
+  def handle_in("chat:send", %{"content" => content}, socket) do
     user_id = socket.assigns.user_id
     room_id = socket.assigns.room_id
 
-    Room.send_chat(room_id, user_id, message)
+    # Validate content
+    cond do
+      content == nil or String.trim(content) == "" ->
+        {:reply, {:error, %{reason: "content_empty"}}, socket}
 
-    {:reply, :ok, socket}
+      String.length(content) > @max_chat_length ->
+        {:reply, {:error, %{reason: "content_too_long"}}, socket}
+
+      true ->
+        # Check chat rate limit
+        case check_chat_rate_limit(socket) do
+          {:ok, updated_socket} ->
+            case Room.add_chat_message(room_id, user_id, content) do
+              {:ok, message_id} ->
+                {:reply, {:ok, %{message_id: message_id, sent: true}}, updated_socket}
+
+              {:error, reason} ->
+                {:reply, {:error, %{reason: to_string(reason)}}, updated_socket}
+            end
+
+          {:error, :rate_limited} ->
+            {:reply, {:error, %{reason: "rate_limited"}}, socket}
+        end
+    end
   end
 
   @impl true
   def handle_info({:broadcast, event, payload}, socket) do
     push(socket, event, payload)
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:force_disconnect, reason}, socket) do
+    push(socket, "force_disconnect", %{reason: reason})
+    {:stop, :normal, socket}
   end
 
   @impl true
@@ -186,6 +216,23 @@ defmodule GameServerWeb.RoomChannel do
       :ok
     else
       {:error, :rate_limited}
+    end
+  end
+
+  defp check_chat_rate_limit(socket) do
+    now = System.monotonic_time(:millisecond)
+    chat_messages = Map.get(socket.assigns, :chat_messages, [])
+
+    # Remove messages older than rate limit window
+    recent_messages = Enum.filter(chat_messages, fn timestamp ->
+      now - timestamp < @chat_rate_limit_window
+    end)
+
+    if length(recent_messages) >= @chat_rate_limit_count do
+      {:error, :rate_limited}
+    else
+      updated_socket = assign(socket, :chat_messages, [now | recent_messages])
+      {:ok, updated_socket}
     end
   end
 end

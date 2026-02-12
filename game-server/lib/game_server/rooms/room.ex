@@ -17,11 +17,15 @@ defmodule GameServer.Rooms.Room do
 
   alias GameServer.Api.RailsClient
   alias GameServer.Games.SimpleCardBattle
+  alias GameServer.Redis
 
   @turn_time_limit 30
   @disconnect_timeout 60_000
+  @reconnect_timeout 60_000
   @termination_delay 30_000
   @max_nonces_per_player 50
+  @max_chat_messages 100
+  @reconnect_token_ttl 300
 
   # Client API
 
@@ -67,10 +71,17 @@ defmodule GameServer.Rooms.Room do
   end
 
   @doc """
-  Send a chat message.
+  Add a chat message.
   """
-  def send_chat(room_id, user_id, message) do
-    GenServer.cast(via_tuple(room_id), {:send_chat, user_id, message})
+  def add_chat_message(room_id, user_id, content) do
+    GenServer.call(via_tuple(room_id), {:add_chat_message, user_id, content})
+  end
+
+  @doc """
+  Get chat history.
+  """
+  def get_chat_history(room_id) do
+    GenServer.call(via_tuple(room_id), :get_chat_history)
   end
 
   @doc """
@@ -108,6 +119,7 @@ defmodule GameServer.Rooms.Room do
       status: :waiting,
       turn_timer_ref: nil,
       disconnect_timer_ref: nil,
+      reconnect_timers: %{},
       chat_messages: [],
       nonce_cache: cache_name
     }
@@ -129,37 +141,61 @@ defmodule GameServer.Rooms.Room do
   @impl true
   def handle_call({:join, user_id, display_name, channel_pid}, _from, state) do
     if user_id in state.expected_player_ids do
-      if Map.has_key?(state.players, user_id) do
-        {:reply, {:error, :already_joined}, state}
-      else
-        player_info = %{
-          display_name: display_name,
-          connected: true,
-          channel_pid: channel_pid
-        }
+      # Check for duplicate connection (T092)
+      state =
+        if Map.has_key?(state.players, user_id) do
+          # Disconnect old session
+          old_player_info = Map.get(state.players, user_id)
 
-        updated_players = Map.put(state.players, user_id, player_info)
-        state = %{state | players: updated_players}
-
-        # Monitor the channel process
-        Process.monitor(channel_pid)
-
-        # Broadcast player joined
-        broadcast_to_room(state, "player:joined", %{
-          user_id: user_id,
-          display_name: display_name
-        })
-
-        # Check if all players have joined
-        state =
-          if map_size(state.players) == length(state.expected_player_ids) do
-            start_game(state)
-          else
-            state
+          if old_player_info.connected do
+            # Send disconnect message to old channel
+            send(old_player_info.channel_pid, {:force_disconnect, "duplicate_connection"})
           end
 
-        {:reply, {:ok, %{players: state.players, status: state.status}}, state}
+          state
+        else
+          state
+        end
+
+      # Generate reconnect token (T086)
+      reconnect_token = UUID.uuid4()
+      redis_key = "reconnect:#{state.room_id}:#{user_id}"
+
+      case Redis.command(["SETEX", redis_key, @reconnect_token_ttl, reconnect_token]) do
+        {:ok, _} ->
+          :ok
+
+        {:error, reason} ->
+          Logger.error("Failed to store reconnect token: #{inspect(reason)}")
       end
+
+      player_info = %{
+        display_name: display_name,
+        connected: true,
+        channel_pid: channel_pid
+      }
+
+      updated_players = Map.put(state.players, user_id, player_info)
+      state = %{state | players: updated_players}
+
+      # Monitor the channel process
+      Process.monitor(channel_pid)
+
+      # Broadcast player joined
+      broadcast_to_room(state, "player:joined", %{
+        user_id: user_id,
+        display_name: display_name
+      })
+
+      # Check if all players have joined
+      state =
+        if map_size(state.players) == length(state.expected_player_ids) do
+          start_game(state)
+        else
+          state
+        end
+
+      {:reply, {:ok, %{players: state.players, status: state.status, reconnect_token: reconnect_token}}, state}
     else
       {:reply, {:error, :not_expected}, state}
     end
@@ -176,20 +212,51 @@ defmodule GameServer.Rooms.Room do
       # Monitor the new channel process
       Process.monitor(channel_pid)
 
-      # Cancel disconnect timer if all players are back
-      state = maybe_cancel_disconnect_timer(state)
+      # Cancel reconnect timer for this player if exists
+      state = cancel_reconnect_timer_for_player(state, user_id)
 
-      # Broadcast player reconnected
+      # Broadcast player reconnected (T091)
       broadcast_to_room(state, "player:reconnected", %{user_id: user_id})
 
-      # Send full state to rejoining player
-      full_state = %{
-        room_id: state.room_id,
-        status: state.status,
-        players: state.players,
-        game_state: state.game_state,
-        chat_messages: state.chat_messages
-      }
+      # Build full state with your_hand (T090)
+      full_state =
+        if state.status == :playing and state.game_state do
+          player_game_state = get_in(state.game_state, [:players, user_id])
+
+          # Build all players state for client
+          players_state =
+            Enum.reduce(state.players, %{}, fn {pid, pinfo}, acc ->
+              game_player_state = get_in(state.game_state, [:players, pid])
+
+              player_data = %{
+                display_name: pinfo.display_name,
+                connected: pinfo.connected,
+                hp: game_player_state[:hp],
+                hand_count: if(pid == user_id, do: length(game_player_state[:hand]), else: length(game_player_state[:hand])),
+                deck_count: length(game_player_state[:deck])
+              }
+
+              Map.put(acc, pid, player_data)
+            end)
+
+          %{
+            room_id: state.room_id,
+            status: state.status,
+            players: players_state,
+            your_hand: player_game_state[:hand],
+            current_turn: state.game_state.current_turn,
+            turn_number: state.game_state.turn_number,
+            turn_time_remaining: @turn_time_limit,
+            chat_messages: state.chat_messages
+          }
+        else
+          %{
+            room_id: state.room_id,
+            status: state.status,
+            players: state.players,
+            chat_messages: state.chat_messages
+          }
+        end
 
       {:reply, {:ok, full_state}, state}
     else
@@ -219,6 +286,42 @@ defmodule GameServer.Rooms.Room do
   end
 
   @impl true
+  def handle_call({:add_chat_message, user_id, content}, _from, state) do
+    if Map.has_key?(state.players, user_id) do
+      message_id = UUID.uuid4()
+      player = Map.get(state.players, user_id)
+      sender_name = player.display_name
+      sent_at = DateTime.utc_now() |> DateTime.to_iso8601()
+
+      message = %{
+        id: message_id,
+        sender_id: user_id,
+        sender_name: sender_name,
+        content: content,
+        sent_at: sent_at
+      }
+
+      # Add message to ring buffer (prepend, keep max 100)
+      updated_messages = [message | state.chat_messages] |> Enum.take(@max_chat_messages)
+      state = %{state | chat_messages: updated_messages}
+
+      # Broadcast to all players
+      broadcast_to_room(state, "chat:new_message", message)
+
+      {:reply, {:ok, message_id}, state}
+    else
+      {:reply, {:error, :not_in_room}, state}
+    end
+  end
+
+  @impl true
+  def handle_call(:get_chat_history, _from, state) do
+    # Return in chronological order (oldest first)
+    history = Enum.reverse(state.chat_messages)
+    {:reply, history, state}
+  end
+
+  @impl true
   def handle_cast({:disconnect, user_id}, state) do
     if Map.has_key?(state.players, user_id) do
       player_info = Map.get(state.players, user_id)
@@ -226,37 +329,24 @@ defmodule GameServer.Rooms.Room do
       updated_players = Map.put(state.players, user_id, updated_player_info)
       state = %{state | players: updated_players}
 
-      # Broadcast player disconnected
+      # Broadcast player disconnected (T088)
       broadcast_to_room(state, "player:disconnected", %{user_id: user_id})
 
-      # Check if all players are disconnected
+      # Start reconnect timer for this player (T088)
+      state =
+        if state.status == :playing do
+          start_reconnect_timer_for_player(state, user_id)
+        else
+          state
+        end
+
+      # Also check if all players are disconnected for room-level abort
       state =
         if all_players_disconnected?(state) do
           start_disconnect_timer(state)
         else
           state
         end
-
-      {:noreply, state}
-    else
-      {:noreply, state}
-    end
-  end
-
-  @impl true
-  def handle_cast({:send_chat, user_id, message}, state) do
-    if Map.has_key?(state.players, user_id) do
-      timestamp = DateTime.utc_now() |> DateTime.to_iso8601()
-
-      chat_message = %{
-        user_id: user_id,
-        message: message,
-        timestamp: timestamp
-      }
-
-      state = %{state | chat_messages: [chat_message | state.chat_messages]}
-
-      broadcast_to_room(state, "chat:message", chat_message)
 
       {:noreply, state}
     else
@@ -304,6 +394,36 @@ defmodule GameServer.Rooms.Room do
 
       {:noreply, state}
     else
+      {:noreply, state}
+    end
+  end
+
+  @impl true
+  def handle_info({:reconnect_timeout, user_id}, state) do
+    # T089: Handle reconnect timeout for a specific player
+    player_info = Map.get(state.players, user_id)
+
+    if player_info && !player_info.connected do
+      Logger.info("Player #{user_id} failed to reconnect in time, removing from game")
+
+      # Broadcast player left (T091)
+      broadcast_to_room(state, "player:left", %{user_id: user_id, reason: "reconnect_timeout"})
+
+      # Call game behaviour's on_player_removed
+      if state.status == :playing && state.game_state do
+        case state.game_module.on_player_removed(state.game_state, user_id) do
+          {:ended, winner_id, reason} ->
+            state = end_game(state, winner_id, reason)
+            {:noreply, state}
+
+          _ ->
+            {:noreply, state}
+        end
+      else
+        {:noreply, state}
+      end
+    else
+      # Player already reconnected, ignore
       {:noreply, state}
     end
   end
@@ -492,12 +612,22 @@ defmodule GameServer.Rooms.Room do
     %{state | disconnect_timer_ref: timer_ref}
   end
 
-  defp maybe_cancel_disconnect_timer(state) do
-    if not all_players_disconnected?(state) and state.disconnect_timer_ref do
-      Process.cancel_timer(state.disconnect_timer_ref)
-      %{state | disconnect_timer_ref: nil}
-    else
-      state
+  defp start_reconnect_timer_for_player(state, user_id) do
+    # Cancel existing timer for this player if any
+    state = cancel_reconnect_timer_for_player(state, user_id)
+
+    timer_ref = Process.send_after(self(), {:reconnect_timeout, user_id}, @reconnect_timeout)
+    %{state | reconnect_timers: Map.put(state.reconnect_timers, user_id, timer_ref)}
+  end
+
+  defp cancel_reconnect_timer_for_player(state, user_id) do
+    case Map.get(state.reconnect_timers, user_id) do
+      nil ->
+        state
+
+      timer_ref ->
+        Process.cancel_timer(timer_ref)
+        %{state | reconnect_timers: Map.delete(state.reconnect_timers, user_id)}
     end
   end
 

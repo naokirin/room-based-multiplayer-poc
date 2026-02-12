@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "../stores/gameStore";
 import { useAuthStore } from "../stores/authStore";
+import { useChatStore } from "../stores/chatStore";
 import { GameRenderer } from "../game/GameRenderer";
+import { Chat } from "./Chat";
 
 export function Game() {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -14,13 +16,22 @@ export function Game() {
     status,
     turnTimeRemaining,
     gameResult,
+    isDisconnected,
+    isReconnecting,
     playCard,
     leaveRoom,
+    reconnectToRoom,
   } = useGameStore();
 
   const { user } = useAuthStore();
+  const { initialize: initializeChat } = useChatStore();
 
   const [showResult, setShowResult] = useState(false);
+
+  // Initialize chat store
+  useEffect(() => {
+    initializeChat();
+  }, [initializeChat]);
 
   // Initialize PixiJS renderer
   useEffect(() => {
@@ -145,22 +156,76 @@ export function Game() {
         }}
       />
 
-      {/* Chat Placeholder */}
+      {/* Chat */}
       <div
         style={{
           width: "800px",
           marginTop: "20px",
-          padding: "15px",
-          backgroundColor: "#1a1a2e",
-          borderRadius: "8px",
-          border: "1px solid #333",
         }}
       >
-        <h4 style={{ color: "#fff", margin: "0 0 10px 0" }}>Chat</h4>
-        <p style={{ color: "#666", fontSize: "14px", margin: 0 }}>
-          Chat functionality will be implemented in Phase 5
-        </p>
+        <Chat />
       </div>
+
+      {/* Disconnection/Reconnection Overlay (T095) */}
+      {(isDisconnected || isReconnecting) && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 999,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#fff",
+              padding: "30px",
+              borderRadius: "12px",
+              textAlign: "center",
+              minWidth: "300px",
+            }}
+          >
+            {isReconnecting && (
+              <>
+                <h3 style={{ margin: "0 0 15px 0" }}>Reconnecting...</h3>
+                <p style={{ fontSize: "14px", color: "#666", margin: 0 }}>
+                  Please wait while we restore your connection.
+                </p>
+              </>
+            )}
+
+            {isDisconnected && !isReconnecting && (
+              <>
+                <h3 style={{ margin: "0 0 15px 0" }}>Connection Lost</h3>
+                <p style={{ fontSize: "14px", color: "#666", margin: "0 0 20px 0" }}>
+                  Attempting to reconnect...
+                </p>
+                <button
+                  type="button"
+                  onClick={() => reconnectToRoom()}
+                  style={{
+                    padding: "8px 20px",
+                    fontSize: "14px",
+                    backgroundColor: "#007bff",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Retry Now
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Game Result Modal */}
       {showResult && gameResult && (

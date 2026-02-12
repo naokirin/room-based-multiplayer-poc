@@ -1,10 +1,15 @@
 import { Socket, Channel } from "phoenix";
 import { v4 as uuidv4 } from "uuid";
 
+type DisconnectCallback = () => void;
+type ReconnectedCallback = () => void;
+
 class SocketManager {
   private socket: Socket | null = null;
   private channel: Channel | null = null;
   private roomId: string | null = null;
+  private disconnectCallback: DisconnectCallback | null = null;
+  private reconnectedCallback: ReconnectedCallback | null = null;
 
   connect(wsUrl: string, token: string): void {
     if (this.socket) {
@@ -28,11 +33,33 @@ class SocketManager {
 
     this.socket.onError((error) => {
       console.error("WebSocket error:", error);
+      if (this.disconnectCallback) {
+        this.disconnectCallback();
+      }
     });
 
     this.socket.onClose(() => {
       console.log("WebSocket closed");
+      if (this.disconnectCallback) {
+        this.disconnectCallback();
+      }
     });
+  }
+
+  setDisconnectCallback(callback: DisconnectCallback): void {
+    this.disconnectCallback = callback;
+  }
+
+  setReconnectedCallback(callback: ReconnectedCallback): void {
+    this.reconnectedCallback = callback;
+  }
+
+  getRoomId(): string | null {
+    return this.roomId;
+  }
+
+  isConnected(): boolean {
+    return this.socket !== null && this.channel !== null;
   }
 
   joinRoom(
@@ -95,12 +122,24 @@ class SocketManager {
     this.channel.push("game:action", payload);
   }
 
-  pushChat(content: string): void {
+  pushChat(content: string): Promise<{ message_id: string; sent: boolean }> {
     if (!this.channel) {
       throw new Error("Not connected to room");
     }
 
-    this.channel.push("chat:send", { content });
+    return new Promise((resolve, reject) => {
+      this.channel!
+        .push("chat:send", { content })
+        .receive("ok", (response) => {
+          resolve(response as { message_id: string; sent: boolean });
+        })
+        .receive("error", (response) => {
+          reject(new Error((response as { reason?: string }).reason || "Failed to send chat message"));
+        })
+        .receive("timeout", () => {
+          reject(new Error("Chat send timeout"));
+        });
+    });
   }
 
   onEvent(event: string, callback: (payload: unknown) => void): void {

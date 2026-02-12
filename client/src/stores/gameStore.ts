@@ -23,10 +23,13 @@ interface GameStoreState {
   reconnectToken: string | null;
   status: GameStatus;
   error: string | null;
+  isReconnecting: boolean;
+  isDisconnected: boolean;
 }
 
 interface GameStoreActions {
   joinRoom: (roomId: string, roomToken: string, wsUrl: string) => Promise<void>;
+  reconnectToRoom: () => Promise<void>;
   playCard: (cardId: string, target?: string) => void;
   handleGameStarted: (payload: unknown) => void;
   handleActionApplied: (payload: unknown) => void;
@@ -34,6 +37,7 @@ interface GameStoreActions {
   handleGameEnded: (payload: unknown) => void;
   handleGameAborted: (payload: unknown) => void;
   handleReconnectToken: (payload: unknown) => void;
+  handleDisconnected: () => void;
   leaveRoom: () => void;
   resetGame: () => void;
 }
@@ -71,6 +75,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   reconnectToken: null,
   status: "waiting",
   error: null,
+  isReconnecting: false,
+  isDisconnected: false,
 
   // Actions
   joinRoom: async (roomId: string, roomToken: string, wsUrl: string) => {
@@ -83,8 +89,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Connect WebSocket
       socketManager.connect(wsUrl, token);
 
+      // Set up disconnect callback (T094)
+      socketManager.setDisconnectCallback(() => {
+        get().handleDisconnected();
+      });
+
       // Join room channel
-      await socketManager.joinRoom(roomId, { room_token: roomToken });
+      const response = await socketManager.joinRoom(roomId, { room_token: roomToken });
 
       // Set up event listeners
       socketManager.onEvent("game:started", (payload) => {
@@ -107,15 +118,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
         get().handleGameAborted(payload);
       });
 
-      socketManager.onEvent("room:reconnect_token", (payload) => {
-        get().handleReconnectToken(payload);
+      socketManager.onEvent("player:reconnected", (payload) => {
+        console.log("Player reconnected:", payload);
       });
 
-      // Store room info
+      socketManager.onEvent("player:left", (payload) => {
+        console.log("Player left:", payload);
+      });
+
+      // Handle reconnect token from join response (T096)
+      if (response && typeof response === "object" && "reconnect_token" in response) {
+        const reconnectToken = (response as { reconnect_token?: string }).reconnect_token;
+        if (reconnectToken) {
+          set({ reconnectToken });
+          localStorage.setItem(RECONNECT_TOKEN_KEY, reconnectToken);
+        }
+      }
+
+      // Store room info (T096)
       set({
         roomId,
         status: "waiting",
         error: null,
+        isDisconnected: false,
+        isReconnecting: false,
       });
 
       localStorage.setItem(ROOM_ID_KEY, roomId);
@@ -123,6 +149,92 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const error = err as { message?: string };
       set({
         error: error.message || "Failed to join room",
+      });
+      throw err;
+    }
+  },
+
+  reconnectToRoom: async () => {
+    try {
+      set({ isReconnecting: true, error: null });
+
+      const token = useAuthStore.getState().token;
+      const roomId = localStorage.getItem(ROOM_ID_KEY);
+      const reconnectToken = localStorage.getItem(RECONNECT_TOKEN_KEY);
+
+      if (!token || !roomId || !reconnectToken) {
+        throw new Error("Missing reconnection data");
+      }
+
+      // Get WebSocket endpoint from API
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+      const response = await fetch(`${apiUrl}/api/v1/rooms/${roomId}/ws_endpoint`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get WebSocket endpoint");
+      }
+
+      const data = await response.json();
+      const wsUrl = data.ws_url;
+
+      // Reconnect WebSocket
+      socketManager.connect(wsUrl, token);
+
+      // Set up disconnect callback
+      socketManager.setDisconnectCallback(() => {
+        get().handleDisconnected();
+      });
+
+      // Rejoin room with reconnect token
+      const rejoinResponse = await socketManager.joinRoom(roomId, {
+        reconnect_token: reconnectToken,
+      });
+
+      // Restore state from rejoin response
+      if (rejoinResponse && typeof rejoinResponse === "object") {
+        const fullState = rejoinResponse as {
+          your_hand?: Card[];
+          current_turn?: string;
+          turn_number?: number;
+          turn_time_remaining?: number;
+          players?: Record<string, PlayerState>;
+          status?: GameStatus;
+        };
+
+        const myUserId = useAuthStore.getState().user?.id;
+        const isMyTurn = fullState.current_turn === myUserId;
+
+        set({
+          myHand: fullState.your_hand || [],
+          currentTurn: fullState.current_turn || null,
+          turnNumber: fullState.turn_number || 0,
+          turnTimeRemaining: fullState.turn_time_remaining || 0,
+          players: fullState.players || {},
+          isMyTurn,
+          status: fullState.status || "waiting",
+          isReconnecting: false,
+          isDisconnected: false,
+        });
+
+        // Restart turn timer if needed
+        if (fullState.turn_time_remaining) {
+          startTurnTimer(() => {
+            const current = get().turnTimeRemaining;
+            if (current > 0) {
+              set({ turnTimeRemaining: current - 1 });
+            }
+          });
+        }
+      }
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      set({
+        error: error.message || "Failed to reconnect",
+        isReconnecting: false,
       });
       throw err;
     }
@@ -278,6 +390,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
     localStorage.setItem(RECONNECT_TOKEN_KEY, data.reconnect_token);
   },
 
+  handleDisconnected: () => {
+    set({ isDisconnected: true });
+
+    // Attempt automatic reconnection after a short delay
+    setTimeout(async () => {
+      const roomId = localStorage.getItem(ROOM_ID_KEY);
+      const reconnectToken = localStorage.getItem(RECONNECT_TOKEN_KEY);
+
+      if (roomId && reconnectToken) {
+        try {
+          await get().reconnectToRoom();
+        } catch (error) {
+          console.error("Auto-reconnect failed:", error);
+        }
+      }
+    }, 2000);
+  },
+
   leaveRoom: () => {
     clearTurnTimer();
     socketManager.disconnect();
@@ -302,6 +432,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       reconnectToken: null,
       status: "waiting",
       error: null,
+      isReconnecting: false,
+      isDisconnected: false,
     });
   },
 }));
