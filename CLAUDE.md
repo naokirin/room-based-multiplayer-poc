@@ -57,14 +57,14 @@ cd client && npm test
 
 ## Recent Changes
 
-- 2026-02-12: Phase 3 Client implementation completed (T077-T085)
-  - Auth Store with auto-refresh and localStorage persistence
-  - Lobby Store with matchmaking queue polling
-  - Game Store with WebSocket integration and turn timer
-  - PixiJS 8 renderer with async initialization
-  - React components for Auth, Lobby, and Game screens
-  - Phoenix WebSocket manager with proper cleanup
-- 001-room-match-platform: MVP platform specification and implementation plan
+- 2026-02-12: All 8 phases of MVP implementation complete (T001-T122)
+  - Phase 1-2: Infrastructure setup, Docker Compose, DB models, auth, matchmaking
+  - Phase 3 (US1): Full match-and-play flow — Rails matchmaking, Phoenix rooms, client UI
+  - Phase 4 (US2): Reconnection with reconnect_token, localStorage persistence, 60s timeout
+  - Phase 5 (US3): In-game chat via Phoenix channels, Zustand chat store
+  - Phase 6 (US4): Matchmaking cancellation with timeout countdown
+  - Phase 7 (US5): Admin panel (users, rooms, announcements), room commands via Redis PubSub
+  - Phase 8: Audit logging, error handling middleware, PlugAttack rate limiting
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
