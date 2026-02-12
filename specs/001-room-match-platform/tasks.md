@@ -140,86 +140,86 @@
 
 ### Rails: Matchmaking
 
-- [ ] T051 [US1] Implement MatchmakingService with Redis Lua atomic pop, queue join, queue check in api-server/app/services/matchmaking_service.rb
-- [ ] T052 [US1] Implement RoomCreationService (create room record, push to Redis room_creation_queue, generate room tokens) in api-server/app/services/room_creation_service.rb
-- [ ] T053 [US1] Implement POST /api/v1/matchmaking/join endpoint in api-server/app/controllers/api/v1/matchmaking_controller.rb
-- [ ] T054 [US1] Implement GET /api/v1/matchmaking/status endpoint (polling) in api-server/app/controllers/api/v1/matchmaking_controller.rb
+- [x] T051 [US1] Implement MatchmakingService with Redis Lua atomic pop, queue join, queue check in api-server/app/services/matchmaking_service.rb
+- [x] T052 [US1] Implement RoomCreationService (create room record, push to Redis room_creation_queue, generate room tokens) in api-server/app/services/room_creation_service.rb
+- [x] T053 [US1] Implement POST /api/v1/matchmaking/join endpoint in api-server/app/controllers/api/v1/matchmaking_controller.rb
+- [x] T054 [US1] Implement GET /api/v1/matchmaking/status endpoint (polling) in api-server/app/controllers/api/v1/matchmaking_controller.rb
 - [x] T055 [US1] Implement GET /api/v1/game_types endpoint in api-server/app/controllers/api/v1/game_types_controller.rb
 
 ### Rails: Internal API (Phoenix → Rails callbacks)
 
-- [ ] T056 [P] [US1] Implement POST /internal/rooms (room ready callback) in api-server/app/controllers/internal/rooms_controller.rb
-- [ ] T057 [P] [US1] Implement PUT /internal/rooms/:room_id/started callback in api-server/app/controllers/internal/rooms_controller.rb
-- [ ] T058 [P] [US1] Implement PUT /internal/rooms/:room_id/finished callback (create GameResult, update room_players) in api-server/app/controllers/internal/rooms_controller.rb
-- [ ] T059 [P] [US1] Implement PUT /internal/rooms/:room_id/aborted callback in api-server/app/controllers/internal/rooms_controller.rb
+- [x] T056 [P] [US1] Implement POST /internal/rooms (room ready callback) in api-server/app/controllers/internal/rooms_controller.rb
+- [x] T057 [P] [US1] Implement PUT /internal/rooms/:room_id/started callback in api-server/app/controllers/internal/rooms_controller.rb
+- [x] T058 [P] [US1] Implement PUT /internal/rooms/:room_id/finished callback (create GameResult, update room_players) in api-server/app/controllers/internal/rooms_controller.rb
+- [x] T059 [P] [US1] Implement PUT /internal/rooms/:room_id/aborted callback in api-server/app/controllers/internal/rooms_controller.rb
 - [x] T060 [P] [US1] Implement POST /internal/auth/verify endpoint in api-server/app/controllers/internal/auth_controller.rb
 
 ### Rails: Room Creation Timeout
 
-- [ ] T061 [US1] Implement room creation timeout checker (15s deadline, mark failed, cleanup active_game keys) in api-server/app/services/room_creation_service.rb
+- [x] T061 [US1] Implement room creation timeout checker (15s deadline, mark failed, cleanup active_game keys) in api-server/app/services/room_creation_service.rb
 
 ### Phoenix: Room Creation Consumer
 
-- [ ] T062 [US1] Implement RoomCreationConsumer GenServer (BRPOP loop on room_creation_queue) in game-server/lib/game_server/consumers/room_creation_consumer.ex
+- [x] T062 [US1] Implement RoomCreationConsumer GenServer (BRPOP loop on room_creation_queue) in game-server/lib/game_server/consumers/room_creation_consumer.ex
 
 ### Phoenix: Game Behaviour
 
-- [ ] T063 [US1] Define Game Behaviour callbacks (init_state, validate_action, apply_action, check_end_condition, on_player_removed) in game-server/lib/game_server/games/game_behaviour.ex
+- [x] T063 [US1] Define Game Behaviour callbacks (init_state, validate_action, apply_action, check_end_condition, on_player_removed) in game-server/lib/game_server/games/game_behaviour.ex
 
 ### Phoenix: Sample Card Battle Game
 
-- [ ] T064 [US1] Implement SimpleCardBattle module (Behaviour implementation: init with 20HP/5 cards, validate play_card, apply damage/heal/draw, check HP=0 or deck empty) in game-server/lib/game_server/games/simple_card_battle.ex
+- [x] T064 [US1] Implement SimpleCardBattle module (Behaviour implementation: init with 20HP/5 cards, validate play_card, apply damage/heal/draw, check HP=0 or deck empty) in game-server/lib/game_server/games/simple_card_battle.ex
 
 ### Phoenix: Room GenServer
 
-- [ ] T065 [US1] Implement Room GenServer (state management, player tracking, join/leave, status transitions) in game-server/lib/game_server/rooms/room.ex
-- [ ] T066 [US1] Implement Room DynamicSupervisor in game-server/lib/game_server/rooms/room_supervisor.ex
-- [ ] T067 [US1] Implement turn management (turn timer, auto-skip on timeout with game:turn_skipped broadcast, turn progression) in game-server/lib/game_server/rooms/room.ex
-- [ ] T068 [US1] Implement nonce cache for replay attack protection (per-player, max 50, LRU eviction) in game-server/lib/game_server/rooms/room.ex
-- [ ] T069 [US1] Implement game end detection and result persistence callback (POST /internal/rooms/:room_id/finished with retry and persist_failed fallback) in game-server/lib/game_server/rooms/room.ex
+- [x] T065 [US1] Implement Room GenServer (state management, player tracking, join/leave, status transitions) in game-server/lib/game_server/rooms/room.ex
+- [x] T066 [US1] Implement Room DynamicSupervisor in game-server/lib/game_server/rooms/room_supervisor.ex
+- [x] T067 [US1] Implement turn management (turn timer, auto-skip on timeout with game:turn_skipped broadcast, turn progression) in game-server/lib/game_server/rooms/room.ex
+- [x] T068 [US1] Implement nonce cache for replay attack protection (per-player, max 50, LRU eviction) in game-server/lib/game_server/rooms/room.ex
+- [x] T069 [US1] Implement game end detection and result persistence callback (POST /internal/rooms/:room_id/finished with retry and persist_failed fallback) in game-server/lib/game_server/rooms/room.ex
 
 ### Phoenix: Room Channel
 
-- [ ] T070 [US1] Implement RoomChannel join with room_token verification (Redis lookup, mark used) in game-server/lib/game_server_web/channels/room_channel.ex
-- [ ] T071 [US1] Implement game:action handler (validate turn, nonce check, delegate to Behaviour, broadcast action_applied + turn_changed) in game-server/lib/game_server_web/channels/room_channel.ex
-- [ ] T072 [US1] Implement game:started broadcast (triggered when all players join) in game-server/lib/game_server_web/channels/room_channel.ex
-- [ ] T073 [US1] Implement game:ended and game:aborted broadcasts in game-server/lib/game_server_web/channels/room_channel.ex
-- [ ] T074 [US1] Implement player:joined broadcast in game-server/lib/game_server_web/channels/room_channel.ex
+- [x] T070 [US1] Implement RoomChannel join with room_token verification (Redis lookup, mark used) in game-server/lib/game_server_web/channels/room_channel.ex
+- [x] T071 [US1] Implement game:action handler (validate turn, nonce check, delegate to Behaviour, broadcast action_applied + turn_changed) in game-server/lib/game_server_web/channels/room_channel.ex
+- [x] T072 [US1] Implement game:started broadcast (triggered when all players join) in game-server/lib/game_server_web/channels/room_channel.ex
+- [x] T073 [US1] Implement game:ended and game:aborted broadcasts in game-server/lib/game_server_web/channels/room_channel.ex
+- [x] T074 [US1] Implement player:joined broadcast in game-server/lib/game_server_web/channels/room_channel.ex
 
 ### Phoenix: Internal API Client
 
-- [ ] T075 [US1] Implement Rails internal API HTTP client (POST /internal/rooms, PUT started/finished/aborted, POST auth/verify) with retry and exponential backoff in game-server/lib/game_server/api/rails_client.ex
+- [x] T075 [US1] Implement Rails internal API HTTP client (POST /internal/rooms, PUT started/finished/aborted, POST auth/verify) with retry and exponential backoff in game-server/lib/game_server/api/rails_client.ex
 
 ### Phoenix: Rate Limiting
 
-- [ ] T076 [US1] Implement channel-level rate limiting for game:action (1/sec) in game-server/lib/game_server_web/channels/room_channel.ex
+- [x] T076 [US1] Implement channel-level rate limiting for game:action (1/sec) in game-server/lib/game_server_web/channels/room_channel.ex
 
 ### Client: Auth Flow
 
-- [ ] T077 [P] [US1] Implement auth store (login, register, token management, auto-refresh) with Zustand in client/src/stores/authStore.ts
-- [ ] T078 [P] [US1] Implement Login/Register UI components in client/src/components/Auth.tsx
+- [x] T077 [P] [US1] Implement auth store (login, register, token management, auto-refresh) with Zustand in client/src/stores/authStore.ts
+- [x] T078 [P] [US1] Implement Login/Register UI components in client/src/components/Auth.tsx
 
 ### Client: Lobby & Matchmaking
 
-- [ ] T079 [P] [US1] Implement lobby store (game types, matchmaking state, polling) with Zustand in client/src/stores/lobbyStore.ts
-- [ ] T080 [P] [US1] Implement Lobby UI component (game type list, match button, searching status) in client/src/components/Lobby.tsx
+- [x] T079 [P] [US1] Implement lobby store (game types, matchmaking state, polling) with Zustand in client/src/stores/lobbyStore.ts
+- [x] T080 [P] [US1] Implement Lobby UI component (game type list, match button, searching status) in client/src/components/Lobby.tsx
 
 ### Client: WebSocket & Game
 
-- [ ] T081 [US1] Implement Phoenix WebSocket manager (socket connect, channel join, event handlers) in client/src/services/socket.ts
-- [ ] T082 [US1] Implement game store (game state, turn management, action submission with nonce) with Zustand in client/src/stores/gameStore.ts
-- [ ] T083 [US1] Implement PixiJS game renderer (board layout, player HP, hand display, card play interaction) in client/src/game/GameRenderer.ts
-- [ ] T084 [US1] Implement Game UI component (PixiJS canvas wrapper, game status, turn indicator) in client/src/components/Game.tsx
+- [x] T081 [US1] Implement Phoenix WebSocket manager (socket connect, channel join, event handlers) in client/src/services/socket.ts
+- [x] T082 [US1] Implement game store (game state, turn management, action submission with nonce) with Zustand in client/src/stores/gameStore.ts
+- [x] T083 [US1] Implement PixiJS game renderer (board layout, player HP, hand display, card play interaction) in client/src/game/GameRenderer.ts
+- [x] T084 [US1] Implement Game UI component (PixiJS canvas wrapper, game status, turn indicator) in client/src/components/Game.tsx
 
 ### Client: App Router
 
-- [ ] T085 [US1] Implement App.tsx with screen routing (auth → lobby → matchmaking → game) in client/src/App.tsx
+- [x] T085 [US1] Implement App.tsx with screen routing (auth → lobby → matchmaking → game) in client/src/App.tsx
 
 ### US1 Tests
 
-- [ ] T085a [P] [US1] Write RSpec request specs for matchmaking endpoints (join, status, contracts verification) in api-server/spec/requests/api/v1/matchmaking_spec.rb
-- [ ] T085b [P] [US1] Write RSpec request specs for internal room callbacks (ready, started, finished, aborted) in api-server/spec/requests/internal/rooms_spec.rb
-- [ ] T085c [P] [US1] Write ExUnit tests for Game Behaviour (SimpleCardBattle: init, validate, apply, end condition) in game-server/test/game_server/games/simple_card_battle_test.exs
+- [x] T085a [P] [US1] Write RSpec request specs for matchmaking endpoints (join, status, contracts verification) in api-server/spec/requests/api/v1/matchmaking_spec.rb
+- [x] T085b [P] [US1] Write RSpec request specs for internal room callbacks (ready, started, finished, aborted) in api-server/spec/requests/internal/rooms_spec.rb
+- [x] T085c [P] [US1] Write ExUnit tests for Game Behaviour (SimpleCardBattle: init, validate, apply, end condition) in game-server/test/game_server/games/simple_card_battle_test.exs
 - [ ] T085d [P] [US1] Write ExUnit tests for Room GenServer (join, turn management, turn skip, game end) in game-server/test/game_server/rooms/room_test.exs
 - [ ] T085e [US1] Write ExUnit channel tests for RoomChannel (join with token, game:action, broadcasts) in game-server/test/game_server_web/channels/room_channel_test.exs
 
@@ -235,23 +235,23 @@
 
 ### Phoenix: Reconnection Logic
 
-- [ ] T086 [US2] Implement reconnect token generation and Redis storage (reconnect:{room_id}:{user_id}) in game-server/lib/game_server/rooms/room.ex
-- [ ] T087 [US2] Implement RoomChannel rejoin with reconnect_token verification in game-server/lib/game_server_web/channels/room_channel.ex
-- [ ] T088 [US2] Implement player disconnect detection (channel terminate callback) and player:disconnected broadcast in game-server/lib/game_server_web/channels/room_channel.ex
-- [ ] T089 [US2] Implement reconnect timeout handling (on_player_removed callback delegation to Behaviour) in game-server/lib/game_server/rooms/room.ex
-- [ ] T090 [US2] Implement full game state serialization for reconnecting player (your_hand, all player states, turn info) in game-server/lib/game_server/rooms/room.ex
-- [ ] T091 [US2] Implement player:reconnected and player:left broadcasts in game-server/lib/game_server_web/channels/room_channel.ex
-- [ ] T092 [US2] Implement duplicate connection prevention (disconnect older session on same player rejoin) in game-server/lib/game_server/rooms/room.ex
+- [x] T086 [US2] Implement reconnect token generation and Redis storage (reconnect:{room_id}:{user_id}) in game-server/lib/game_server/rooms/room.ex
+- [x] T087 [US2] Implement RoomChannel rejoin with reconnect_token verification in game-server/lib/game_server_web/channels/room_channel.ex
+- [x] T088 [US2] Implement player disconnect detection (channel terminate callback) and player:disconnected broadcast in game-server/lib/game_server_web/channels/room_channel.ex
+- [x] T089 [US2] Implement reconnect timeout handling (on_player_removed callback delegation to Behaviour) in game-server/lib/game_server/rooms/room.ex
+- [x] T090 [US2] Implement full game state serialization for reconnecting player (your_hand, all player states, turn info) in game-server/lib/game_server/rooms/room.ex
+- [x] T091 [US2] Implement player:reconnected and player:left broadcasts in game-server/lib/game_server_web/channels/room_channel.ex
+- [x] T092 [US2] Implement duplicate connection prevention (disconnect older session on same player rejoin) in game-server/lib/game_server/rooms/room.ex
 
 ### Rails: Reconnection Support
 
-- [ ] T093 [US2] Implement GET /api/v1/rooms/:room_id/ws_endpoint for reconnection URL lookup in api-server/app/controllers/api/v1/rooms_controller.rb
+- [x] T093 [US2] Implement GET /api/v1/rooms/:room_id/ws_endpoint for reconnection URL lookup in api-server/app/controllers/api/v1/rooms_controller.rb
 
 ### Client: Reconnection
 
-- [ ] T094 [US2] Implement reconnection flow in socket manager (detect disconnect, retrieve ws_endpoint, rejoin with reconnect_token) in client/src/services/socket.ts
-- [ ] T095 [US2] Implement reconnection UI (disconnected indicator, reconnecting status, state restoration) in client/src/components/Game.tsx
-- [ ] T096 [US2] Persist reconnect_token and room_id in localStorage for page-refresh reconnection in client/src/stores/gameStore.ts
+- [x] T094 [US2] Implement reconnection flow in socket manager (detect disconnect, retrieve ws_endpoint, rejoin with reconnect_token) in client/src/services/socket.ts
+- [x] T095 [US2] Implement reconnection UI (disconnected indicator, reconnecting status, state restoration) in client/src/components/Game.tsx
+- [x] T096 [US2] Persist reconnect_token and room_id in localStorage for page-refresh reconnection in client/src/stores/gameStore.ts
 
 ### US2 Tests
 
@@ -270,15 +270,15 @@
 
 ### Phoenix: Chat
 
-- [ ] T097 [US3] Implement chat:send handler with validation (500 char limit, empty check, rate limit 5/10s) in game-server/lib/game_server_web/channels/room_channel.ex
-- [ ] T098 [US3] Implement chat message ring buffer (max 100 messages, ephemeral) in game-server/lib/game_server/rooms/room.ex
-- [ ] T099 [US3] Implement chat:new_message broadcast in game-server/lib/game_server_web/channels/room_channel.ex
+- [x] T097 [US3] Implement chat:send handler with validation (500 char limit, empty check, rate limit 5/10s) in game-server/lib/game_server_web/channels/room_channel.ex
+- [x] T098 [US3] Implement chat message ring buffer (max 100 messages, ephemeral) in game-server/lib/game_server/rooms/room.ex
+- [x] T099 [US3] Implement chat:new_message broadcast in game-server/lib/game_server_web/channels/room_channel.ex
 
 ### Client: Chat
 
-- [ ] T100 [P] [US3] Implement chat store (message list, send message) with Zustand in client/src/stores/chatStore.ts
-- [ ] T101 [US3] Implement Chat UI component (message list, input field, send button) in client/src/components/Chat.tsx
-- [ ] T102 [US3] Integrate chat component into Game screen in client/src/components/Game.tsx
+- [x] T100 [P] [US3] Implement chat store (message list, send message) with Zustand in client/src/stores/chatStore.ts
+- [x] T101 [US3] Implement Chat UI component (message list, input field, send button) in client/src/components/Chat.tsx
+- [x] T102 [US3] Integrate chat component into Game screen in client/src/components/Game.tsx
 
 ### US3 Tests
 
@@ -296,13 +296,13 @@
 
 ### Rails: Cancel Matchmaking
 
-- [ ] T103 [US4] Implement DELETE /api/v1/matchmaking/cancel endpoint (LREM from Redis queue) in api-server/app/controllers/api/v1/matchmaking_controller.rb
-- [ ] T104 [US4] Implement matchmaking timeout detection (60s default, cleanup expired entries) as background job in api-server/app/jobs/matchmaking_cleanup_job.rb
+- [x] T103 [US4] Implement DELETE /api/v1/matchmaking/cancel endpoint (LREM from Redis queue) in api-server/app/controllers/api/v1/matchmaking_controller.rb
+- [x] T104 [US4] Implement matchmaking timeout detection (60s default, cleanup expired entries) as background job in api-server/app/jobs/matchmaking_cleanup_job.rb
 
 ### Client: Cancel Matchmaking
 
-- [ ] T105 [US4] Add cancel matchmaking action to lobby store in client/src/stores/lobbyStore.ts
-- [ ] T106 [US4] Add cancel button and timeout handling to matchmaking UI in client/src/components/Lobby.tsx
+- [x] T105 [US4] Add cancel matchmaking action to lobby store in client/src/stores/lobbyStore.ts
+- [x] T106 [US4] Add cancel button and timeout handling to matchmaking UI in client/src/components/Lobby.tsx
 
 ### US4 Tests
 
