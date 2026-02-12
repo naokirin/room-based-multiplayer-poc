@@ -210,12 +210,14 @@ export class GameRenderer {
     maxHP: number,
     width: number,
     height: number
-  ): Graphics {
-    const container = new Graphics();
+  ): Container {
+    // PixiJS v8: Only Container may have children. Use Container for bar + label.
+    const container = new Container();
+    const bar = new Graphics();
 
     // Background
-    container.rect(0, 0, width, height);
-    container.fill(0x333333);
+    bar.rect(0, 0, width, height);
+    bar.fill(0x333333);
 
     // HP fill
     const hpPercent = currentHP / maxHP;
@@ -228,10 +230,11 @@ export class GameRenderer {
       fillColor = 0xffc107; // Yellow
     }
 
-    container.rect(0, 0, fillWidth, height);
-    container.fill(fillColor);
+    bar.rect(0, 0, fillWidth, height);
+    bar.fill(fillColor);
+    container.addChild(bar);
 
-    // HP text
+    // HP text (sibling of bar, not child of Graphics)
     const hpStyle = new TextStyle({
       fontFamily: "Arial",
       fontSize: 14,
@@ -395,7 +398,7 @@ export class GameRenderer {
     });
 
     const valueText = new Text({
-      text: card.value.toString(),
+      text: (card.value != null ? card.value : 0).toString(),
       style: valueStyle,
     });
     valueText.x = width / 2;
