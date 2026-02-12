@@ -13,8 +13,10 @@ module Admin
 
       if user&.authenticate(params[:password]) && user.admin?
         session[:admin_user_id] = user.id
+        audit_log(action: "admin.login.success", target: user)
         redirect_to admin_root_path, notice: "Logged in successfully"
       else
+        audit_log(action: "admin.login.failure", metadata: { email: params[:email] })
         flash.now[:alert] = "Invalid email or password, or not an admin"
         render :new, status: :unprocessable_entity
       end

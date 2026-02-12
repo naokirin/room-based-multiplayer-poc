@@ -37,6 +37,7 @@ defmodule GameServerWeb.Endpoint do
     plug Phoenix.CodeReloader
   end
 
+  plug GameServerWeb.Plugs.RateLimiter
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 

@@ -1,6 +1,6 @@
 class CreateAuditLogs < ActiveRecord::Migration[8.1]
   def change
-    create_table :audit_logs do |t|
+    create_table :audit_logs, id: :string, limit: 36 do |t|
       t.string :actor_id, limit: 36
       t.integer :actor_type, null: false
       t.string :action, null: false, limit: 100

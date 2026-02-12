@@ -38,6 +38,7 @@ module Admin
       }
 
       REDIS.publish("room_commands", JSON.generate(command))
+      audit_log(action: "admin.room.terminate", target: @room, metadata: { reason: "admin_terminated" })
 
       redirect_to admin_room_path(@room), notice: "Terminate command sent to game server"
     end

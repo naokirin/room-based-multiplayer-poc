@@ -21,13 +21,16 @@ module Api
         user = User.find_by(email: params[:email])
 
         unless user&.authenticate(params[:password])
+          audit_log(action: "user.login.failure", metadata: { email: params[:email] })
           return render json: { error: "invalid_credentials", message: "Invalid email or password" }, status: :unauthorized
         end
 
         if user.account_frozen?
+          audit_log(action: "user.login.frozen", target: user)
           return render json: { error: "account_frozen", message: "Your account has been suspended" }, status: :unauthorized
         end
 
+        audit_log(action: "user.login.success", target: user)
         token = JwtService.encode({ user_id: user.id })
         render json: {
           user: user_json(user, include_role: true),

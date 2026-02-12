@@ -6,6 +6,7 @@ defmodule GameServer.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      {PlugAttack.Storage.Ets, name: GameServerWeb.Plugs.RateLimiter.Storage, clean_period: 60_000},
       GameServerWeb.Telemetry,
       GameServer.Redis,
       {Registry, keys: :unique, name: GameServer.RoomRegistry},

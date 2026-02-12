@@ -360,9 +360,9 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T118 [P] Integrate audit logging into all security-relevant actions (login, freeze, force-terminate, failed auth) across api-server/app/controllers/
-- [ ] T119 [P] Add error handling middleware for consistent JSON error responses in api-server/app/controllers/application_controller.rb
-- [ ] T120 [P] Add plug_attack rate limiting to Phoenix socket in game-server/lib/game_server_web/channels/user_socket.ex
+- [x] T118 [P] Integrate audit logging into all security-relevant actions (login, freeze, force-terminate, failed auth) across api-server/app/controllers/
+- [x] T119 [P] Add error handling middleware for consistent JSON error responses in api-server/app/controllers/application_controller.rb
+- [x] T120 [P] Add plug_attack rate limiting to Phoenix socket in game-server/lib/game_server_web/channels/user_socket.ex
 - [ ] T121 Run quickstart.md full flow validation (Docker up, seed, 2-player login, match, play, reconnect, chat, admin)
 - [ ] T122 Final Docker Compose integration test (all services start, health checks pass)
 

@@ -35,12 +35,14 @@ module Admin
       end
 
       @user.freeze_account!(reason: params[:reason] || "Frozen by admin")
+      audit_log(action: "admin.user.freeze", target: @user, metadata: { reason: params[:reason] })
       redirect_to admin_user_path(@user), notice: "User has been frozen"
     end
 
     # POST /admin/users/:id/unfreeze
     def unfreeze
       @user.unfreeze_account!
+      audit_log(action: "admin.user.unfreeze", target: @user)
       redirect_to admin_user_path(@user), notice: "User has been unfrozen"
     end
 
