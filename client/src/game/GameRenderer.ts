@@ -429,6 +429,24 @@ export class GameRenderer {
   }
 
   destroy(): void {
-    this.app.destroy(true, { children: true, texture: true, baseTexture: true });
+    try {
+      // PixiJS v8 Application.destroy() may call this._cancelResize() which can be
+      // undefined when ResizePlugin was not used or app was destroyed before init completed.
+      const app = this.app as Application & { _cancelResize?: () => void };
+      if (typeof app._cancelResize !== "function") {
+        app._cancelResize = () => {};
+      }
+      this.app.destroy(true, {
+        children: true,
+        texture: true,
+        baseTexture: true,
+      });
+    } catch (err) {
+      // Fallback: remove canvas from DOM if destroy throws (e.g. half-initialized app)
+      const canvas = this.app?.canvas;
+      if (canvas?.parentElement) {
+        canvas.parentElement.removeChild(canvas);
+      }
+    }
   }
 }

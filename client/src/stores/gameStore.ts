@@ -256,20 +256,60 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   handleGameStarted: (payload: unknown) => {
+    // Server sends flat payload: your_hand, your_hp, opponent_hp, current_turn, turn_number (no nested game_state)
     const data = payload as {
-      game_state: GameState;
+      your_hand?: Card[];
+      your_hp?: number;
+      opponent_hp?: number;
+      current_turn?: string;
+      turn_number?: number;
     };
 
-    const myUserId = useAuthStore.getState().user?.id;
-    const isMyTurn = data.game_state.current_turn === myUserId;
+    if (!data || data.current_turn === undefined) {
+      return;
+    }
+
+    const myUserId = useAuthStore.getState().user?.id ?? "";
+    const user = useAuthStore.getState().user;
+    const myHand = data.your_hand ?? [];
+    const currentTurn = data.current_turn;
+    const turnNumber = data.turn_number ?? 0;
+    const turnTimeRemaining = 30; // default until server sends it
+    const isMyTurn = currentTurn === myUserId;
+
+    // Build minimal GameState for renderer (server does not send full game_state on game:started)
+    const players: Record<string, PlayerState> = {
+      [myUserId]: {
+        display_name: user?.display_name ?? "You",
+        connected: true,
+        hp: data.your_hp ?? 100,
+        hand_count: myHand.length,
+        deck_count: 0,
+      },
+      opponent: {
+        display_name: "Opponent",
+        connected: true,
+        hp: data.opponent_hp ?? 100,
+        hand_count: 0,
+        deck_count: 0,
+      },
+    };
+
+    const gameState: GameState = {
+      current_turn: currentTurn,
+      turn_number: turnNumber,
+      turn_time_remaining: turnTimeRemaining,
+      players,
+      your_hand: myHand,
+    };
 
     set({
-      gameState: data.game_state,
-      myHand: data.game_state.your_hand,
-      currentTurn: data.game_state.current_turn,
-      turnNumber: data.game_state.turn_number,
-      turnTimeRemaining: data.game_state.turn_time_remaining,
-      players: data.game_state.players,
+      gameState,
+      myHand,
+      currentTurn,
+      turnNumber,
+      turnTimeRemaining,
+      players,
       isMyTurn,
       status: "playing",
     });
