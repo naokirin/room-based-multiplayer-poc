@@ -9,9 +9,12 @@ defmodule GameServerWeb.UserSocket do
   def connect(%{"token" => token, "protocol_version" => version} = _params, socket, _connect_info) do
     with :ok <- validate_protocol_version(version),
          {:ok, claims} <- GameServer.Auth.JWT.verify_token(token) do
+      # Normalize user_id to string (JWT may decode as string or number depending on encoding)
+      user_id = claims["user_id"] |> to_string()
+
       socket =
         socket
-        |> assign(:user_id, claims["user_id"])
+        |> assign(:user_id, user_id)
         |> assign(:protocol_version, version)
 
       {:ok, socket}

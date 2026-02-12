@@ -136,11 +136,14 @@ defmodule GameServerWeb.RoomChannel do
       {:ok, token_data_json} ->
         case Jason.decode(token_data_json) do
           {:ok, token_data} ->
-            stored_room_id = Map.get(token_data, "room_id")
-            stored_user_id = Map.get(token_data, "user_id")
+            # Normalize to string for comparison (Redis/JSON may store ids as string or number)
+            stored_room_id = token_data |> Map.get("room_id") |> to_string()
+            stored_user_id = token_data |> Map.get("user_id") |> to_string()
             status = Map.get(token_data, "status")
+            room_id_str = to_string(room_id)
+            user_id_str = to_string(user_id)
 
-            if stored_room_id == room_id and stored_user_id == user_id and status == "pending" do
+            if stored_room_id == room_id_str and stored_user_id == user_id_str and status == "pending" do
               # Mark token as used
               Redis.command(["SETEX", redis_key, 10, Jason.encode!(%{status: "used"})])
 

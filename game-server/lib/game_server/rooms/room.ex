@@ -195,7 +195,13 @@ defmodule GameServer.Rooms.Room do
           state
         end
 
-      {:reply, {:ok, %{players: state.players, status: state.status, reconnect_token: reconnect_token}}, state}
+      # Return client-safe state (no PIDs; Jason cannot encode them)
+      reply_state = %{
+        players: players_for_client(state.players),
+        status: state.status,
+        reconnect_token: reconnect_token
+      }
+      {:reply, {:ok, reply_state}, state}
     else
       {:reply, {:error, :not_expected}, state}
     end
@@ -253,7 +259,7 @@ defmodule GameServer.Rooms.Room do
           %{
             room_id: state.room_id,
             status: state.status,
-            players: state.players,
+            players: players_for_client(state.players),
             chat_messages: state.chat_messages
           }
         end
@@ -629,6 +635,13 @@ defmodule GameServer.Rooms.Room do
         Process.cancel_timer(timer_ref)
         %{state | reconnect_timers: Map.delete(state.reconnect_timers, user_id)}
     end
+  end
+
+  # Build players map for client (no channel_pid; PIDs are not JSON-serializable)
+  defp players_for_client(players) do
+    Map.new(players, fn {user_id, info} ->
+      {user_id, %{display_name: info.display_name, connected: info.connected}}
+    end)
   end
 
   defp all_players_disconnected?(state) do
