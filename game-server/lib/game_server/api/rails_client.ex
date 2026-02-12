@@ -4,21 +4,21 @@ defmodule GameServer.Api.RailsClient do
 
   Uses Tesla with Finch adapter and automatic retry with exponential backoff.
   All requests include the X-Internal-Api-Key header for authentication.
+
+  Base URL and API key are read at runtime so that Docker/runtime env (e.g.
+  RAILS_INTERNAL_URL=http://api-server:3001) are applied correctly.
   """
 
   use Tesla
 
-  @base_url System.get_env("RAILS_INTERNAL_URL", "http://localhost:3001")
-  @api_key System.get_env("INTERNAL_API_KEY", "")
   @max_retries 3
   @retry_delay 500
 
-  plug Tesla.Middleware.BaseUrl, @base_url
   plug Tesla.Middleware.JSON
   plug Tesla.Middleware.Headers, [
-    {"content-type", "application/json"},
-    {"x-internal-api-key", @api_key}
+    {"content-type", "application/json"}
   ]
+  plug GameServer.Api.RailsClient.RuntimeHeaders
 
   plug Tesla.Middleware.Retry,
     delay: @retry_delay,
@@ -175,6 +175,18 @@ defmodule GameServer.Api.RailsClient do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  # Plug that sets base URL and X-Internal-Api-Key at request time (runtime env).
+  defmodule RuntimeHeaders do
+    @moduledoc false
+    def call(env, next) do
+      base = System.get_env("RAILS_INTERNAL_URL", "http://localhost:3001") |> String.trim_trailing("/")
+      key = System.get_env("INTERNAL_API_KEY", "")
+      url = if String.starts_with?(env.url, "http"), do: env.url, else: base <> env.url
+      headers = [{"x-internal-api-key", key} | env.headers]
+      next.(%{env | url: url, headers: headers})
     end
   end
 end

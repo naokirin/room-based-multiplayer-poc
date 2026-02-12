@@ -72,7 +72,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-me}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-api-key}
-      RAILS_INTERNAL_URL: http://api-server:3001/internal
+      RAILS_INTERNAL_URL: http://api-server:3001
       NODE_NAME: game-server-1
       PORT: 4000
       MIX_ENV: dev
