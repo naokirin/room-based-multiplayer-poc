@@ -15,11 +15,14 @@ interface RendererOptions {
 
 export class GameRenderer {
   private app: Application;
+  private containerRef: HTMLElement;
   private stage: Container | null = null;
   private cardClickCallback: ((cardId: string) => void) | null = null;
   private initialized = false;
+  private destroyed = false;
 
   constructor(container: HTMLElement, options: RendererOptions = {}) {
+    this.containerRef = container;
     const width = options.width || 800;
     const height = options.height || 600;
 
@@ -35,12 +38,17 @@ export class GameRenderer {
         antialias: true,
       })
       .then(() => {
-        // Append canvas to container
-        container.appendChild(this.app.canvas);
+        // Skip if already destroyed (e.g. unmount before init completed)
+        if (this.destroyed) return;
 
-        // Create stage after app is initialized
+        const canvas = this.app?.canvas;
+        const stage = this.app?.stage;
+        if (!canvas || !stage) return;
+
+        container.appendChild(canvas);
+
         this.stage = new Container();
-        this.app.stage.addChild(this.stage);
+        stage.addChild(this.stage);
         this.initialized = true;
       });
   }
@@ -429,11 +437,11 @@ export class GameRenderer {
   }
 
   destroy(): void {
+    this.destroyed = true;
+
     try {
-      // PixiJS v8 Application.destroy() may call this._cancelResize() which can be
-      // undefined when ResizePlugin was not used or app was destroyed before init completed.
       const app = this.app as Application & { _cancelResize?: () => void };
-      if (typeof app._cancelResize !== "function") {
+      if (typeof app?._cancelResize !== "function") {
         app._cancelResize = () => {};
       }
       this.app.destroy(true, {
@@ -441,11 +449,21 @@ export class GameRenderer {
         texture: true,
         baseTexture: true,
       });
-    } catch (err) {
-      // Fallback: remove canvas from DOM if destroy throws (e.g. half-initialized app)
-      const canvas = this.app?.canvas;
-      if (canvas?.parentElement) {
-        canvas.parentElement.removeChild(canvas);
+    } catch {
+      // Stop ticker so no further render() runs (avoids updateLocalTransform on null)
+      try {
+        (this.app as Application & { stop?: () => void }).stop?.();
+      } catch {
+        // Ignore
+      }
+      // Remove canvas from DOM without touching this.app (app.canvas getter can throw when half-initialized)
+      try {
+        const canvas = this.containerRef?.querySelector?.("canvas");
+        if (canvas?.parentElement) {
+          canvas.parentElement.removeChild(canvas);
+        }
+      } catch {
+        // Ignore cleanup errors
       }
     }
   }
