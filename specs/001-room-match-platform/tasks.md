@@ -320,32 +320,32 @@
 
 ### Rails: Admin Authentication
 
-- [ ] T107 [US5] Implement admin authentication concern (admin role check) in api-server/app/controllers/concerns/admin_authenticatable.rb
-- [ ] T108 [US5] Implement admin session management (login form, session controller) in api-server/app/controllers/admin/sessions_controller.rb
+- [x] T107 [US5] Implement admin authentication concern (admin role check) in api-server/app/controllers/concerns/admin_authenticatable.rb
+- [x] T108 [US5] Implement admin session management (login form, session controller) in api-server/app/controllers/admin/sessions_controller.rb
 
 ### Rails: Admin Views
 
-- [ ] T109 [P] [US5] Implement admin layout template in api-server/app/views/layouts/admin.html.erb
-- [ ] T110 [P] [US5] Implement admin dashboard (overview stats) in api-server/app/controllers/admin/dashboard_controller.rb and api-server/app/views/admin/dashboard/
-- [ ] T111 [US5] Implement admin users controller (search by name/ID, list, show, freeze/unfreeze) in api-server/app/controllers/admin/users_controller.rb and api-server/app/views/admin/users/
-- [ ] T112 [US5] Implement admin rooms controller (list active/completed, show, force-terminate via Redis PubSub) in api-server/app/controllers/admin/rooms_controller.rb and api-server/app/views/admin/rooms/
-- [ ] T113 [US5] Implement admin announcements controller (CRUD, publish/unpublish) in api-server/app/controllers/admin/announcements_controller.rb and api-server/app/views/admin/announcements/
+- [x] T109 [P] [US5] Implement admin layout template in api-server/app/views/layouts/admin.html.erb
+- [x] T110 [P] [US5] Implement admin dashboard (overview stats) in api-server/app/controllers/admin/dashboard_controller.rb and api-server/app/views/admin/dashboard/
+- [x] T111 [US5] Implement admin users controller (search by name/ID, list, show, freeze/unfreeze) in api-server/app/controllers/admin/users_controller.rb and api-server/app/views/admin/users/
+- [x] T112 [US5] Implement admin rooms controller (list active/completed, show, force-terminate via Redis PubSub) in api-server/app/controllers/admin/rooms_controller.rb and api-server/app/views/admin/rooms/
+- [x] T113 [US5] Implement admin announcements controller (CRUD, publish/unpublish) in api-server/app/controllers/admin/announcements_controller.rb and api-server/app/views/admin/announcements/
 
 ### Phoenix: Room Commands Subscriber
 
-- [ ] T114 [US5] Implement RoomCommandsSubscriber GenServer (subscribe to room_commands PubSub, dispatch terminate to local Room) in game-server/lib/game_server_web/subscribers/room_commands_subscriber.ex
+- [x] T114 [US5] Implement RoomCommandsSubscriber GenServer (subscribe to room_commands PubSub, dispatch terminate to local Room) in game-server/lib/game_server_web/subscribers/room_commands_subscriber.ex
 
 ### Rails: Announcements API
 
-- [ ] T115 [US5] Implement GET /api/v1/announcements endpoint (active announcements for players) in api-server/app/controllers/api/v1/announcements_controller.rb
+- [x] T115 [US5] Implement GET /api/v1/announcements endpoint (active announcements for players) in api-server/app/controllers/api/v1/announcements_controller.rb
 
 ### Client: Announcements
 
-- [ ] T116 [US5] Implement announcement display in lobby UI in client/src/components/Lobby.tsx
+- [x] T116 [US5] Implement announcement display in lobby UI in client/src/components/Lobby.tsx
 
 ### Rails: Persist Failed Recovery
 
-- [ ] T117 [US5] Implement PersistRecoveryJob (SCAN persist_failed:*, import results, alert on stale) in api-server/app/jobs/persist_recovery_job.rb
+- [x] T117 [US5] Implement PersistRecoveryJob (SCAN persist_failed:*, import results, alert on stale) in api-server/app/jobs/persist_recovery_job.rb
 
 ### US5 Tests
 
