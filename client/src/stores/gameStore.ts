@@ -450,12 +450,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   leaveRoom: () => {
     clearTurnTimer();
-    socketManager.disconnect();
-
-    localStorage.removeItem(ROOM_ID_KEY);
-    localStorage.removeItem(RECONNECT_TOKEN_KEY);
-
-    get().resetGame();
+    socketManager.leaveRoom(() => {
+      localStorage.removeItem(ROOM_ID_KEY);
+      localStorage.removeItem(RECONNECT_TOKEN_KEY);
+      get().resetGame();
+    });
   },
 
   resetGame: () => {

@@ -194,6 +194,29 @@ class SocketManager {
     return this.channel;
   }
 
+  /**
+   * Notify server of voluntary leave, then disconnect. Runs callback after disconnect
+   * (or immediately if not in a channel). Use this when the user clicks "Leave Game".
+   */
+  leaveRoom(callback?: () => void): void {
+    if (!this.channel) {
+      this.disconnect();
+      callback?.();
+      return;
+    }
+
+    const done = () => {
+      this.disconnect();
+      callback?.();
+    };
+
+    this.channel
+      .push("room:leave", {})
+      .receive("ok", done)
+      .receive("error", done)
+      .receive("timeout", done);
+  }
+
   disconnect(): void {
     if (this.channel) {
       this.channel.leave();

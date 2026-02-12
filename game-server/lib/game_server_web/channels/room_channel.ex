@@ -65,6 +65,15 @@ defmodule GameServerWeb.RoomChannel do
   end
 
   @impl true
+  def handle_in("room:leave", _payload, socket) do
+    user_id = socket.assigns.user_id
+    room_id = socket.assigns.room_id
+
+    Room.leave_voluntarily(room_id, user_id)
+    {:reply, :ok, socket}
+  end
+
+  @impl true
   def handle_in("chat:send", %{"content" => content}, socket) do
     user_id = socket.assigns.user_id
     room_id = socket.assigns.room_id

@@ -64,6 +64,14 @@ defmodule GameServer.Rooms.Room do
   end
 
   @doc """
+  Notify that a player is leaving voluntarily (e.g. clicked "Leave Game").
+  When all players have left voluntarily, the room is aborted immediately.
+  """
+  def leave_voluntarily(room_id, user_id) do
+    GenServer.cast(via_tuple(room_id), {:leave_voluntarily, user_id})
+  end
+
+  @doc """
   Handle player disconnect.
   """
   def disconnect(room_id, user_id) do
@@ -120,6 +128,7 @@ defmodule GameServer.Rooms.Room do
       turn_timer_ref: nil,
       disconnect_timer_ref: nil,
       reconnect_timers: %{},
+      voluntary_leaves: MapSet.new(),
       chat_messages: [],
       nonce_cache: cache_name
     }
@@ -328,6 +337,18 @@ defmodule GameServer.Rooms.Room do
   end
 
   @impl true
+  def handle_cast({:leave_voluntarily, user_id}, state) do
+    state =
+      if Map.has_key?(state.players, user_id) do
+        %{state | voluntary_leaves: MapSet.put(state.voluntary_leaves, user_id)}
+      else
+        state
+      end
+
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_cast({:disconnect, user_id}, state) do
     if Map.has_key?(state.players, user_id) do
       player_info = Map.get(state.players, user_id)
@@ -346,10 +367,26 @@ defmodule GameServer.Rooms.Room do
           state
         end
 
-      # Also check if all players are disconnected for room-level abort
+      # When all players disconnected: abort immediately if all left voluntarily, else start 60s timer
       state =
         if all_players_disconnected?(state) do
-          start_disconnect_timer(state)
+          if all_left_voluntarily?(state) do
+            Logger.info("All players left voluntarily, aborting room #{state.room_id} immediately")
+
+            case RailsClient.room_aborted(state.room_id, "all_players_left") do
+              {:ok, _} ->
+                Logger.info("Room #{state.room_id} aborted successfully")
+
+              {:error, reason} ->
+                Logger.error("Failed to notify Rails of room abort: #{inspect(reason)}")
+            end
+
+            state = %{state | status: :aborted}
+            Process.send_after(self(), :terminate_room, @termination_delay)
+            state
+          else
+            start_disconnect_timer(state)
+          end
         else
           state
         end
@@ -648,6 +685,11 @@ defmodule GameServer.Rooms.Room do
     Enum.all?(state.players, fn {_user_id, player_info} ->
       not player_info.connected
     end)
+  end
+
+  defp all_left_voluntarily?(state) do
+    player_ids = Map.keys(state.players) |> MapSet.new()
+    MapSet.equal?(state.voluntary_leaves, player_ids)
   end
 
   defp get_next_player_id(state) do
