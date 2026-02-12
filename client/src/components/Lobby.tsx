@@ -16,24 +16,31 @@ export function Lobby() {
   const { user, logout } = useAuthStore();
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const TIMEOUT_SECONDS = 60;
 
   useEffect(() => {
     fetchGameTypes();
   }, [fetchGameTypes]);
 
-  // Update elapsed time when queued
+  // Update elapsed time when queued and auto-cancel on timeout
   useEffect(() => {
     if (matchmakingStatus === "queued" && queuedAt) {
       const startTime = new Date(queuedAt).getTime();
       const interval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         setElapsedSeconds(elapsed);
+
+        // Auto-cancel when timeout is reached
+        if (elapsed >= TIMEOUT_SECONDS) {
+          clearInterval(interval);
+          cancelQueue();
+        }
       }, 1000);
 
       return () => clearInterval(interval);
     }
     setElapsedSeconds(0);
-  }, [matchmakingStatus, queuedAt]);
+  }, [matchmakingStatus, queuedAt, cancelQueue]);
 
   const handlePlay = (gameTypeId: string) => {
     joinQueue(gameTypeId);
@@ -101,8 +108,11 @@ export function Lobby() {
           }}
         >
           <h3 style={{ margin: "0 0 10px 0" }}>Searching for match...</h3>
-          <p style={{ margin: "0 0 15px 0", fontSize: "14px", color: "#666" }}>
+          <p style={{ margin: "0 0 5px 0", fontSize: "14px", color: "#666" }}>
             Elapsed time: {elapsedSeconds}s
+          </p>
+          <p style={{ margin: "0 0 15px 0", fontSize: "12px", color: "#856404" }}>
+            Timeout in: {TIMEOUT_SECONDS - elapsedSeconds}s
           </p>
           <button
             type="button"
