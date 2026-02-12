@@ -45,88 +45,88 @@
 
 ### Database & Models (Rails)
 
-- [ ] T009 Create Rails migration for users table (UUID PK, email, password_digest, display_name, role, status, frozen_at, frozen_reason) in api-server/db/migrate/
-- [ ] T010 Create Rails migration for game_types table (UUID PK, name, player_count, turn_time_limit, config_json, active) in api-server/db/migrate/
-- [ ] T011 Create Rails migration for rooms table (UUID PK, game_type_id FK, status enum, node_name, player_count, started_at, finished_at) in api-server/db/migrate/
-- [ ] T012 Create Rails migration for room_players table (UUID PK, room_id FK, user_id FK, joined_at, result enum) in api-server/db/migrate/
-- [ ] T013 Create Rails migration for game_results table (UUID PK, room_id FK unique, winner_id FK, result_data JSON, turns_played, duration_seconds) in api-server/db/migrate/
-- [ ] T014 Create Rails migration for matches table (UUID PK, game_type_id FK, room_id FK, status enum, matched_at) in api-server/db/migrate/
-- [ ] T015 Create Rails migration for match_players table (UUID PK, match_id FK, user_id FK, queued_at) in api-server/db/migrate/
-- [ ] T016 Create Rails migration for cards table (UUID PK, game_type_id FK, name, effect, value, cost, active) in api-server/db/migrate/
-- [ ] T017 Create Rails migration for announcements table (UUID PK, admin_id FK, title, body, active, published_at, expires_at) in api-server/db/migrate/
-- [ ] T018 Create Rails migration for audit_logs table (BIGINT PK, actor_id FK, actor_type, action, target_type, target_id, metadata JSON, ip_address) in api-server/db/migrate/
-- [ ] T019 [P] Implement User model with validations and has_secure_password in api-server/app/models/user.rb
-- [ ] T020 [P] Implement GameType model with validations in api-server/app/models/game_type.rb
-- [ ] T021 [P] Implement Room model with status enum and associations in api-server/app/models/room.rb
-- [ ] T022 [P] Implement RoomPlayer model with associations in api-server/app/models/room_player.rb
-- [ ] T023 [P] Implement GameResult model with associations in api-server/app/models/game_result.rb
-- [ ] T024 [P] Implement Match and MatchPlayer models in api-server/app/models/match.rb and api-server/app/models/match_player.rb
-- [ ] T025 [P] Implement Card model in api-server/app/models/card.rb
-- [ ] T026 [P] Implement Announcement model in api-server/app/models/announcement.rb
-- [ ] T027 [P] Implement AuditLog model in api-server/app/models/audit_log.rb
+- [x] T009 Create Rails migration for users table (UUID PK, email, password_digest, display_name, role, status, frozen_at, frozen_reason) in api-server/db/migrate/
+- [x] T010 Create Rails migration for game_types table (UUID PK, name, player_count, turn_time_limit, config_json, active) in api-server/db/migrate/
+- [x] T011 Create Rails migration for rooms table (UUID PK, game_type_id FK, status enum, node_name, player_count, started_at, finished_at) in api-server/db/migrate/
+- [x] T012 Create Rails migration for room_players table (UUID PK, room_id FK, user_id FK, joined_at, result enum) in api-server/db/migrate/
+- [x] T013 Create Rails migration for game_results table (UUID PK, room_id FK unique, winner_id FK, result_data JSON, turns_played, duration_seconds) in api-server/db/migrate/
+- [x] T014 Create Rails migration for matches table (UUID PK, game_type_id FK, room_id FK, status enum, matched_at) in api-server/db/migrate/
+- [x] T015 Create Rails migration for match_players table (UUID PK, match_id FK, user_id FK, queued_at) in api-server/db/migrate/
+- [x] T016 Create Rails migration for cards table (UUID PK, game_type_id FK, name, effect, value, cost, active) in api-server/db/migrate/
+- [x] T017 Create Rails migration for announcements table (UUID PK, admin_id FK, title, body, active, published_at, expires_at) in api-server/db/migrate/
+- [x] T018 Create Rails migration for audit_logs table (BIGINT PK, actor_id FK, actor_type, action, target_type, target_id, metadata JSON, ip_address) in api-server/db/migrate/
+- [x] T019 [P] Implement User model with validations and has_secure_password in api-server/app/models/user.rb
+- [x] T020 [P] Implement GameType model with validations in api-server/app/models/game_type.rb
+- [x] T021 [P] Implement Room model with status enum and associations in api-server/app/models/room.rb
+- [x] T022 [P] Implement RoomPlayer model with associations in api-server/app/models/room_player.rb
+- [x] T023 [P] Implement GameResult model with associations in api-server/app/models/game_result.rb
+- [x] T024 [P] Implement Match and MatchPlayer models in api-server/app/models/match.rb and api-server/app/models/match_player.rb
+- [x] T025 [P] Implement Card model in api-server/app/models/card.rb
+- [x] T026 [P] Implement Announcement model in api-server/app/models/announcement.rb
+- [x] T027 [P] Implement AuditLog model in api-server/app/models/audit_log.rb
 
 ### Base Controllers (Rails)
 
-- [ ] T028 [P] Implement Api::V1::ApplicationController inheriting ActionController::API (JSON-only, JWT auth) in api-server/app/controllers/api/v1/application_controller.rb
-- [ ] T029 [P] Implement Internal::ApplicationController inheriting ActionController::API (JSON-only, API key auth) in api-server/app/controllers/internal/application_controller.rb
-- [ ] T030 [P] Implement Admin::ApplicationController inheriting ActionController::Base (sessions, CSRF, ERB, Turbo) in api-server/app/controllers/admin/application_controller.rb
+- [x] T028 [P] Implement Api::V1::ApplicationController inheriting ActionController::API (JSON-only, JWT auth) in api-server/app/controllers/api/v1/application_controller.rb
+- [x] T029 [P] Implement Internal::ApplicationController inheriting ActionController::API (JSON-only, API key auth) in api-server/app/controllers/internal/application_controller.rb
+- [x] T030 [P] Implement Admin::ApplicationController inheriting ActionController::Base (sessions, CSRF, ERB, Turbo) in api-server/app/controllers/admin/application_controller.rb
 
 ### Authentication (Rails)
 
-- [ ] T031 Implement JwtService for token encoding/decoding (HS256) in api-server/app/services/jwt_service.rb
-- [ ] T032 Implement API authentication concern (before_action, current_user) in api-server/app/controllers/concerns/authenticatable.rb
-- [ ] T033 Implement internal API key authentication concern in api-server/app/controllers/concerns/internal_authenticatable.rb
+- [x] T031 Implement JwtService for token encoding/decoding (HS256) in api-server/app/services/jwt_service.rb
+- [x] T032 Implement API authentication concern (before_action, current_user) in api-server/app/controllers/concerns/authenticatable.rb
+- [x] T033 Implement internal API key authentication concern in api-server/app/controllers/concerns/internal_authenticatable.rb
 
 ### Authentication Endpoints (Rails)
 
-- [ ] T034 Implement POST /api/v1/auth/register endpoint in api-server/app/controllers/api/v1/auth_controller.rb
-- [ ] T035 Implement POST /api/v1/auth/login endpoint (with frozen account check) in api-server/app/controllers/api/v1/auth_controller.rb
-- [ ] T036 Implement POST /api/v1/auth/refresh endpoint in api-server/app/controllers/api/v1/auth_controller.rb
-- [ ] T037 Implement GET /api/v1/profile endpoint in api-server/app/controllers/api/v1/profiles_controller.rb
+- [x] T034 Implement POST /api/v1/auth/register endpoint in api-server/app/controllers/api/v1/auth_controller.rb
+- [x] T035 Implement POST /api/v1/auth/login endpoint (with frozen account check) in api-server/app/controllers/api/v1/auth_controller.rb
+- [x] T036 Implement POST /api/v1/auth/refresh endpoint in api-server/app/controllers/api/v1/auth_controller.rb
+- [x] T037 Implement GET /api/v1/profile endpoint in api-server/app/controllers/api/v1/profiles_controller.rb
 
 ### Rate Limiting & Security (Rails)
 
-- [ ] T038 Configure rack-attack with per-endpoint rate limits (auth, matchmaking, rooms, admin) in api-server/config/initializers/rack_attack.rb
+- [x] T038 Configure rack-attack with per-endpoint rate limits (auth, matchmaking, rooms, admin) in api-server/config/initializers/rack_attack.rb
 
 ### Health Check Endpoints
 
-- [ ] T039 [P] Implement GET /api/v1/health endpoint (DB + Redis check) in api-server/app/controllers/api/v1/health_controller.rb
-- [ ] T040 [P] Implement GET /internal/health endpoint for Phoenix in game-server/lib/game_server_web/controllers/health_controller.ex
+- [x] T039 [P] Implement GET /api/v1/health endpoint (DB + Redis check) in api-server/app/controllers/api/v1/health_controller.rb
+- [x] T040 [P] Implement GET /internal/health endpoint for Phoenix in game-server/lib/game_server_web/controllers/health_controller.ex
 
 ### Routes
 
-- [ ] T041 [P] Configure Rails routes (api/v1 namespace, internal namespace, admin namespace) in api-server/config/routes.rb
-- [ ] T042 [P] Configure Phoenix router with socket endpoint and internal health route in game-server/lib/game_server_web/router.ex
+- [x] T041 [P] Configure Rails routes (api/v1 namespace, internal namespace, admin namespace) in api-server/config/routes.rb
+- [x] T042 [P] Configure Phoenix router with socket endpoint and internal health route in game-server/lib/game_server_web/router.ex
 
 ### Phoenix Socket & JWT
 
-- [ ] T043 Implement JWT verification module (HS256 shared secret) in game-server/lib/game_server/auth/jwt.ex
-- [ ] T044 Implement UserSocket with JWT authentication and protocol version check in game-server/lib/game_server_web/channels/user_socket.ex
+- [x] T043 Implement JWT verification module (HS256 shared secret) in game-server/lib/game_server/auth/jwt.ex
+- [x] T044 Implement UserSocket with JWT authentication and protocol version check in game-server/lib/game_server_web/channels/user_socket.ex
 
 ### Redis Connection
 
-- [ ] T045 [P] Configure Redis connection for Rails (connection pool) in api-server/config/initializers/redis.rb
-- [ ] T046 [P] Configure Redix connection pool for Phoenix in game-server/lib/game_server/redis.ex
+- [x] T045 [P] Configure Redis connection for Rails (connection pool) in api-server/config/initializers/redis.rb
+- [x] T046 [P] Configure Redix connection pool for Phoenix in game-server/lib/game_server/redis.ex
 
 ### Seed Data
 
-- [ ] T047 Create seed script with admin user, 2 test players, game type (simple_card_battle), and card definitions in api-server/db/seeds.rb
+- [x] T047 Create seed script with admin user, 2 test players, game type (simple_card_battle), and card definitions in api-server/db/seeds.rb
 
 ### Audit Logging
 
-- [ ] T048 Implement AuditLogService for recording security events in api-server/app/services/audit_log_service.rb
+- [x] T048 Implement AuditLogService for recording security events in api-server/app/services/audit_log_service.rb
 
 ### Shared Types (Client)
 
-- [ ] T049 Define shared TypeScript types (User, Room, GameType, GameState, ChatMessage, API responses) in client/src/types/index.ts
-- [ ] T050 Implement API client service (axios/fetch wrapper with JWT handling) in client/src/services/api.ts
+- [x] T049 Define shared TypeScript types (User, Room, GameType, GameState, ChatMessage, API responses) in client/src/types/index.ts
+- [x] T050 Implement API client service (axios/fetch wrapper with JWT handling) in client/src/services/api.ts
 
 ### Foundation Tests
 
-- [ ] T050a [P] Write RSpec request specs for auth endpoints (register, login, refresh, profile) verifying contracts/rails-api.md shapes in api-server/spec/requests/api/v1/auth_spec.rb
-- [ ] T050b [P] Write RSpec request specs for internal auth/verify endpoint verifying contracts/internal-api.md in api-server/spec/requests/internal/auth_spec.rb
-- [ ] T050c [P] Write RSpec model specs for User, GameType, Room, RoomPlayer models (validations, associations, enums) in api-server/spec/models/
-- [ ] T050d [P] Write ExUnit tests for JWT verification module in game-server/test/game_server/auth/jwt_test.exs
+- [x] T050a [P] Write RSpec request specs for auth endpoints (register, login, refresh, profile) verifying contracts/rails-api.md shapes in api-server/spec/requests/api/v1/auth_spec.rb
+- [x] T050b [P] Write RSpec request specs for internal auth/verify endpoint verifying contracts/internal-api.md in api-server/spec/requests/internal/auth_spec.rb
+- [x] T050c [P] Write RSpec model specs for User, GameType, Room, RoomPlayer models (validations, associations, enums) in api-server/spec/models/
+- [x] T050d [P] Write ExUnit tests for JWT verification module in game-server/test/game_server/auth/jwt_test.exs
 
 **Checkpoint**: Foundation ready — all services can build, connect to DB/Redis, authenticate users. Contract tests pass. User story implementation can now begin.
 
@@ -144,7 +144,7 @@
 - [ ] T052 [US1] Implement RoomCreationService (create room record, push to Redis room_creation_queue, generate room tokens) in api-server/app/services/room_creation_service.rb
 - [ ] T053 [US1] Implement POST /api/v1/matchmaking/join endpoint in api-server/app/controllers/api/v1/matchmaking_controller.rb
 - [ ] T054 [US1] Implement GET /api/v1/matchmaking/status endpoint (polling) in api-server/app/controllers/api/v1/matchmaking_controller.rb
-- [ ] T055 [US1] Implement GET /api/v1/game_types endpoint in api-server/app/controllers/api/v1/game_types_controller.rb
+- [x] T055 [US1] Implement GET /api/v1/game_types endpoint in api-server/app/controllers/api/v1/game_types_controller.rb
 
 ### Rails: Internal API (Phoenix → Rails callbacks)
 
@@ -152,7 +152,7 @@
 - [ ] T057 [P] [US1] Implement PUT /internal/rooms/:room_id/started callback in api-server/app/controllers/internal/rooms_controller.rb
 - [ ] T058 [P] [US1] Implement PUT /internal/rooms/:room_id/finished callback (create GameResult, update room_players) in api-server/app/controllers/internal/rooms_controller.rb
 - [ ] T059 [P] [US1] Implement PUT /internal/rooms/:room_id/aborted callback in api-server/app/controllers/internal/rooms_controller.rb
-- [ ] T060 [P] [US1] Implement POST /internal/auth/verify endpoint in api-server/app/controllers/internal/auth_controller.rb
+- [x] T060 [P] [US1] Implement POST /internal/auth/verify endpoint in api-server/app/controllers/internal/auth_controller.rb
 
 ### Rails: Room Creation Timeout
 
