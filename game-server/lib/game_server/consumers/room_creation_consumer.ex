@@ -2,7 +2,9 @@ defmodule GameServer.Consumers.RoomCreationConsumer do
   @moduledoc """
   GenServer that polls Redis for room creation commands.
 
-  Runs a BRPOP loop on the `room_creation_queue` Redis list.
+  Runs a BRPOP loop on the `room_creation_queue` Redis list using a dedicated
+  Redix connection (:redix_brpop) to avoid blocking the shared connection.
+
   When a command is received:
   1. Parse the JSON command
   2. Spawn a Room GenServer via DynamicSupervisor
@@ -15,11 +17,12 @@ defmodule GameServer.Consumers.RoomCreationConsumer do
   use GenServer
   require Logger
 
-  alias GameServer.Redis
   alias GameServer.Rooms.RoomSupervisor
 
   @queue_key "room_creation_queue"
   @brpop_timeout 5
+  # Redix command timeout must exceed BRPOP timeout to avoid false timeouts
+  @redix_timeout (@brpop_timeout + 2) * 1_000
   @max_backoff 30_000
   @initial_backoff 1_000
 
@@ -29,19 +32,13 @@ defmodule GameServer.Consumers.RoomCreationConsumer do
 
   @impl true
   def init(_state) do
-    state = %{
-      backoff: @initial_backoff
-    }
-
-    # Start polling immediately
     send(self(), :poll)
-
-    {:ok, state}
+    {:ok, %{backoff: @initial_backoff}}
   end
 
   @impl true
   def handle_info(:poll, state) do
-    case Redis.command(["BRPOP", @queue_key, @brpop_timeout]) do
+    case Redix.command(:redix_brpop, ["BRPOP", @queue_key, @brpop_timeout], timeout: @redix_timeout) do
       {:ok, nil} ->
         # Timeout, no items in queue - reset backoff and continue polling
         send(self(), :poll)

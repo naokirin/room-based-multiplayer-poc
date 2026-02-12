@@ -14,6 +14,8 @@ defmodule GameServer.Application do
       {DNSCluster, query: Application.get_env(:game_server, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: GameServer.PubSub},
       GameServer.Rooms.RoomSupervisor,
+      # Dedicated Redix connection for BRPOP (blocking command must not share connection)
+      %{id: :redix_brpop, start: {Redix, :start_link, [System.get_env("REDIS_URL", "redis://localhost:6379/0"), [name: :redix_brpop]]}},
       GameServer.Consumers.RoomCreationConsumer,
       GameServer.Subscribers.RoomCommandsSubscriber,
       GameServerWeb.Endpoint
