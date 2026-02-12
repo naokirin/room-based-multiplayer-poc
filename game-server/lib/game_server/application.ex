@@ -8,8 +8,12 @@ defmodule GameServer.Application do
     children = [
       GameServerWeb.Telemetry,
       GameServer.Redis,
+      {Registry, keys: :unique, name: GameServer.RoomRegistry},
+      {Finch, name: GameServer.Finch},
       {DNSCluster, query: Application.get_env(:game_server, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: GameServer.PubSub},
+      GameServer.Rooms.RoomSupervisor,
+      GameServer.Consumers.RoomCreationConsumer,
       GameServerWeb.Endpoint
     ]
 
