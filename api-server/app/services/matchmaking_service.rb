@@ -3,13 +3,16 @@ class MatchmakingService
     # Add user to matchmaking queue for a specific game type
     # Returns: { status: :queued/:matched, data: {...} }
     def join_queue(user_id, game_type_id)
-      # Check if user already has active game
+      # Check if user already has active game (clear stale Redis if room is gone or finished)
       if active_game_exists?(user_id)
         active_game = get_active_game(user_id)
-        return {
-          status: :already_in_game,
-          data: active_game
-        }
+        unless active_game_stale?(user_id, active_game)
+          return {
+            status: :already_in_game,
+            data: active_game
+          }
+        end
+        clear_active_game(user_id)
       end
 
       # Check if user is already in queue
@@ -157,13 +160,17 @@ class MatchmakingService
 
     # Get queue status for a user
     def queue_status(user_id)
-      # Check if user has active game
+      # Check if user has active game (clear if stale)
       if active_game_exists?(user_id)
         active_game = get_active_game(user_id)
-        return {
-          status: :matched,
-          data: active_game
-        }
+        if active_game_stale?(user_id, active_game)
+          clear_active_game(user_id)
+        else
+          return {
+            status: :matched,
+            data: active_game
+          }
+        end
       end
 
       # Check if user is in queue
@@ -200,6 +207,31 @@ class MatchmakingService
 
     def active_game_exists?(user_id)
       REDIS.exists?("active_game:#{user_id}")
+    end
+
+    # Seconds after which a room still in "preparing" is considered stale (e.g. stack was restarted)
+    PREPARING_STALE_THRESHOLD = 30
+    # ready/playing room with no update for this long is considered stale (e.g. stack was restarted)
+    ROOM_INACTIVE_STALE_THRESHOLD = 5.minutes
+
+    # Returns true if active_game Redis data is stale (room gone, finished, or no longer live)
+    def active_game_stale?(user_id, active_game)
+      room_id = active_game["room_id"]
+      return true if room_id.blank?
+
+      room = Room.find_by(id: room_id)
+      return true unless room
+      return true if room.finished? || room.aborted? || room.failed?
+      # Room stuck in preparing (e.g. game-server restarted before room was ready)
+      return true if room.preparing? && room.created_at < PREPARING_STALE_THRESHOLD.seconds.ago
+      # ready/playing but no recent activity (e.g. stack was restarted, game-server state is gone)
+      return true if (room.ready? || room.playing?) && room.updated_at < ROOM_INACTIVE_STALE_THRESHOLD.ago
+
+      false
+    end
+
+    def clear_active_game(user_id)
+      REDIS.del("active_game:#{user_id}")
     end
 
     def get_active_game(user_id)

@@ -93,9 +93,17 @@ RSpec.describe "Api::V1::Matchmaking", type: :request do
     end
 
     context "when already in game" do
+      let!(:room) do
+        Room.create!(
+          game_type_id: game_type.id,
+          player_count: 2,
+          status: :preparing
+        )
+      end
+
       before do
-        # Set active game in Redis with all required fields
-        REDIS.hset("active_game:#{user.id}", "room_id", "test-room-id")
+        # Set active game in Redis with a real room (so it is not considered stale)
+        REDIS.hset("active_game:#{user.id}", "room_id", room.id)
         REDIS.hset("active_game:#{user.id}", "room_token", "test-token")
         REDIS.hset("active_game:#{user.id}", "ws_url", "ws://localhost:4000/socket")
         REDIS.hset("active_game:#{user.id}", "game_type_id", game_type.id)
@@ -111,9 +119,32 @@ RSpec.describe "Api::V1::Matchmaking", type: :request do
         expect(response).to have_http_status(:conflict)
         json = response.parsed_body
         expect(json["status"]).to eq("already_in_game")
-        expect(json["room_id"]).to eq("test-room-id")
+        expect(json["room_id"]).to eq(room.id)
         expect(json["room_token"]).to eq("test-token")
         expect(json["ws_url"]).to eq("ws://localhost:4000/socket")
+      end
+    end
+
+    context "when active_game is stale (room missing or finished)" do
+      before do
+        # Stale: room_id does not exist in DB (e.g. stack was restarted, Redis kept old key)
+        REDIS.hset("active_game:#{user.id}", "room_id", "00000000-0000-0000-0000-000000000000")
+        REDIS.hset("active_game:#{user.id}", "room_token", "old-token")
+        REDIS.hset("active_game:#{user.id}", "ws_url", "ws://localhost:4000/socket")
+        REDIS.hset("active_game:#{user.id}", "game_type_id", game_type.id)
+        REDIS.hset("active_game:#{user.id}", "status", "preparing")
+      end
+
+      it "clears stale Redis and allows join (returns queued)" do
+        post "/api/v1/matchmaking/join",
+             params: { game_type_id: game_type.id },
+             headers: { "Authorization" => "Bearer #{token}" },
+             as: :json
+
+        expect(response).to have_http_status(:ok)
+        json = response.parsed_body
+        expect(json["status"]).to eq("queued")
+        expect(REDIS.exists?("active_game:#{user.id}")).to be_falsey
       end
     end
 
@@ -180,9 +211,17 @@ RSpec.describe "Api::V1::Matchmaking", type: :request do
     end
 
     context "when matched status" do
+      let!(:room) do
+        Room.create!(
+          game_type_id: game_type.id,
+          player_count: 2,
+          status: :ready
+        )
+      end
+
       before do
-        # Set active game with all required fields
-        REDIS.hset("active_game:#{user.id}", "room_id", "test-room-id")
+        # Set active game with a real room (so it is not considered stale)
+        REDIS.hset("active_game:#{user.id}", "room_id", room.id)
         REDIS.hset("active_game:#{user.id}", "room_token", "test-token")
         REDIS.hset("active_game:#{user.id}", "ws_url", "ws://localhost:4000/socket")
         REDIS.hset("active_game:#{user.id}", "game_type_id", game_type.id)
@@ -197,7 +236,7 @@ RSpec.describe "Api::V1::Matchmaking", type: :request do
         expect(response).to have_http_status(:ok)
         json = response.parsed_body
         expect(json["status"]).to eq("matched")
-        expect(json["room_id"]).to eq("test-room-id")
+        expect(json["room_id"]).to eq(room.id)
         expect(json["room_token"]).to eq("test-token")
         expect(json["ws_url"]).to eq("ws://localhost:4000/socket")
       end
