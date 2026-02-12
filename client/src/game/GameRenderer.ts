@@ -29,13 +29,15 @@ export class GameRenderer {
     // Create PixiJS Application
     this.app = new Application();
 
-    // Initialize the app asynchronously
+    // Initialize the app asynchronously. autoStart: false so the ticker does not
+    // run until our stage is attached (avoids updateLocalTransform on null).
     this.app
       .init({
         width,
         height,
         backgroundColor: 0x1a1a2e,
         antialias: true,
+        autoStart: false,
       })
       .then(() => {
         // Skip if already destroyed (e.g. unmount before init completed)
@@ -50,6 +52,10 @@ export class GameRenderer {
         this.stage = new Container();
         stage.addChild(this.stage);
         this.initialized = true;
+
+        // Start ticker only after our stage is in the scene graph
+        const app = this.app as Application & { start?: () => void };
+        app.start?.();
       });
   }
 
@@ -442,8 +448,18 @@ export class GameRenderer {
   destroy(): void {
     this.destroyed = true;
 
+    // Stop ticker first so no render() runs during/after destroy (avoids updateLocalTransform on null)
+    const app = this.app as Application & {
+      _cancelResize?: () => void;
+      stop?: () => void;
+    };
     try {
-      const app = this.app as Application & { _cancelResize?: () => void };
+      app.stop?.();
+    } catch {
+      // Ignore
+    }
+
+    try {
       if (typeof app?._cancelResize !== "function") {
         app._cancelResize = () => {};
       }
@@ -453,13 +469,7 @@ export class GameRenderer {
         baseTexture: true,
       });
     } catch {
-      // Stop ticker so no further render() runs (avoids updateLocalTransform on null)
-      try {
-        (this.app as Application & { stop?: () => void }).stop?.();
-      } catch {
-        // Ignore
-      }
-      // Remove canvas from DOM without touching this.app (app.canvas getter can throw when half-initialized)
+      // Remove canvas from DOM when destroy throws (e.g. half-initialized app)
       try {
         const canvas = this.containerRef?.querySelector?.("canvas");
         if (canvas?.parentElement) {
