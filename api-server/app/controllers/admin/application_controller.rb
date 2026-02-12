@@ -2,12 +2,8 @@ module Admin
   class ApplicationController < ActionController::Base
     include AdminAuthenticatable
 
+    before_action :require_admin!
+
     layout "admin"
-
-    private
-
-    def require_admin!
-      redirect_to admin_login_path unless current_admin
-    end
   end
 end

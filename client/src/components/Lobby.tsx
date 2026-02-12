@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLobbyStore } from "../stores/lobbyStore";
 import { useAuthStore } from "../stores/authStore";
+import { api } from "../services/api";
+import type { Announcement } from "../types";
 
 export function Lobby() {
   const {
@@ -16,10 +18,15 @@ export function Lobby() {
   const { user, logout } = useAuthStore();
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const TIMEOUT_SECONDS = 60;
 
   useEffect(() => {
     fetchGameTypes();
+    api
+      .getAnnouncements()
+      .then((res) => setAnnouncements(res.announcements))
+      .catch((err) => console.error("Failed to fetch announcements:", err));
   }, [fetchGameTypes]);
 
   // Update elapsed time when queued and auto-cancel on timeout
@@ -94,6 +101,34 @@ export function Lobby() {
           Logout
         </button>
       </div>
+
+      {/* Announcements */}
+      {announcements.length > 0 && (
+        <div style={{ marginBottom: "20px" }}>
+          {announcements.map((announcement) => (
+            <div
+              key={announcement.id}
+              style={{
+                padding: "15px 20px",
+                marginBottom: "10px",
+                backgroundColor: "#e7f1ff",
+                border: "1px solid #b6d4fe",
+                borderRadius: "8px",
+              }}
+            >
+              <h4 style={{ margin: "0 0 6px 0", color: "#084298" }}>
+                {announcement.title}
+              </h4>
+              <p style={{ margin: "0 0 6px 0", fontSize: "14px", color: "#333" }}>
+                {announcement.body}
+              </p>
+              <p style={{ margin: 0, fontSize: "12px", color: "#666" }}>
+                {new Date(announcement.published_at).toLocaleDateString()}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Matchmaking Status */}
       {matchmakingStatus === "queued" && (

@@ -12,6 +12,9 @@ module AdminAuthenticatable
   end
 
   def require_admin!
-    redirect_to admin_login_path, alert: "Please log in" unless current_admin
+    unless current_admin
+      redirect_to admin_login_path, alert: "Please log in as admin"
+      nil
+    end
   end
 end

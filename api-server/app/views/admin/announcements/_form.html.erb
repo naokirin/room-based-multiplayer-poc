@@ -1,0 +1,38 @@
+<%= form_with(model: [:admin, announcement]) do |f| %>
+  <% if announcement.errors.any? %>
+    <div style="padding: 15px; margin-bottom: 20px; background: #f8d7da; border: 1px solid #dc3545; border-radius: 4px; color: #721c24;">
+      <ul style="margin: 0; padding-left: 20px;">
+        <% announcement.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div style="margin-bottom: 16px;">
+    <%= f.label :title, style: "display: block; margin-bottom: 4px; font-weight: bold;" %>
+    <%= f.text_field :title, style: "width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" %>
+  </div>
+
+  <div style="margin-bottom: 16px;">
+    <%= f.label :body, style: "display: block; margin-bottom: 4px; font-weight: bold;" %>
+    <%= f.text_area :body, rows: 6, style: "width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" %>
+  </div>
+
+  <div style="margin-bottom: 16px;">
+    <%= f.label :active, style: "font-weight: bold;" %>
+    <%= f.check_box :active %>
+  </div>
+
+  <div style="margin-bottom: 16px;">
+    <%= f.label :published_at, style: "display: block; margin-bottom: 4px; font-weight: bold;" %>
+    <%= f.datetime_local_field :published_at, style: "padding: 8px; border: 1px solid #ccc; border-radius: 4px;" %>
+  </div>
+
+  <div style="margin-bottom: 16px;">
+    <%= f.label :expires_at, style: "display: block; margin-bottom: 4px; font-weight: bold;" %>
+    <%= f.datetime_local_field :expires_at, style: "padding: 8px; border: 1px solid #ccc; border-radius: 4px;" %>
+  </div>
+
+  <%= f.submit class: "btn btn-primary" %>
+<% end %>

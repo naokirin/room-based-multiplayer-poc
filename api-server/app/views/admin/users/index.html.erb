@@ -1,0 +1,53 @@
+<div class="page-header">
+  <h1>Users</h1>
+</div>
+
+<div class="card">
+  <%= form_with url: admin_users_path, method: :get, local: true, class: "form-inline" do %>
+    <input type="text" name="search" value="<%= params[:search] %>" placeholder="Search by name or email..." class="form-control" />
+    <button type="submit" class="btn btn-primary">Search</button>
+    <% if params[:search].present? %>
+      <%= link_to "Clear", admin_users_path, class: "btn btn-secondary" %>
+    <% end %>
+  <% end %>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Display Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Created At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @users.each do |user| %>
+        <tr>
+          <td><%= user.display_name %></td>
+          <td><%= user.email %></td>
+          <td><span class="badge <%= user.admin? ? 'badge-blue' : 'badge-gray' %>"><%= user.role %></span></td>
+          <td><span class="badge <%= user.account_active? ? 'badge-green' : 'badge-red' %>"><%= user.status %></span></td>
+          <td><%= user.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+          <td><%= link_to "View", admin_user_path(user), class: "btn btn-secondary btn-sm" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% total_pages = (@total_count.to_f / @per_page).ceil %>
+  <% if total_pages > 1 %>
+    <div class="pagination">
+      <% (1..total_pages).each do |page| %>
+        <% if page == @page %>
+          <span class="current"><%= page %></span>
+        <% else %>
+          <%= link_to page, admin_users_path(page: page, search: params[:search]) %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

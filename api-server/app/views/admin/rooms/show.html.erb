@@ -1,0 +1,75 @@
+<div class="page-header">
+  <h1>Room: <%= @room.id.truncate(20) %></h1>
+  <%= link_to "Back to Rooms", admin_rooms_path, class: "btn btn-secondary" %>
+</div>
+
+<div class="card">
+  <table>
+    <tbody>
+      <tr><th style="width: 200px;">ID</th><td><%= @room.id %></td></tr>
+      <tr><th>Game Type</th><td><%= @room.game_type.name %></td></tr>
+      <tr><th>Player Count</th><td><%= @room.player_count %></td></tr>
+      <tr>
+        <th>Status</th>
+        <td>
+          <% badge_class = case @room.status
+                           when "preparing", "ready" then "badge-yellow"
+                           when "playing" then "badge-blue"
+                           when "finished" then "badge-green"
+                           when "aborted", "failed" then "badge-red"
+                           else "badge-gray"
+                           end %>
+          <span class="badge <%= badge_class %>"><%= @room.status %></span>
+        </td>
+      </tr>
+      <tr><th>Node Name</th><td><%= @room.node_name || "-" %></td></tr>
+      <tr><th>Started At</th><td><%= @room.started_at&.strftime("%Y-%m-%d %H:%M:%S") || "-" %></td></tr>
+      <tr><th>Finished At</th><td><%= @room.finished_at&.strftime("%Y-%m-%d %H:%M:%S") || "-" %></td></tr>
+      <tr><th>Created At</th><td><%= @room.created_at.strftime("%Y-%m-%d %H:%M:%S") %></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<% if @room.status.in?(%w[preparing ready playing]) %>
+  <div class="card">
+    <h2 style="margin-bottom: 16px;">Actions</h2>
+    <%= button_to "Terminate Room", terminate_admin_room_path(@room), method: :post, class: "btn btn-danger", data: { confirm: "Are you sure you want to terminate this room?" } %>
+  </div>
+<% end %>
+
+<div class="card">
+  <h2 style="margin-bottom: 16px;">Players</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Player</th>
+        <th>Email</th>
+        <th>Joined At</th>
+        <th>Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @room_players.each do |rp| %>
+        <tr>
+          <td><%= link_to rp.user.display_name, admin_user_path(rp.user) %></td>
+          <td><%= rp.user.email %></td>
+          <td><%= rp.joined_at&.strftime("%Y-%m-%d %H:%M") || "-" %></td>
+          <td><%= rp.result || "-" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if @game_result %>
+  <div class="card">
+    <h2 style="margin-bottom: 16px;">Game Result</h2>
+    <table>
+      <tbody>
+        <tr><th style="width: 200px;">Winner</th><td><%= @game_result.winner ? link_to(@game_result.winner.display_name, admin_user_path(@game_result.winner)) : "Draw / No winner" %></td></tr>
+        <tr><th>Turns Played</th><td><%= @game_result.turns_played %></td></tr>
+        <tr><th>Duration</th><td><%= @game_result.duration_seconds %>s</td></tr>
+      </tbody>
+    </table>
+  </div>
+<% end %>

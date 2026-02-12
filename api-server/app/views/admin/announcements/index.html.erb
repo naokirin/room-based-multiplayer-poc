@@ -1,0 +1,46 @@
+<div class="page-header">
+  <h1>Announcements</h1>
+  <%= link_to "New Announcement", new_admin_announcement_path, class: "btn btn-primary" %>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Status</th>
+        <th>Published At</th>
+        <th>Expires At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @announcements.each do |announcement| %>
+        <tr>
+          <td><%= announcement.title %></td>
+          <td><%= announcement.admin.display_name %></td>
+          <td>
+            <% if !announcement.active? %>
+              <span class="badge badge-gray">Inactive</span>
+            <% elsif announcement.published_at.nil? %>
+              <span class="badge badge-yellow">Draft</span>
+            <% elsif announcement.published_at > Time.current %>
+              <span class="badge badge-blue">Scheduled</span>
+            <% elsif announcement.expires_at.present? && announcement.expires_at <= Time.current %>
+              <span class="badge badge-red">Expired</span>
+            <% else %>
+              <span class="badge badge-green">Published</span>
+            <% end %>
+          </td>
+          <td><%= announcement.published_at&.strftime("%Y-%m-%d %H:%M") || "-" %></td>
+          <td><%= announcement.expires_at&.strftime("%Y-%m-%d %H:%M") || "Never" %></td>
+          <td>
+            <%= link_to "View", admin_announcement_path(announcement), class: "btn btn-secondary btn-sm" %>
+            <%= link_to "Edit", edit_admin_announcement_path(announcement), class: "btn btn-secondary btn-sm" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,53 @@
+module Admin
+  class UsersController < ApplicationController
+    before_action :set_user, only: [:show, :freeze, :unfreeze]
+
+    # GET /admin/users
+    def index
+      @users = User.order(created_at: :desc)
+
+      if params[:search].present?
+        search_term = "%#{params[:search]}%"
+        @users = @users.where("display_name LIKE :q OR email LIKE :q", q: search_term)
+      end
+
+      @page = [params[:page].to_i, 1].max
+      @per_page = 25
+      @total_count = @users.count
+      @users = @users.offset((@page - 1) * @per_page).limit(@per_page)
+    end
+
+    # GET /admin/users/:id
+    def show
+      @game_results = GameResult
+        .joins(room: :room_players)
+        .where(room_players: { user_id: @user.id })
+        .includes(room: :game_type)
+        .order(created_at: :desc)
+        .limit(20)
+    end
+
+    # POST /admin/users/:id/freeze
+    def freeze
+      if @user.admin?
+        redirect_to admin_user_path(@user), alert: "Cannot freeze admin users"
+        return
+      end
+
+      @user.freeze_account!(reason: params[:reason] || "Frozen by admin")
+      redirect_to admin_user_path(@user), notice: "User has been frozen"
+    end
+
+    # POST /admin/users/:id/unfreeze
+    def unfreeze
+      @user.unfreeze_account!
+      redirect_to admin_user_path(@user), notice: "User has been unfrozen"
+    end
+
+    private
+
+    def set_user
+      @user = User.find(params[:id])
+    end
+  end
+end

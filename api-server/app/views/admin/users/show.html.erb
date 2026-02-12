@@ -1,0 +1,80 @@
+<div class="page-header">
+  <h1>User: <%= @user.display_name %></h1>
+  <%= link_to "Back to Users", admin_users_path, class: "btn btn-secondary" %>
+</div>
+
+<div class="card">
+  <table>
+    <tbody>
+      <tr><th style="width: 200px;">ID</th><td><%= @user.id %></td></tr>
+      <tr><th>Email</th><td><%= @user.email %></td></tr>
+      <tr><th>Display Name</th><td><%= @user.display_name %></td></tr>
+      <tr><th>Role</th><td><span class="badge <%= @user.admin? ? 'badge-blue' : 'badge-gray' %>"><%= @user.role %></span></td></tr>
+      <tr>
+        <th>Status</th>
+        <td><span class="badge <%= @user.account_active? ? 'badge-green' : 'badge-red' %>"><%= @user.status %></span></td>
+      </tr>
+      <% if @user.account_frozen? %>
+        <tr><th>Frozen At</th><td><%= @user.frozen_at&.strftime("%Y-%m-%d %H:%M") %></td></tr>
+        <tr><th>Frozen Reason</th><td><%= @user.frozen_reason %></td></tr>
+      <% end %>
+      <tr><th>Created At</th><td><%= @user.created_at.strftime("%Y-%m-%d %H:%M") %></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2 style="margin-bottom: 16px;">Actions</h2>
+  <% unless @user.admin? %>
+    <% if @user.account_active? %>
+      <%= form_with url: freeze_admin_user_path(@user), method: :post, local: true, style: "display: inline-flex; gap: 8px; align-items: flex-end;" do %>
+        <input type="text" name="reason" placeholder="Reason for freezing..." class="form-control" style="width: 300px;" />
+        <button type="submit" class="btn btn-danger btn-sm" data-confirm="Are you sure you want to freeze this user?">Freeze User</button>
+      <% end %>
+    <% else %>
+      <%= button_to "Unfreeze User", unfreeze_admin_user_path(@user), method: :post, class: "btn btn-success btn-sm" %>
+    <% end %>
+  <% else %>
+    <p style="color: #64748b; font-style: italic;">Admin users cannot be frozen.</p>
+  <% end %>
+</div>
+
+<div class="card">
+  <h2 style="margin-bottom: 16px;">Game History</h2>
+  <% if @game_results.any? %>
+    <table>
+      <thead>
+        <tr>
+          <th>Game Type</th>
+          <th>Room</th>
+          <th>Result</th>
+          <th>Turns</th>
+          <th>Duration</th>
+          <th>Played At</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @game_results.each do |result| %>
+          <tr>
+            <td><%= result.room.game_type.name %></td>
+            <td><%= link_to result.room_id.truncate(12), admin_room_path(result.room_id) %></td>
+            <td>
+              <% if result.winner_id == @user.id %>
+                <span class="badge badge-green">Won</span>
+              <% elsif result.winner_id.nil? %>
+                <span class="badge badge-yellow">Draw</span>
+              <% else %>
+                <span class="badge badge-red">Lost</span>
+              <% end %>
+            </td>
+            <td><%= result.turns_played %></td>
+            <td><%= result.duration_seconds %>s</td>
+            <td><%= result.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p style="color: #64748b;">No game history yet.</p>
+  <% end %>
+</div>

@@ -14,6 +14,7 @@ defmodule GameServer.Application do
       {Phoenix.PubSub, name: GameServer.PubSub},
       GameServer.Rooms.RoomSupervisor,
       GameServer.Consumers.RoomCreationConsumer,
+      GameServer.Subscribers.RoomCommandsSubscriber,
       GameServerWeb.Endpoint
     ]
 

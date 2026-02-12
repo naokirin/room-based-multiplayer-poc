@@ -1,0 +1,61 @@
+<div class="page-header">
+  <h1>Rooms</h1>
+</div>
+
+<div class="card">
+  <div class="form-inline">
+    <%= link_to "All", admin_rooms_path, class: "btn #{params[:status].blank? ? 'btn-primary' : 'btn-secondary'} btn-sm" %>
+    <% Room.statuses.keys.each do |status| %>
+      <%= link_to status.capitalize, admin_rooms_path(status: status), class: "btn #{params[:status] == status ? 'btn-primary' : 'btn-secondary'} btn-sm" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Room ID</th>
+        <th>Game Type</th>
+        <th>Players</th>
+        <th>Status</th>
+        <th>Created At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rooms.each do |room| %>
+        <tr>
+          <td><%= room.id.truncate(12) %></td>
+          <td><%= room.game_type.name %></td>
+          <td><%= room.player_count %></td>
+          <td>
+            <% badge_class = case room.status
+                             when "preparing", "ready" then "badge-yellow"
+                             when "playing" then "badge-blue"
+                             when "finished" then "badge-green"
+                             when "aborted", "failed" then "badge-red"
+                             else "badge-gray"
+                             end %>
+            <span class="badge <%= badge_class %>"><%= room.status %></span>
+          </td>
+          <td><%= room.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+          <td><%= link_to "View", admin_room_path(room), class: "btn btn-secondary btn-sm" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% total_pages = (@total_count.to_f / @per_page).ceil %>
+  <% if total_pages > 1 %>
+    <div class="pagination">
+      <% (1..total_pages).each do |page| %>
+        <% if page == @page %>
+          <span class="current"><%= page %></span>
+        <% else %>
+          <%= link_to page, admin_rooms_path(page: page, status: params[:status]) %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

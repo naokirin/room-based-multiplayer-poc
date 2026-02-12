@@ -1,0 +1,24 @@
+<div class="page-header">
+  <h1><%= @announcement.title %></h1>
+  <div>
+    <%= link_to "Edit", edit_admin_announcement_path(@announcement), class: "btn btn-secondary" %>
+    <%= link_to "Back", admin_announcements_path, class: "btn btn-secondary" %>
+  </div>
+</div>
+
+<div class="card">
+  <table>
+    <tbody>
+      <tr><th style="width: 200px;">Author</th><td><%= @announcement.admin.display_name %></td></tr>
+      <tr><th>Body</th><td><%= simple_format(@announcement.body) %></td></tr>
+      <tr><th>Active</th><td><%= @announcement.active? ? "Yes" : "No" %></td></tr>
+      <tr><th>Published At</th><td><%= @announcement.published_at&.strftime("%Y-%m-%d %H:%M") || "Not published" %></td></tr>
+      <tr><th>Expires At</th><td><%= @announcement.expires_at&.strftime("%Y-%m-%d %H:%M") || "Never" %></td></tr>
+      <tr><th>Created At</th><td><%= @announcement.created_at.strftime("%Y-%m-%d %H:%M") %></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <%= button_to "Delete", admin_announcement_path(@announcement), method: :delete, class: "btn btn-danger", data: { confirm: "Are you sure?" } %>
+</div>
