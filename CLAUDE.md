@@ -1,10 +1,10 @@
 # room-based-multiplayer-poc Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-02-10
+Auto-generated from all feature plans. Last updated: 2026-02-12
 
 ## Active Technologies
 
-- TypeScript 5.x, React 18+, PixiJS 8+ (client)
+- TypeScript 5.9, React 19, PixiJS 8.16, Zustand 5.0, Phoenix WS 1.8 (client)
 - Ruby 3.3+, Rails 8.0+ (api-server)
 - Elixir 1.17+, Phoenix 1.7+ (game-server)
 - MySQL 8.0+, Redis 7+ (datastores)
@@ -37,6 +37,8 @@ cd game-server && mix test
 
 # Client
 cd client && npm run dev
+cd client && npm run typecheck
+cd client && npm run biome:check
 cd client && npm test
 ```
 
@@ -44,7 +46,7 @@ cd client && npm test
 
 - Ruby: Standard Rails conventions, RSpec for tests
 - Elixir: Standard Elixir/Phoenix conventions, ExUnit for tests
-- TypeScript: ESLint + Prettier, Vitest for tests
+- TypeScript: ESLint + Biome, Vitest for tests (React 19, strict mode)
 
 ## Architecture Principles
 
@@ -55,6 +57,13 @@ cd client && npm test
 
 ## Recent Changes
 
+- 2026-02-12: Phase 3 Client implementation completed (T077-T085)
+  - Auth Store with auto-refresh and localStorage persistence
+  - Lobby Store with matchmaking queue polling
+  - Game Store with WebSocket integration and turn timer
+  - PixiJS 8 renderer with async initialization
+  - React components for Auth, Lobby, and Game screens
+  - Phoenix WebSocket manager with proper cleanup
 - 001-room-match-platform: MVP platform specification and implementation plan
 
 <!-- MANUAL ADDITIONS START -->

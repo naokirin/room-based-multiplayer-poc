@@ -1,35 +1,71 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import { useAuthStore } from "./stores/authStore";
+import { useGameStore } from "./stores/gameStore";
+import { useLobbyStore } from "./stores/lobbyStore";
+import { Auth } from "./components/Auth";
+import { Lobby } from "./components/Lobby";
+import { Game } from "./components/Game";
+
+type Screen = "auth" | "lobby" | "game";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [screen, setScreen] = useState<Screen>("auth");
+
+  const { isAuthenticated, initializeFromStorage } = useAuthStore();
+  const { matchmakingStatus, currentMatch, clearMatch } = useLobbyStore();
+  const { status: gameStatus, joinRoom } = useGameStore();
+
+  // Initialize auth from localStorage on mount
+  useEffect(() => {
+    initializeFromStorage();
+  }, [initializeFromStorage]);
+
+  // Screen routing logic
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setScreen("auth");
+      return;
+    }
+
+    // If we have an active game or matched
+    if (gameStatus !== "waiting" || matchmakingStatus === "matched") {
+      setScreen("game");
+
+      // Auto-join room when matched
+      if (matchmakingStatus === "matched" && currentMatch) {
+        joinRoom(
+          currentMatch.room_id,
+          currentMatch.room_token,
+          currentMatch.ws_url
+        );
+        clearMatch();
+      }
+      return;
+    }
+
+    // Otherwise show lobby
+    setScreen("lobby");
+  }, [
+    isAuthenticated,
+    matchmakingStatus,
+    currentMatch,
+    gameStatus,
+    joinRoom,
+    clearMatch,
+  ]);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: screen === "game" ? "#0f0f23" : "#f5f5f5",
+      }}
+    >
+      {screen === "auth" && <Auth />}
+      {screen === "lobby" && <Lobby />}
+      {screen === "game" && <Game />}
+    </div>
+  );
 }
 
-export default App
+export default App;
