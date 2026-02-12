@@ -13,6 +13,7 @@ interface ChatStoreState {
   messages: ChatMessage[];
   isLoading: boolean;
   error: string | null;
+  isInitialized: boolean;
 }
 
 interface ChatStoreActions {
@@ -31,6 +32,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   messages: [],
   isLoading: false,
   error: null,
+  isInitialized: false,
 
   // Actions
   sendMessage: async (content: string) => {
@@ -61,7 +63,17 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   addMessage: (message: ChatMessage) => {
     const currentMessages = get().messages;
 
-    // Add new message and keep max 100
+    // Ignore or update duplicate messages with the same id
+    const exists = currentMessages.some((m) => m.id === message.id);
+    if (exists) {
+      const updatedMessages = currentMessages.map((m) =>
+        m.id === message.id ? message : m
+      );
+      set({ messages: updatedMessages });
+      return;
+    }
+
+    // Add new message and keep max 100 (immutable)
     const updatedMessages = [...currentMessages, message].slice(-MAX_MESSAGES);
 
     set({ messages: updatedMessages });
@@ -72,10 +84,17 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   initialize: () => {
+    // Avoid registering multiple listeners (e.g. React StrictMode double effect)
+    if (get().isInitialized) {
+      return;
+    }
+
     // Set up chat message listener
     socketManager.onEvent("chat:new_message", (payload) => {
       const message = payload as ChatMessage;
       get().addMessage(message);
     });
+
+    set({ isInitialized: true });
   },
 }));
