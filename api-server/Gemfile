@@ -21,6 +21,9 @@ gem "bcrypt", "~> 3.1.7"
 # JWT authentication
 gem "jwt"
 
+# CORS (for API access from client app)
+gem "rack-cors"
+
 # Rate limiting
 gem "rack-attack"
 
