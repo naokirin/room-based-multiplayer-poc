@@ -108,8 +108,11 @@ class MatchmakingService
       )
 
       # Create MatchPlayer records
-      user_ids.each do |user_id|
-        match.match_players.create!(user_id: user_id)
+      players.each do |player|
+        match.match_players.create!(
+          user_id: player["user_id"],
+          queued_at: player["queued_at"]
+        )
       end
 
       # Create Room via RoomCreationService
@@ -196,7 +199,7 @@ class MatchmakingService
     private
 
     def active_game_exists?(user_id)
-      REDIS.exists?("active_game:#{user_id}") == 1
+      REDIS.exists?("active_game:#{user_id}")
     end
 
     def get_active_game(user_id)

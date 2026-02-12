@@ -21,7 +21,7 @@ module Internal
 
       # Update active_game status in Redis for all players
       room.room_players.each do |room_player|
-        if REDIS.exists?("active_game:#{room_player.user_id}") == 1
+        if REDIS.exists?("active_game:#{room_player.user_id}")
           REDIS.hset("active_game:#{room_player.user_id}", "status", "ready")
         end
       end
@@ -59,7 +59,7 @@ module Internal
 
       # Update active_game status in Redis
       room.room_players.each do |room_player|
-        if REDIS.exists?("active_game:#{room_player.user_id}") == 1
+        if REDIS.exists?("active_game:#{room_player.user_id}")
           REDIS.hset("active_game:#{room_player.user_id}", "status", "playing")
         end
       end
