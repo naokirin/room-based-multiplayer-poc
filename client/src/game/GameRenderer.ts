@@ -20,6 +20,12 @@ export class GameRenderer {
   private cardClickCallback: ((cardId: string) => void) | null = null;
   private initialized = false;
   private destroyed = false;
+  private pendingState: {
+    gameState: GameState | null;
+    myHand: Card[];
+    isMyTurn: boolean;
+    myUserId: string;
+  } | null = null;
 
   constructor(container: HTMLElement, options: RendererOptions = {}) {
     this.containerRef = container;
@@ -56,6 +62,13 @@ export class GameRenderer {
         // Start ticker only after our stage is in the scene graph
         const app = this.app as Application & { start?: () => void };
         app.start?.();
+
+        // Render any state that arrived before initialization completed
+        if (this.pendingState) {
+          const { gameState, myHand, isMyTurn, myUserId } = this.pendingState;
+          this.pendingState = null;
+          this.updateState(gameState, myHand, isMyTurn, myUserId);
+        }
       });
   }
 
@@ -65,8 +78,9 @@ export class GameRenderer {
     isMyTurn: boolean,
     myUserId: string
   ): void {
-    // Wait for initialization
+    // Buffer state if not yet initialized; will render when init completes
     if (!this.initialized || !this.stage) {
+      this.pendingState = { gameState, myHand, isMyTurn, myUserId };
       return;
     }
 

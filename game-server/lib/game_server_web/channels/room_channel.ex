@@ -43,20 +43,20 @@ defmodule GameServerWeb.RoomChannel do
 
     # Rate limit check
     case check_rate_limit(socket) do
-      :ok ->
+      {:ok, updated_socket} ->
         nonce = Map.get(payload, "nonce")
         action = Map.drop(payload, ["nonce"])
 
         if nonce do
           case Room.handle_action(room_id, user_id, action, nonce) do
             :ok ->
-              {:reply, :ok, socket}
+              {:reply, :ok, updated_socket}
 
             {:error, reason} ->
-              {:reply, {:error, %{reason: to_string(reason)}}, socket}
+              {:reply, {:error, %{reason: to_string(reason)}}, updated_socket}
           end
         else
-          {:reply, {:error, %{reason: "missing_nonce"}}, socket}
+          {:reply, {:error, %{reason: "missing_nonce"}}, updated_socket}
         end
 
       {:error, :rate_limited} ->
@@ -165,7 +165,7 @@ defmodule GameServerWeb.RoomChannel do
                   socket =
                     socket
                     |> assign(:room_id, room_id)
-                    |> assign(:last_action_at, 0)
+                    |> assign(:last_action_at, System.monotonic_time(:millisecond) - @rate_limit_window)
 
                   {:ok, room_state, socket}
 
@@ -223,11 +223,10 @@ defmodule GameServerWeb.RoomChannel do
 
   defp check_rate_limit(socket) do
     now = System.monotonic_time(:millisecond)
-    last_action_at = Map.get(socket.assigns, :last_action_at, 0)
+    last_action_at = socket.assigns.last_action_at
 
     if now - last_action_at >= @rate_limit_window do
-      assign(socket, :last_action_at, now)
-      :ok
+      {:ok, assign(socket, :last_action_at, now)}
     else
       {:error, :rate_limited}
     end
