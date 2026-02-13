@@ -94,10 +94,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       });
       await socketManager.connect(wsUrl, token);
 
-      // Join room channel (socket is already open)
-      const response = await socketManager.joinRoom(roomId, { room_token: roomToken });
+      // Create channel first (no join yet)
+      socketManager.createChannel(roomId, { room_token: roomToken });
 
-      // Set up event listeners
+      // Register event listeners BEFORE joining so we don't miss game:started
       socketManager.onEvent("game:started", (payload) => {
         get().handleGameStarted(payload);
       });
@@ -129,6 +129,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       socketManager.onEvent("player:left", (payload) => {
         console.log("Player left:", payload);
       });
+
+      // Now join the channel (events are already registered)
+      const response = await socketManager.joinChannel();
 
       // Handle reconnect token from join response (T096)
       if (response && typeof response === "object" && "reconnect_token" in response) {

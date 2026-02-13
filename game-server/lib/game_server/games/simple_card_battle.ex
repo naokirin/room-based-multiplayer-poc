@@ -56,15 +56,20 @@ defmodule GameServer.Games.SimpleCardBattle do
     card_id = Map.get(action, "card_id")
     player_state = get_in(game_state, [:players, player_id])
 
-    # Find and remove the card from hand
+    # Find the card and remove it from hand first
     card_index = Enum.find_index(player_state.hand, &(&1["id"] == card_id))
     card = Enum.at(player_state.hand, card_index)
-    updated_hand = List.delete_at(player_state.hand, card_index)
+    hand_after_play = List.delete_at(player_state.hand, card_index)
 
-    # Apply card effects
+    # Update game_state with card removed BEFORE applying effects,
+    # so that draw_card effects append to the correct hand
+    state_after_remove =
+      put_in(game_state, [:players, player_id, :hand], hand_after_play)
+
+    # Apply card effects (draw_card will add to hand_after_play)
     {updated_game_state, effects} =
       apply_card_effects(
-        game_state,
+        state_after_remove,
         player_id,
         card,
         Map.get(action, "target")
@@ -74,7 +79,6 @@ defmodule GameServer.Games.SimpleCardBattle do
     updated_player_state =
       updated_game_state
       |> get_in([:players, player_id])
-      |> Map.put(:hand, updated_hand)
       |> Map.update(:discard, [card], &[card | &1])
 
     final_game_state = put_in(updated_game_state, [:players, player_id], updated_player_state)

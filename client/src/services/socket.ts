@@ -94,26 +94,33 @@ class SocketManager {
     return this.socket !== null && this.channel !== null;
   }
 
-  joinRoom(
+  /**
+   * Create a channel for the given room without joining yet.
+   * Register event listeners via onEvent() before calling joinChannel().
+   */
+  createChannel(
     roomId: string,
     params: { room_token?: string; reconnect_token?: string }
-  ): Promise<Record<string, unknown>> {
+  ): void {
     if (!this.socket) {
       throw new Error("Socket not connected");
     }
 
     this.roomId = roomId;
     const channelName = `room:${roomId}`;
-
     this.channel = this.socket.channel(channelName, params);
+  }
+
+  /**
+   * Join the previously created channel. Must call createChannel() first.
+   */
+  joinChannel(): Promise<Record<string, unknown>> {
+    if (!this.channel) {
+      throw new Error("Channel not created. Call createChannel() first.");
+    }
 
     return new Promise((resolve, reject) => {
-      if (!this.channel) {
-        reject(new Error("Channel creation failed"));
-        return;
-      }
-
-      this.channel
+      this.channel!
         .join()
         .receive("ok", (response) => {
           console.log("Joined room successfully", response);
@@ -151,7 +158,11 @@ class SocketManager {
       payload.target_user_id = target;
     }
 
-    this.channel.push("game:action", payload);
+    this.channel
+      .push("game:action", payload)
+      .receive("error", (response: unknown) => {
+        console.error("game:action error:", response);
+      });
   }
 
   pushChat(content: string): Promise<{ message_id: string; sent: boolean }> {
