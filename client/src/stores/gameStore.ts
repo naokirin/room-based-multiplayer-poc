@@ -197,10 +197,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
       });
       await socketManager.connect(wsUrl, token);
 
-      // Rejoin room with reconnect token
-      const rejoinResponse = await socketManager.joinRoom(roomId, {
-        reconnect_token: reconnectToken,
+      // Create channel with reconnect token (same pattern as joinRoom)
+      socketManager.createChannel(roomId, { reconnect_token: reconnectToken });
+
+      // Register event listeners BEFORE joining (same as joinRoom)
+      socketManager.onEvent("game:started", (payload) => {
+        get().handleGameStarted(payload);
       });
+      socketManager.onEvent("game:action_applied", (payload) => {
+        get().handleActionApplied(payload);
+      });
+      socketManager.onEvent("game:hand_updated", (payload) => {
+        get().handleHandUpdated(payload);
+      });
+      socketManager.onEvent("game:turn_changed", (payload) => {
+        get().handleTurnChanged(payload);
+      });
+      socketManager.onEvent("game:ended", (payload) => {
+        get().handleGameEnded(payload);
+      });
+      socketManager.onEvent("game:aborted", (payload) => {
+        get().handleGameAborted(payload);
+      });
+      socketManager.onEvent("player:reconnected", (payload) => {
+        console.log("Player reconnected:", payload);
+      });
+      socketManager.onEvent("player:left", (payload) => {
+        console.log("Player left:", payload);
+      });
+
+      // Rejoin channel; server returns full state when using reconnect_token
+      const rejoinResponse = await socketManager.joinChannel();
 
       // Restore state from rejoin response
       if (rejoinResponse && typeof rejoinResponse === "object") {
@@ -217,6 +244,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const isMyTurn = fullState.current_turn === myUserId;
 
         set({
+          roomId,
           myHand: fullState.your_hand || [],
           currentTurn: fullState.current_turn || null,
           turnNumber: fullState.turn_number || 0,
@@ -227,6 +255,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
           isReconnecting: false,
           isDisconnected: false,
         });
+
+        // Update reconnect token if server returned a new one
+        if (rejoinResponse && typeof rejoinResponse === "object" && "reconnect_token" in rejoinResponse) {
+          const newToken = (rejoinResponse as { reconnect_token?: string }).reconnect_token;
+          if (newToken) {
+            set({ reconnectToken: newToken });
+            localStorage.setItem(RECONNECT_TOKEN_KEY, newToken);
+          }
+        }
 
         // Restart turn timer if needed
         if (fullState.turn_time_remaining) {
