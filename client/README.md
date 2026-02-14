@@ -61,8 +61,8 @@ npm run dev          # Start dev server (port 5173)
 npm run build        # Build for production
 npm run preview      # Preview production build
 npm run typecheck    # Run TypeScript type checking
-npm run biome:check  # Run Biome linter
-npm run lint         # Run ESLint
+npm run lint         # Run Biome (lint + format check)
+npm run lint:fix     # Fix with Biome
 ```
 
 ## Implementation Status

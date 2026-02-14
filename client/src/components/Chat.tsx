@@ -1,88 +1,93 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useChatStore } from "../stores/chatStore";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../stores/authStore";
+import { useChatStore } from "../stores/chatStore";
 
 export const Chat: React.FC = () => {
-  const [input, setInput] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+	const [input, setInput] = useState("");
+	const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, isLoading, error, sendMessage } = useChatStore();
-  const currentUser = useAuthStore((state) => state.user);
+	const { messages, isLoading, error, sendMessage } = useChatStore();
+	const currentUser = useAuthStore((state) => state.user);
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+	// Auto-scroll to bottom when new messages arrive
+	useEffect(() => {
+		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+	}, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
 
-    if (!input.trim() || isLoading) {
-      return;
-    }
+		if (!input.trim() || isLoading) {
+			return;
+		}
 
-    try {
-      await sendMessage(input.trim());
-      setInput("");
-    } catch (err) {
-      console.error("Failed to send message:", err);
-    }
-  };
+		try {
+			await sendMessage(input.trim());
+			setInput("");
+		} catch (err) {
+			console.error("Failed to send message:", err);
+		}
+	};
 
-  const formatTime = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+	const formatTime = (isoString: string) => {
+		const date = new Date(isoString);
+		return date.toLocaleTimeString("ja-JP", {
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+	};
 
-  return (
-    <div className="chat-container">
-      <div className="chat-header">
-        <h3>Chat</h3>
-      </div>
+	return (
+		<div className="chat-container">
+			<div className="chat-header">
+				<h3>Chat</h3>
+			</div>
 
-      <div className="chat-messages">
-        {messages.length === 0 ? (
-          <div className="chat-empty">メッセージはまだありません</div>
-        ) : (
-          messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`chat-message ${
-                msg.sender_id === currentUser?.id ? "own-message" : ""
-              }`}
-            >
-              <div className="message-header">
-                <span className="message-sender">{msg.sender_name}</span>
-                <span className="message-time">{formatTime(msg.sent_at)}</span>
-              </div>
-              <div className="message-content">{msg.content}</div>
-            </div>
-          ))
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+			<div className="chat-messages">
+				{messages.length === 0 ? (
+					<div className="chat-empty">メッセージはまだありません</div>
+				) : (
+					messages.map((msg) => (
+						<div
+							key={msg.id}
+							className={`chat-message ${
+								msg.sender_id === currentUser?.id ? "own-message" : ""
+							}`}
+						>
+							<div className="message-header">
+								<span className="message-sender">{msg.sender_name}</span>
+								<span className="message-time">{formatTime(msg.sent_at)}</span>
+							</div>
+							<div className="message-content">{msg.content}</div>
+						</div>
+					))
+				)}
+				<div ref={messagesEndRef} />
+			</div>
 
-      {error && <div className="chat-error">{error}</div>}
+			{error && <div className="chat-error">{error}</div>}
 
-      <form onSubmit={handleSubmit} className="chat-input-form">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="メッセージを入力..."
-          maxLength={500}
-          disabled={isLoading}
-          className="chat-input"
-        />
-        <button type="submit" disabled={isLoading || !input.trim()} className="chat-send-button">
-          送信
-        </button>
-      </form>
+			<form onSubmit={handleSubmit} className="chat-input-form">
+				<input
+					type="text"
+					value={input}
+					onChange={(e) => setInput(e.target.value)}
+					placeholder="メッセージを入力..."
+					maxLength={500}
+					disabled={isLoading}
+					className="chat-input"
+				/>
+				<button
+					type="submit"
+					disabled={isLoading || !input.trim()}
+					className="chat-send-button"
+				>
+					送信
+				</button>
+			</form>
 
-      <style>{`
+			<style>{`
         .chat-container {
           display: flex;
           flex-direction: column;
@@ -211,6 +216,6 @@ export const Chat: React.FC = () => {
           cursor: not-allowed;
         }
       `}</style>
-    </div>
-  );
+		</div>
+	);
 };

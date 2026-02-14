@@ -46,7 +46,7 @@ cd client && npm test
 
 - Ruby: Standard Rails conventions, RSpec for tests
 - Elixir: Standard Elixir/Phoenix conventions, ExUnit for tests
-- TypeScript: ESLint + Biome, Vitest for tests (React 19, strict mode)
+- TypeScript: Biome (lint + format), Vitest for tests (React 19, strict mode)
 
 ## Architecture Principles
 
