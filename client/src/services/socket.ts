@@ -100,7 +100,11 @@ class SocketManager {
    */
   createChannel(
     roomId: string,
-    params: { room_token?: string; reconnect_token?: string }
+    params: {
+      room_token?: string;
+      reconnect_token?: string;
+      display_name?: string;
+    }
   ): void {
     if (!this.socket) {
       throw new Error("Socket not connected");

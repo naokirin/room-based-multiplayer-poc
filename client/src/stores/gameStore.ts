@@ -95,8 +95,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       });
       await socketManager.connect(wsUrl, token);
 
+      const user = useAuthStore.getState().user;
+      const displayName = user?.display_name ?? "Player";
+
       // Create channel first (no join yet)
-      socketManager.createChannel(roomId, { room_token: roomToken });
+      socketManager.createChannel(roomId, {
+        room_token: roomToken,
+        display_name: displayName,
+      });
 
       // Register event listeners BEFORE joining so we don't miss game:started
       socketManager.onEvent("game:started", (payload) => {
