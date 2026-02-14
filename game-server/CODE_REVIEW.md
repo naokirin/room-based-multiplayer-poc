@@ -42,9 +42,9 @@
 
 ---
 
-### 4. Room モジュールが長い（責務の集中） — **一部対応 (2026-02-15)**
+### 4. Room モジュールが長い（責務の集中） — **対応済み (2026-02-15)**
 
-**対応**: Rails 通知を `GameServer.Rooms.RoomNotifier` に切り出し。Room は Notifier を呼ぶだけに変更。タイマー分離は未実施。
+**対応**: Rails 通知を `GameServer.Rooms.RoomNotifier`、タイマーを `GameServer.Rooms.RoomTimers` に切り出し。Room は両モジュールを呼ぶだけに変更。
 
 ---
 
@@ -134,6 +134,6 @@
 1. ~~**必須**: HealthController の Redis 呼び出しを `GameServer.Redis` 経由に変更。~~ → 対応済み
 2. ~~**必須**: AGENTS.md と HTTP クライアント（Tesla vs Req）の記述を一致させる。~~ → Req 統一済み
 3. ~~**推奨**: Room の hand_count 冗長分岐の削除、RoomChannel の `chat_messages` 初期 assign、JWT テストの環境変数復元。~~ → 対応済み
-4. ~~**余裕があれば**: Channel と HealthController のテスト追加。~~ → 対応済み。Room のタイマー責務分割は未実施。
+4. ~~**余裕があれば**: Channel と HealthController のテスト追加、Room のタイマー責務分割。~~ → 対応済み（RoomTimers に分離済み）。
 
 以上で game-server のコードレビューを完了とする。

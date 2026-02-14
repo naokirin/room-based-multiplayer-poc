@@ -17,14 +17,11 @@ defmodule GameServer.Rooms.Room do
 
   alias GameServer.Games.SimpleCardBattle
   alias GameServer.Rooms.RoomNotifier
+  alias GameServer.Rooms.RoomTimers
   alias GameServer.Redis
   alias GameServer.Rooms.RoomBroadcast
 
   @turn_time_limit 30
-  @reveal_delay_ms 2_500
-  @disconnect_timeout 60_000
-  @reconnect_timeout 60_000
-  @termination_delay 30_000
   @max_nonces_per_player 50
   @max_chat_messages 100
   @reconnect_token_ttl 300
@@ -337,7 +334,7 @@ defmodule GameServer.Rooms.Room do
     RoomNotifier.notify_room_aborted(state.room_id, reason)
     state = %{state | status: :aborted}
     RoomBroadcast.broadcast_to_room(state.players, "room:aborted", %{reason: reason})
-    Process.send_after(self(), :terminate_room, @termination_delay)
+    RoomTimers.schedule_terminate(self())
     {:noreply, state}
   end
 
@@ -379,10 +376,10 @@ defmodule GameServer.Rooms.Room do
             Logger.info("All players left voluntarily, aborting room #{state.room_id} immediately")
             RoomNotifier.notify_room_aborted(state.room_id, "all_players_left")
             state = %{state | status: :aborted}
-            Process.send_after(self(), :terminate_room, @termination_delay)
+            RoomTimers.schedule_terminate(self())
             state
           else
-            start_disconnect_timer(state)
+            %{state | disconnect_timer_ref: RoomTimers.start_disconnect_timer(self(), state.disconnect_timer_ref)}
           end
         else
           state
@@ -430,9 +427,7 @@ defmodule GameServer.Rooms.Room do
       Logger.info("All players disconnected for too long, aborting room #{state.room_id}")
       RoomNotifier.notify_room_aborted(state.room_id, "all_players_disconnected")
       state = %{state | status: :aborted}
-
-      # Schedule termination
-      Process.send_after(self(), :terminate_room, @termination_delay)
+      RoomTimers.schedule_terminate(self())
 
       {:noreply, state}
     else
@@ -600,17 +595,12 @@ defmodule GameServer.Rooms.Room do
           })
 
           # Cancel turn timer during reveal so it does not tick
-          state =
-            if state.turn_timer_ref do
-              Process.cancel_timer(state.turn_timer_ref)
-              %{state | turn_timer_ref: nil}
-            else
-              state
-            end
+          RoomTimers.cancel(state.turn_timer_ref)
+          state = %{state | turn_timer_ref: nil}
 
           # Advance turn after reveal delay so both players can see the played card
           next_player_id = get_next_player_id(state)
-          Process.send_after(self(), {:advance_turn_after_reveal, next_player_id}, @reveal_delay_ms)
+          RoomTimers.schedule_advance_turn(self(), next_player_id)
 
           {:reply, :ok, state}
 
@@ -664,12 +654,8 @@ defmodule GameServer.Rooms.Room do
       deck_count: length(next_player_state.deck)
     })
 
-    # Cancel old timer and start new one
-    if state.turn_timer_ref do
-      Process.cancel_timer(state.turn_timer_ref)
-    end
-
-    start_turn_timer(state, new_turn_number)
+    RoomTimers.cancel(state.turn_timer_ref)
+    %{state | turn_timer_ref: RoomTimers.start_turn_timer(self(), new_turn_number)}
   end
 
   defp end_game(state, winner_id, reason) do
@@ -686,37 +672,19 @@ defmodule GameServer.Rooms.Room do
     # Notify Rails
     RoomNotifier.notify_room_finished(state.room_id, result_data)
 
-    # Cancel turn timer
-    if state.turn_timer_ref do
-      Process.cancel_timer(state.turn_timer_ref)
-    end
-
-    # Schedule termination
-    Process.send_after(self(), :terminate_room, @termination_delay)
-
+    RoomTimers.cancel(state.turn_timer_ref)
+    RoomTimers.schedule_terminate(self())
     state
   end
 
   defp start_turn_timer(state, turn_number) do
-    timer_ref = Process.send_after(self(), {:turn_timeout, turn_number}, @turn_time_limit * 1000)
-    %{state | turn_timer_ref: timer_ref}
-  end
-
-  defp start_disconnect_timer(state) do
-    if state.disconnect_timer_ref do
-      Process.cancel_timer(state.disconnect_timer_ref)
-    end
-
-    timer_ref = Process.send_after(self(), :disconnect_timeout, @disconnect_timeout)
-    %{state | disconnect_timer_ref: timer_ref}
+    %{state | turn_timer_ref: RoomTimers.start_turn_timer(self(), turn_number)}
   end
 
   defp start_reconnect_timer_for_player(state, user_id) do
-    # Cancel existing timer for this player if any
     state = cancel_reconnect_timer_for_player(state, user_id)
-
-    timer_ref = Process.send_after(self(), {:reconnect_timeout, user_id}, @reconnect_timeout)
-    %{state | reconnect_timers: Map.put(state.reconnect_timers, user_id, timer_ref)}
+    ref = RoomTimers.start_reconnect_timer(self(), user_id)
+    %{state | reconnect_timers: Map.put(state.reconnect_timers, user_id, ref)}
   end
 
   defp cancel_reconnect_timer_for_player(state, user_id) do
@@ -725,7 +693,7 @@ defmodule GameServer.Rooms.Room do
         state
 
       timer_ref ->
-        Process.cancel_timer(timer_ref)
+        RoomTimers.cancel(timer_ref)
         %{state | reconnect_timers: Map.delete(state.reconnect_timers, user_id)}
     end
   end
