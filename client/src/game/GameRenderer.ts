@@ -708,7 +708,7 @@ export class GameRenderer {
 			this.app.destroy(true, {
 				children: true,
 				texture: true,
-				baseTexture: true,
+				textureSource: true,
 			});
 		} catch {
 			// Remove canvas from DOM when destroy throws (e.g. half-initialized app)
