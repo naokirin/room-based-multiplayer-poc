@@ -74,13 +74,14 @@ defmodule GameServerWeb.RoomChannel do
   end
 
   @impl true
-  def handle_in("chat:send", %{"content" => content}, socket) do
+  def handle_in("chat:send", payload, socket) do
     user_id = socket.assigns.user_id
     room_id = socket.assigns.room_id
+    content = Map.get(payload, "content")
 
-    # Validate content
+    # Validate content (missing, non-string, or empty)
     cond do
-      content == nil or String.trim(content) == "" ->
+      content == nil or not is_binary(content) or String.trim(content) == "" ->
         {:reply, {:error, %{reason: "content_empty"}}, socket}
 
       String.length(content) > @max_chat_length ->

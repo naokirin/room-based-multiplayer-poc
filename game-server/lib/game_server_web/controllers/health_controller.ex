@@ -28,8 +28,7 @@ defmodule GameServerWeb.HealthController do
   end
 
   defp count_active_rooms do
-    # Will be implemented when Room supervisor is ready
-    0
+    Registry.count(GameServer.RoomRegistry)
   end
 
   defp node_name do

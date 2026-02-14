@@ -241,18 +241,18 @@ defmodule GameServer.Rooms.Room do
 
           # Build all players state for client
           players_state =
-            Enum.reduce(state.players, %{}, fn {pid, pinfo}, acc ->
-              game_player_state = get_in(state.game_state, [:players, pid])
+            Enum.reduce(state.players, %{}, fn {player_id, pinfo}, acc ->
+              game_player_state = get_in(state.game_state, [:players, player_id])
 
               player_data = %{
                 display_name: pinfo.display_name,
                 connected: pinfo.connected,
                 hp: game_player_state[:hp],
-                hand_count: if(pid == user_id, do: length(game_player_state[:hand]), else: length(game_player_state[:hand])),
+                hand_count: if(player_id == user_id, do: length(game_player_state[:hand]), else: length(game_player_state[:hand])),
                 deck_count: length(game_player_state[:deck])
               }
 
-              Map.put(acc, pid, player_data)
+              Map.put(acc, player_id, player_data)
             end)
 
           %{
@@ -335,6 +335,24 @@ defmodule GameServer.Rooms.Room do
     # Return in chronological order (oldest first)
     history = Enum.reverse(state.chat_messages)
     {:reply, history, state}
+  end
+
+  @impl true
+  def handle_cast({:admin_terminate, reason}, state) do
+    Logger.info("Room #{state.room_id} admin terminated: #{reason}")
+
+    case RailsClient.room_aborted(state.room_id, to_string(reason)) do
+      {:ok, _} ->
+        Logger.info("Room #{state.room_id} aborted successfully")
+
+      {:error, err} ->
+        Logger.error("Failed to notify Rails of room abort: #{inspect(err)}")
+    end
+
+    state = %{state | status: :aborted}
+    broadcast_to_room(state, "room:aborted", %{reason: reason})
+    Process.send_after(self(), :terminate_room, @termination_delay)
+    {:noreply, state}
   end
 
   @impl true
@@ -579,17 +597,17 @@ defmodule GameServer.Rooms.Room do
       state = %{state | game_state: new_game_state}
 
       # Broadcast per-player action_applied with full state view
-      Enum.each(state.players, fn {pid, pinfo} ->
-        player_game_state = get_in(new_game_state, [:players, pid])
-        opp_id = get_room_opponent_id(new_game_state, pid)
+      Enum.each(state.players, fn {player_id, pinfo} ->
+        player_game_state = get_in(new_game_state, [:players, player_id])
+        opp_id = get_room_opponent_id(new_game_state, player_id)
         opp_game_state = get_in(new_game_state, [:players, opp_id])
         opp_info = Map.get(state.players, opp_id)
 
-        send_to_player(state, pid, "game:action_applied", %{
+        send_to_player(state, player_id, "game:action_applied", %{
           actor_id: user_id,
           effects: effects,
           players: %{
-            pid => %{
+            player_id => %{
               display_name: pinfo.display_name,
               connected: pinfo.connected,
               hp: player_game_state.hp,

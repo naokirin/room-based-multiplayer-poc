@@ -26,7 +26,7 @@ defmodule GameServer.Subscribers.RoomCommandsSubscriber do
 
       {:error, reason} ->
         Logger.error("[RoomCommandsSubscriber] Failed to connect: #{inspect(reason)}")
-        {:ok, %{pubsub: nil}}
+        {:stop, {:redis_connection_failed, reason}}
     end
   end
 
