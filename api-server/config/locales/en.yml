@@ -44,6 +44,7 @@ en:
 
   # Admin flash and alerts
   admin:
+    not_found: "The requested resource was not found"
     login_required: "Please log in as admin"
     sessions:
       login_success: "Logged in successfully"
@@ -60,3 +61,14 @@ en:
       create_success: "Announcement created successfully"
       update_success: "Announcement updated successfully"
       destroy_success: "Announcement deleted"
+
+  # Internal API (server-to-server) messages
+  internal:
+    rooms:
+      room_id_required: "room_id is required"
+      node_name_required: "node_name is required"
+      room_not_found: "Room not found"
+      player_mismatch: "Provided player_ids do not match room players"
+    auth:
+      invalid_token: "invalid_token"
+      user_not_found: "user_not_found"

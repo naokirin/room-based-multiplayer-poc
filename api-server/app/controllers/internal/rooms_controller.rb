@@ -6,17 +6,17 @@ module Internal
       node_name = params[:node_name]
 
       if room_id.blank?
-        return render json: { error: "bad_request", message: "room_id is required" }, status: :bad_request
+        return render json: { error: "bad_request", message: I18n.t("internal.rooms.room_id_required") }, status: :bad_request
       end
       if node_name.blank?
-        return render json: { error: "bad_request", message: "node_name is required" }, status: :bad_request
+        return render json: { error: "bad_request", message: I18n.t("internal.rooms.node_name_required") }, status: :bad_request
       end
 
       room = Room.find_by(id: room_id)
       unless room
         return render json: {
           error: "room_not_found",
-          message: "Room with ID #{room_id} not found"
+          message: I18n.t("internal.rooms.room_not_found")
         }, status: :not_found
       end
 
@@ -52,7 +52,7 @@ module Internal
       unless room_player_ids == provided_player_ids
         return render json: {
           error: "player_mismatch",
-          message: "Provided player_ids do not match room players",
+          message: I18n.t("internal.rooms.player_mismatch"),
           expected: room_player_ids,
           provided: provided_player_ids
         }, status: :bad_request
@@ -81,10 +81,11 @@ module Internal
     def finished
       room = Room.find(params[:room_id])
       winner_id = params[:winner_id]
-      turns_played = params[:turns_played] || 0
-      duration_seconds = params[:duration_seconds] || 0
-      # player_results: Hash of user_id (string) => result (e.g. "win", "lose", "draw") from Phoenix
-      player_results = params[:player_results] || {}
+      turns_played = (params[:turns_played] || 0).to_i
+      duration_seconds = (params[:duration_seconds] || 0).to_i
+      # player_results: Hash of user_id (string) => result (winner/loser/draw/aborted) from Phoenix
+      raw_results = params.permit(player_results: {}).to_h[:player_results] || {}
+      player_results = permitted_player_results(room, raw_results)
 
       # Create GameResult record
       game_result = GameResult.create!(
@@ -100,12 +101,10 @@ module Internal
         finished_at: Time.current
       )
 
-      # Update room_players results
+      # Update room_players results (only permitted room members and valid enum values)
       player_results.each do |user_id, result|
         room_player = room.room_players.find_by(user_id: user_id)
-        if room_player
-          room_player.update!(result: result)
-        end
+        room_player&.update!(result: result)
       end
 
       # Clean up active_game Redis keys
@@ -136,6 +135,20 @@ module Internal
         acknowledged: true,
         room_status: "aborted"
       }, status: :ok
+    end
+
+    private
+
+    VALID_ROOM_PLAYER_RESULTS = %w[winner loser draw aborted].freeze
+
+    def permitted_player_results(room, raw_results)
+      return {} if raw_results.blank?
+      return {} unless raw_results.is_a?(Hash)
+
+      allowed_user_ids = room.room_players.pluck(:user_id).to_set
+      raw_results.filter do |user_id, result|
+        allowed_user_ids.include?(user_id.to_s) && VALID_ROOM_PLAYER_RESULTS.include?(result.to_s)
+      end
     end
   end
 end
