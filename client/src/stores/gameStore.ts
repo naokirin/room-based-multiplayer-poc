@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { GameState, Card, PlayerState } from "../types";
+import { MAX_HP } from "../types";
 import { socketManager } from "../services/socket";
 import { useAuthStore } from "./authStore";
 
@@ -332,14 +333,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       [myUserId]: {
         display_name: data.your_display_name ?? "You",
         connected: true,
-        hp: data.your_hp ?? 20,
+        hp: data.your_hp ?? MAX_HP,
         hand_count: myHand.length,
         deck_count: data.your_deck_count ?? 0,
       },
       [opponentId]: {
         display_name: data.opponent_display_name ?? "Opponent",
         connected: true,
-        hp: data.opponent_hp ?? 20,
+        hp: data.opponent_hp ?? MAX_HP,
         hand_count: data.opponent_hand_count ?? 0,
         deck_count: data.opponent_deck_count ?? 0,
       },

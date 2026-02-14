@@ -62,13 +62,24 @@ export interface RoomPlayer {
   connected: boolean;
 }
 
+// Card effect entry (for single or composite cards)
+export interface CardEffect {
+  effect: "deal_damage" | "heal" | "draw_card";
+  value: number;
+}
+
 // Card types
 export interface Card {
   id: string;
   name: string;
   effect: "deal_damage" | "heal" | "draw_card";
   value: number;
+  /** When present, card has multiple effects (composite). First element matches effect/value. */
+  effects?: CardEffect[];
 }
+
+// Simple card battle: max HP (must match game-server)
+export const MAX_HP = 10;
 
 // Game state types
 export interface PlayerState {

@@ -7,35 +7,35 @@ defmodule GameServer.Games.SimpleCardBattleTest do
   @player2_id 2
 
   describe "init_state/2" do
-    test "creates players with 20 HP" do
+    test "creates players with 10 HP" do
       config = %{}
       player_ids = [@player1_id, @player2_id]
 
       {:ok, game_state} = SimpleCardBattle.init_state(config, player_ids)
 
-      assert game_state.players[@player1_id].hp == 20
-      assert game_state.players[@player2_id].hp == 20
+      assert game_state.players[@player1_id].hp == 10
+      assert game_state.players[@player2_id].hp == 10
     end
 
-    test "creates players with 5 cards in hand" do
+    test "creates players with 3 cards in hand" do
       config = %{}
       player_ids = [@player1_id, @player2_id]
 
       {:ok, game_state} = SimpleCardBattle.init_state(config, player_ids)
 
-      assert length(game_state.players[@player1_id].hand) == 5
-      assert length(game_state.players[@player2_id].hand) == 5
+      assert length(game_state.players[@player1_id].hand) == 3
+      assert length(game_state.players[@player2_id].hand) == 3
     end
 
-    test "deck size is correct (30 cards total, 5 in hand = 25 remaining)" do
+    test "deck size is correct (15 cards total, 3 in hand = 12 remaining)" do
       config = %{}
       player_ids = [@player1_id, @player2_id]
 
       {:ok, game_state} = SimpleCardBattle.init_state(config, player_ids)
 
-      # Default deck has 30 cards, 5 drawn = 25 remaining
-      assert length(game_state.players[@player1_id].deck) == 25
-      assert length(game_state.players[@player2_id].deck) == 25
+      # Default deck has 15 cards, 3 drawn = 12 remaining
+      assert length(game_state.players[@player1_id].deck) == 12
+      assert length(game_state.players[@player2_id].deck) == 12
     end
 
     test "sets current_turn to first player" do
@@ -136,8 +136,8 @@ defmodule GameServer.Games.SimpleCardBattleTest do
       {:ok, updated_state, effects} =
         SimpleCardBattle.apply_action(game_state, @player1_id, action)
 
-      # Attack card deals 3 damage
-      assert updated_state.players[@player2_id].hp == 17
+      # Attack card deals 3 damage (10 - 3 = 7)
+      assert updated_state.players[@player2_id].hp == 7
 
       # Check effects
       assert Enum.any?(effects, fn effect ->
@@ -145,10 +145,10 @@ defmodule GameServer.Games.SimpleCardBattleTest do
              end)
     end
 
-    test "heal increases HP (capped at 20)", %{game_state: game_state} do
-      # Set player1 HP to 15
+    test "heal increases HP (capped at max HP)", %{game_state: game_state} do
+      # Set player1 HP to 5
       game_state =
-        put_in(game_state, [:players, @player1_id, :hp], 15)
+        put_in(game_state, [:players, @player1_id, :hp], 5)
 
       # Find a heal card, or add one if not in hand
       heal_card =
@@ -180,8 +180,8 @@ defmodule GameServer.Games.SimpleCardBattleTest do
       {:ok, updated_state, effects} =
         SimpleCardBattle.apply_action(game_state, @player1_id, action)
 
-      # Heal card heals 2 HP (15 + 2 = 17)
-      assert updated_state.players[@player1_id].hp == 17
+      # Heal card heals 2 HP (5 + 2 = 7)
+      assert updated_state.players[@player1_id].hp == 7
 
       # Check effects
       assert Enum.any?(effects, fn effect ->
@@ -189,10 +189,10 @@ defmodule GameServer.Games.SimpleCardBattleTest do
              end)
     end
 
-    test "heal is capped at max HP (20)", %{game_state: game_state} do
-      # Set player1 HP to 19
+    test "heal is capped at max HP (10)", %{game_state: game_state} do
+      # Set player1 HP to 9
       game_state =
-        put_in(game_state, [:players, @player1_id, :hp], 19)
+        put_in(game_state, [:players, @player1_id, :hp], 9)
 
       # Find a heal card (or add one if not in hand)
       heal_card =
@@ -225,8 +225,8 @@ defmodule GameServer.Games.SimpleCardBattleTest do
       {:ok, updated_state, _effects} =
         SimpleCardBattle.apply_action(game_state, @player1_id, action)
 
-      # Heal card heals 2 HP but capped at 20 (19 + 2 = 21 -> 20)
-      assert updated_state.players[@player1_id].hp == 20
+      # Heal card heals 2 HP but capped at 10 (9 + 2 = 11 -> 10)
+      assert updated_state.players[@player1_id].hp == 10
     end
 
     test "draw_card draws cards from deck", %{game_state: game_state} do
@@ -262,10 +262,10 @@ defmodule GameServer.Games.SimpleCardBattleTest do
       {:ok, updated_state, effects} =
         SimpleCardBattle.apply_action(game_state, @player1_id, action)
 
-      # Note: Due to implementation order, the hand is set to updated_hand (with draw card removed)
-      # AFTER draw effects are applied. This means drawn cards are lost.
-      # The hand size should be initial - 1 (the draw card removed)
-      assert length(updated_state.players[@player1_id].hand) == initial_hand_size - 1
+      # After playing draw card: hand had initial_hand_size, remove 1 = initial_hand_size - 1.
+      # Then draw 2 (capped by hand limit 5): hand = (initial_hand_size - 1) + 2, max 5.
+      final_hand_size = length(updated_state.players[@player1_id].hand)
+      assert final_hand_size == min(initial_hand_size - 1 + 2, 5)
 
       # Check effects to see if draw happened
       draw_effect = Enum.find(effects, fn effect -> effect.type == "cards_drawn" end)
@@ -273,6 +273,39 @@ defmodule GameServer.Games.SimpleCardBattleTest do
       assert draw_effect.player_id == @player1_id
       # The effect should show some cards were drawn
       assert draw_effect.count > 0
+    end
+
+    test "draw_card is capped by hand limit (5)", %{game_state: game_state} do
+      # Fill hand to 5 with dummy cards so draw has no room
+      full_hand =
+        for i <- 1..5, do: %{"id" => "dummy_#{i}", "name" => "Dummy", "effects" => []}
+
+      game_state =
+        game_state
+        |> put_in([:players, @player1_id, :hand], full_hand)
+        |> put_in([:players, @player1_id, :deck], [
+          %{"id" => "draw_1", "name" => "Draw", "effects" => [%{"effect" => "draw_card", "value" => 2}]}
+          | Enum.take(game_state.players[@player1_id].deck, 10)
+        ])
+
+      # Replace one card in hand with Draw
+      draw_card = %{
+        "id" => "test_draw",
+        "name" => "Draw",
+        "effects" => [%{"effect" => "draw_card", "value" => 2}]
+      }
+
+      hand_with_draw = [draw_card | Enum.take(full_hand, 4)]
+      game_state = put_in(game_state, [:players, @player1_id, :hand], hand_with_draw)
+
+      action = %{"action" => "play_card", "card_id" => draw_card["id"]}
+      {:ok, updated_state, effects} = SimpleCardBattle.apply_action(game_state, @player1_id, action)
+
+      # Hand was 5, we removed 1 (the Draw card) = 4 slots. Draw 2 would give 6, but cap is 5, so we draw only 1
+      assert length(updated_state.players[@player1_id].hand) == 5
+
+      draw_effect = Enum.find(effects, fn e -> e.type == "cards_drawn" end)
+      assert draw_effect.count == 1
     end
 
     test "played card is moved to discard pile", %{game_state: game_state} do

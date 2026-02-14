@@ -3,19 +3,21 @@ defmodule GameServer.Games.SimpleCardBattle do
   Simple card battle game implementation.
 
   Game rules:
-  - Each player starts with 20 HP
-  - Players draw 5 cards from a shuffled deck at game start
+  - Each player starts with 10 HP
+  - Players draw 3 cards from a shuffled deck at game start
+  - Hand limit: 5 cards (draws that would exceed are capped)
   - Turn-based gameplay (players alternate turns)
-  - Card effects: deal_damage, heal, draw_card
-  - Win conditions: reduce opponent HP to 0 or opponent runs out of cards
+  - Card effects: deal_damage, heal, draw_card (and composite cards with multiple effects)
+  - Win conditions: reduce opponent HP to 0 or opponent runs out of cards (no deck reshuffle)
   - Lose condition: disconnect/forfeit
   """
 
   @behaviour GameServer.Games.GameBehaviour
 
-  @initial_hp 20
-  @initial_hand_size 5
-  @max_hp 20
+  @initial_hp 10
+  @initial_hand_size 3
+  @max_hp 10
+  @max_hand_size 5
 
   @impl true
   def init_state(config, player_ids) when length(player_ids) == 2 do
@@ -195,8 +197,10 @@ defmodule GameServer.Games.SimpleCardBattle do
 
   defp apply_single_effect(game_state, player_id, %{"effect" => "draw_card", "value" => count}) do
     player_state = get_in(game_state, [:players, player_id])
+    slots_available = max(0, @max_hand_size - length(player_state.hand))
+    draw_count = min(count, slots_available)
 
-    {drawn_cards, remaining_deck} = draw_cards(player_state.deck, count)
+    {drawn_cards, remaining_deck} = draw_cards(player_state.deck, draw_count)
     new_hand = player_state.hand ++ drawn_cards
 
     updated_player_state =
@@ -229,9 +233,9 @@ defmodule GameServer.Games.SimpleCardBattle do
   end
 
   defp default_deck do
-    # Default deck with 30 cards (10 of each type)
-    damage_cards =
-      for i <- 1..10 do
+    # 15-card deck: fewer Attack, base cards, and composite-effect cards
+    attack_cards =
+      for i <- 1..4 do
         %{
           "id" => "dmg_#{i}",
           "name" => "Attack",
@@ -240,7 +244,7 @@ defmodule GameServer.Games.SimpleCardBattle do
       end
 
     heal_cards =
-      for i <- 1..10 do
+      for i <- 1..2 do
         %{
           "id" => "heal_#{i}",
           "name" => "Heal",
@@ -249,7 +253,7 @@ defmodule GameServer.Games.SimpleCardBattle do
       end
 
     draw_cards =
-      for i <- 1..10 do
+      for i <- 1..2 do
         %{
           "id" => "draw_#{i}",
           "name" => "Draw",
@@ -257,6 +261,45 @@ defmodule GameServer.Games.SimpleCardBattle do
         }
       end
 
-    damage_cards ++ heal_cards ++ draw_cards
+    # Composite: 2 damage + 1 draw
+    strike_cards =
+      for i <- 1..3 do
+        %{
+          "id" => "strike_#{i}",
+          "name" => "Strike",
+          "effects" => [
+            %{"effect" => "deal_damage", "value" => 2},
+            %{"effect" => "draw_card", "value" => 1}
+          ]
+        }
+      end
+
+    # Composite: 1 heal + 1 draw
+    burst_cards =
+      for i <- 1..2 do
+        %{
+          "id" => "burst_#{i}",
+          "name" => "Burst",
+          "effects" => [
+            %{"effect" => "heal", "value" => 1},
+            %{"effect" => "draw_card", "value" => 1}
+          ]
+        }
+      end
+
+    # Composite: 1 damage + 1 heal
+    vamp_cards =
+      for i <- 1..2 do
+        %{
+          "id" => "vamp_#{i}",
+          "name" => "Vamp",
+          "effects" => [
+            %{"effect" => "deal_damage", "value" => 1},
+            %{"effect" => "heal", "value" => 1}
+          ]
+        }
+      end
+
+    attack_cards ++ heal_cards ++ draw_cards ++ strike_cards ++ burst_cards ++ vamp_cards
   end
 end

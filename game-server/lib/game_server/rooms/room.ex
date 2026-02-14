@@ -504,6 +504,9 @@ defmodule GameServer.Rooms.Room do
   defp game_module_for("simple_card_battle"), do: SimpleCardBattle
   defp game_module_for(_), do: SimpleCardBattle
 
+  defp max_hand_size_for_game("simple_card_battle"), do: 5
+  defp max_hand_size_for_game(_), do: 99
+
   defp nonce_cache_name(room_id), do: :"nonce_cache_#{room_id}"
 
   defp start_game(state) do
@@ -629,10 +632,13 @@ defmodule GameServer.Rooms.Room do
       |> Map.put(:current_turn, next_player_id)
       |> Map.put(:turn_number, new_turn_number)
 
-    # Auto-draw 1 card at the start of each turn
+    # Auto-draw 1 card at the start of each turn (only if under hand limit)
+    next_hand = get_in(new_game_state, [:players, next_player_id, :hand]) || []
+    max_hand = max_hand_size_for_game(state.game_type)
+
     new_game_state =
-      case get_in(new_game_state, [:players, next_player_id, :deck]) do
-        [top_card | rest_deck] ->
+      case {get_in(new_game_state, [:players, next_player_id, :deck]), length(next_hand) < max_hand} do
+        {[top_card | rest_deck], true} ->
           new_game_state
           |> update_in([:players, next_player_id, :hand], &(&1 ++ [top_card]))
           |> put_in([:players, next_player_id, :deck], rest_deck)
@@ -805,13 +811,17 @@ defmodule GameServer.Rooms.Room do
   end
 
   defp flatten_card(card) do
-    first_effect = List.first(card["effects"] || []) || %{}
+    effects_list = card["effects"] || []
+    first_effect = List.first(effects_list) || %{}
+    effects_for_client =
+      Enum.map(effects_list, fn e -> %{"effect" => e["effect"], "value" => e["value"] || 0} end)
 
     %{
       "id" => card["id"],
       "name" => card["name"],
       "effect" => first_effect["effect"],
-      "value" => first_effect["value"] || 0
+      "value" => first_effect["value"] || 0,
+      "effects" => effects_for_client
     }
   end
 

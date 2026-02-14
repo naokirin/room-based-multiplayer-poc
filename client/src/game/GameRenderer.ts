@@ -7,6 +7,7 @@ import {
   FederatedPointerEvent,
 } from "pixi.js";
 import type { GameState, Card, PlayerState } from "../types";
+import { MAX_HP } from "../types";
 
 interface RendererOptions {
   width?: number;
@@ -157,7 +158,7 @@ export class GameRenderer {
     container.addChild(nameText);
 
     // HP Bar
-    const hpBar = this.createHPBar(player.hp, 20, 200, 20);
+    const hpBar = this.createHPBar(player.hp, MAX_HP, 200, 20);
     hpBar.x = 20;
     hpBar.y = 35;
     container.addChild(hpBar);
@@ -202,7 +203,7 @@ export class GameRenderer {
     container.addChild(nameText);
 
     // HP Bar
-    const hpBar = this.createHPBar(player.hp, 20, 200, 20);
+    const hpBar = this.createHPBar(player.hp, MAX_HP, 200, 20);
     hpBar.x = 20;
     hpBar.y = 35;
     container.addChild(hpBar);
@@ -388,45 +389,115 @@ export class GameRenderer {
       style: nameStyle,
     });
     nameText.x = width / 2;
-    nameText.y = 10;
+    nameText.y = 8;
     nameText.anchor.set(0.5, 0);
     container.addChild(nameText);
 
-    // Effect icon/text
-    const effectStyle = new TextStyle({
-      fontFamily: "Arial",
-      fontSize: 10,
-      fill: 0xaaaaaa,
-      align: "center",
-    });
+    const effects: Array<{ effect: string; value: number }> =
+      card.effects && card.effects.length >= 1
+        ? card.effects
+        : [{ effect: card.effect, value: card.value ?? 0 }];
+    const isComposite = effects.length > 1;
 
-    const effectText = new Text({
-      text: this.getEffectDisplay(card.effect),
-      style: effectStyle,
-    });
-    effectText.x = width / 2;
-    effectText.y = height / 2 - 5;
-    effectText.anchor.set(0.5);
-    container.addChild(effectText);
+    if (isComposite) {
+      // Composite: each effect as a row with icon + large value
+      const rowHeight = (height - 28) / effects.length;
+      const labelFontSize = 11;
+      const valueFontSize = 18;
 
-    // Value
-    const valueStyle = new TextStyle({
-      fontFamily: "Arial",
-      fontSize: 20,
-      fill: this.getEffectColor(card.effect),
-      fontWeight: "bold",
-    });
+      effects.forEach((e, i) => {
+        const yBase = 26 + i * rowHeight;
+        const labelStyle = new TextStyle({
+          fontFamily: "Arial",
+          fontSize: labelFontSize,
+          fill: 0xe0e0e0,
+          align: "left",
+        });
+        const labelText = new Text({
+          text: `${this.getEffectShortLabel(e.effect)} ${this.getEffectShortName(e.effect)}`,
+          style: labelStyle,
+        });
+        labelText.x = 6;
+        labelText.y = yBase;
+        labelText.anchor.set(0, 0);
+        container.addChild(labelText);
 
-    const valueText = new Text({
-      text: (card.value != null ? card.value : 0).toString(),
-      style: valueStyle,
-    });
-    valueText.x = width / 2;
-    valueText.y = height - 25;
-    valueText.anchor.set(0.5);
-    container.addChild(valueText);
+        const valueStyle = new TextStyle({
+          fontFamily: "Arial",
+          fontSize: valueFontSize,
+          fill: this.getEffectColor(e.effect),
+          fontWeight: "bold",
+          align: "right",
+        });
+        const valueText = new Text({
+          text: e.value.toString(),
+          style: valueStyle,
+        });
+        valueText.x = width - 6;
+        valueText.y = yBase + rowHeight / 2 - valueFontSize / 2;
+        valueText.anchor.set(1, 0.5);
+        container.addChild(valueText);
+      });
+    } else {
+      // Single effect: one effect label + one large value
+      const effectStyle = new TextStyle({
+        fontFamily: "Arial",
+        fontSize: 12,
+        fill: 0xe0e0e0,
+        align: "center",
+      });
+      const effectLabel = new Text({
+        text: this.getEffectDisplay(card.effect),
+        style: effectStyle,
+      });
+      effectLabel.x = width / 2;
+      effectLabel.y = height / 2 - 22;
+      effectLabel.anchor.set(0.5, 0.5);
+      container.addChild(effectLabel);
+
+      const valueStyle = new TextStyle({
+        fontFamily: "Arial",
+        fontSize: 24,
+        fill: this.getEffectColor(card.effect),
+        fontWeight: "bold",
+      });
+      const valueText = new Text({
+        text: (card.value != null ? card.value : 0).toString(),
+        style: valueStyle,
+      });
+      valueText.x = width / 2;
+      valueText.y = height - 22;
+      valueText.anchor.set(0.5, 0.5);
+      container.addChild(valueText);
+    }
 
     return container;
+  }
+
+  private getEffectShortName(effect: string): string {
+    switch (effect) {
+      case "deal_damage":
+        return "Damage";
+      case "heal":
+        return "Heal";
+      case "draw_card":
+        return "Draw";
+      default:
+        return effect;
+    }
+  }
+
+  private getEffectShortLabel(effect: string): string {
+    switch (effect) {
+      case "deal_damage":
+        return "⚔";
+      case "heal":
+        return "❤";
+      case "draw_card":
+        return "📄";
+      default:
+        return "?";
+    }
   }
 
   private getEffectDisplay(effect: string): string {
