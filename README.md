@@ -144,3 +144,4 @@ specs/                      # Feature specifications and task plans
 - **JWT shared secret**: Rails issues tokens, Phoenix verifies them
 - **String UUIDs**: All primary keys are 36-char UUID strings
 - **Phoenix Channels**: WebSocket transport for real-time game communication
+- **Game server internal routes**: Only `/internal/health` is exposed under `/internal` and it has no authentication. When adding other internal endpoints, add API key auth to the internal pipeline.
