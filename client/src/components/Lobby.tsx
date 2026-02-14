@@ -10,6 +10,7 @@ export function Lobby() {
 		gameTypes,
 		matchmakingStatus,
 		queuedAt,
+		queuedTimeoutSeconds,
 		error,
 		fetchGameTypes,
 		joinQueue,
@@ -22,7 +23,8 @@ export function Lobby() {
 
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
 	const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-	const TIMEOUT_SECONDS = 60;
+	/** Use API timeout when queued; fallback if server did not send it */
+	const timeoutSeconds = queuedTimeoutSeconds ?? 60;
 
 	useEffect(() => {
 		fetchGameTypes();
@@ -41,7 +43,7 @@ export function Lobby() {
 				setElapsedSeconds(elapsed);
 
 				// Auto-cancel when timeout is reached
-				if (elapsed >= TIMEOUT_SECONDS) {
+				if (elapsed >= timeoutSeconds) {
 					clearInterval(interval);
 					cancelQueue();
 				}
@@ -50,7 +52,7 @@ export function Lobby() {
 			return () => clearInterval(interval);
 		}
 		setElapsedSeconds(0);
-	}, [matchmakingStatus, queuedAt, cancelQueue]);
+	}, [matchmakingStatus, queuedAt, timeoutSeconds, cancelQueue]);
 
 	const handlePlay = (gameTypeId: string) => {
 		joinQueue(gameTypeId);
@@ -91,13 +93,14 @@ export function Lobby() {
 				</div>
 				<button
 					type="button"
+					aria-label="Log out"
 					onClick={handleLogout}
 					style={{
-						padding: "8px 16px",
-						backgroundColor: "#dc3545",
+						padding: "var(--padding-button)",
+						backgroundColor: "var(--color-danger)",
 						color: "#fff",
 						border: "none",
-						borderRadius: "4px",
+						borderRadius: "var(--radius-button)",
 						cursor: "pointer",
 					}}
 				>
@@ -141,9 +144,9 @@ export function Lobby() {
 					style={{
 						padding: "20px",
 						marginBottom: "20px",
-						backgroundColor: "#fff3cd",
-						border: "1px solid #ffc107",
-						borderRadius: "8px",
+						backgroundColor: "var(--color-warning-bg)",
+						border: "1px solid var(--color-warning-border)",
+						borderRadius: "var(--radius-card)",
 						textAlign: "center",
 					}}
 				>
@@ -154,17 +157,18 @@ export function Lobby() {
 					<p
 						style={{ margin: "0 0 15px 0", fontSize: "12px", color: "#856404" }}
 					>
-						Timeout in: {TIMEOUT_SECONDS - elapsedSeconds}s
+						Timeout in: {timeoutSeconds - elapsedSeconds}s
 					</p>
 					<button
 						type="button"
+						aria-label="Cancel matchmaking"
 						onClick={handleCancel}
 						style={{
-							padding: "8px 20px",
-							backgroundColor: "#6c757d",
+							padding: "var(--padding-button)",
+							backgroundColor: "var(--color-neutral)",
 							color: "#fff",
 							border: "none",
-							borderRadius: "4px",
+							borderRadius: "var(--radius-button)",
 							cursor: "pointer",
 						}}
 					>
@@ -178,15 +182,21 @@ export function Lobby() {
 					style={{
 						padding: "20px",
 						marginBottom: "20px",
-						backgroundColor: "#d4edda",
-						border: "1px solid #28a745",
-						borderRadius: "8px",
+						backgroundColor: "var(--color-success-bg)",
+						border: "1px solid var(--color-success)",
+						borderRadius: "var(--radius-card)",
 						textAlign: "center",
 					}}
 				>
-					<h3 style={{ margin: 0, color: "#155724" }}>Match found!</h3>
+					<h3 style={{ margin: 0, color: "var(--color-success-text)" }}>
+						Match found!
+					</h3>
 					<p
-						style={{ margin: "5px 0 0 0", fontSize: "14px", color: "#155724" }}
+						style={{
+							margin: "5px 0 0 0",
+							fontSize: "14px",
+							color: "var(--color-success-text)",
+						}}
 					>
 						Connecting to game...
 					</p>
@@ -198,9 +208,9 @@ export function Lobby() {
 					style={{
 						padding: "20px",
 						marginBottom: "20px",
-						backgroundColor: "#f8d7da",
-						border: "1px solid #dc3545",
-						borderRadius: "8px",
+						backgroundColor: "var(--color-error-bg)",
+						border: "1px solid var(--color-error-border)",
+						borderRadius: "var(--radius-card)",
 						textAlign: "center",
 					}}
 				>
@@ -218,10 +228,10 @@ export function Lobby() {
 					style={{
 						padding: "15px",
 						marginBottom: "20px",
-						backgroundColor: "#f8d7da",
+						backgroundColor: "var(--color-error-bg)",
 						color: "#721c24",
-						border: "1px solid #dc3545",
-						borderRadius: "4px",
+						border: "1px solid var(--color-error-border)",
+						borderRadius: "var(--radius-button)",
 					}}
 				>
 					{error || gameError}
@@ -258,13 +268,14 @@ export function Lobby() {
 									</div>
 									<button
 										type="button"
+										aria-label={`Play ${gameType.name}`}
 										onClick={() => handlePlay(gameType.id)}
 										style={{
 											padding: "10px 24px",
-											backgroundColor: "#28a745",
+											backgroundColor: "var(--color-success)",
 											color: "#fff",
 											border: "none",
-											borderRadius: "4px",
+											borderRadius: "var(--radius-button)",
 											cursor: "pointer",
 											fontSize: "16px",
 											fontWeight: "bold",

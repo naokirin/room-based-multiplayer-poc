@@ -62,16 +62,17 @@ export class ErrorBoundary extends Component<Props, State> {
 						{this.props.returnToLobby && (
 							<button
 								type="button"
+								aria-label="Return to lobby"
 								onClick={() => {
 									useGameStore.getState().leaveRoom();
 									this.setState({ hasError: false, error: null });
 								}}
 								style={{
-									padding: "10px 20px",
-									backgroundColor: "#dc3545",
+									padding: "var(--padding-button)",
+									backgroundColor: "var(--color-danger)",
 									color: "#fff",
 									border: "none",
-									borderRadius: "4px",
+									borderRadius: "var(--radius-button)",
 									cursor: "pointer",
 								}}
 							>
@@ -80,13 +81,14 @@ export class ErrorBoundary extends Component<Props, State> {
 						)}
 						<button
 							type="button"
+							aria-label="Try again"
 							onClick={() => this.setState({ hasError: false, error: null })}
 							style={{
-								padding: "10px 20px",
-								backgroundColor: "#007bff",
+								padding: "var(--padding-button)",
+								backgroundColor: "var(--color-primary)",
 								color: "#fff",
 								border: "none",
-								borderRadius: "4px",
+								borderRadius: "var(--radius-button)",
 								cursor: "pointer",
 							}}
 						>

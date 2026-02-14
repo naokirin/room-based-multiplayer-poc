@@ -16,6 +16,8 @@ interface LobbyState {
 	matchmakingStatus: MatchmakingStatus;
 	currentMatch: MatchInfo | null;
 	queuedAt: string | null;
+	/** Timeout in seconds from API (MatchmakingQueuedResponse.timeout_seconds). Used for countdown. */
+	queuedTimeoutSeconds: number | null;
 	error: string | null;
 	isLoading: boolean;
 }
@@ -56,6 +58,7 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 	matchmakingStatus: "idle",
 	currentMatch: null,
 	queuedAt: null,
+	queuedTimeoutSeconds: null,
 	error: null,
 	isLoading: false,
 
@@ -95,10 +98,11 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 					isLoading: false,
 				});
 			} else if (response.status === "queued") {
-				// Enter queue and start polling
+				// Enter queue and start polling (use API timeout_seconds for countdown)
 				set({
 					matchmakingStatus: "queued",
 					queuedAt: response.queued_at,
+					queuedTimeoutSeconds: response.timeout_seconds ?? null,
 					isLoading: false,
 				});
 
@@ -121,6 +125,7 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 			set({
 				matchmakingStatus: "idle",
 				queuedAt: null,
+				queuedTimeoutSeconds: null,
 				error: null,
 			});
 		} catch (err: unknown) {
@@ -140,6 +145,7 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 					set({
 						matchmakingStatus: "error",
 						queuedAt: null,
+						queuedTimeoutSeconds: null,
 						error:
 							"Invalid matched response: missing room_id, room_token, or ws_url",
 					});
@@ -150,12 +156,14 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 					matchmakingStatus: "matched",
 					currentMatch: { room_id, room_token, ws_url },
 					queuedAt: null,
+					queuedTimeoutSeconds: null,
 				});
 			} else if (response.status === "timeout") {
 				clearPollTimer();
 				set({
 					matchmakingStatus: "timeout",
 					queuedAt: null,
+					queuedTimeoutSeconds: null,
 					error: response.message || "Matchmaking timeout",
 				});
 			} else if (response.status === "error") {
@@ -163,6 +171,7 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 				set({
 					matchmakingStatus: "error",
 					queuedAt: null,
+					queuedTimeoutSeconds: null,
 					error: response.message || "Matchmaking error",
 				});
 			}
@@ -171,6 +180,8 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 			clearPollTimer();
 			set({
 				matchmakingStatus: "error",
+				queuedAt: null,
+				queuedTimeoutSeconds: null,
 				error: getErrorMessage(err, "Failed to check status"),
 			});
 		}
@@ -181,6 +192,7 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 			matchmakingStatus: "idle",
 			currentMatch: null,
 			queuedAt: null,
+			queuedTimeoutSeconds: null,
 			error: null,
 		});
 	},

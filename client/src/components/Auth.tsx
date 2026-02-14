@@ -124,9 +124,9 @@ export function Auth() {
 						style={{
 							padding: "10px",
 							marginBottom: "15px",
-							backgroundColor: "#fee",
+							backgroundColor: "var(--color-error-bg)",
 							color: "#c00",
-							borderRadius: "4px",
+							borderRadius: "var(--radius-button)",
 							fontSize: "14px",
 						}}
 					>
@@ -136,15 +136,16 @@ export function Auth() {
 
 				<button
 					type="submit"
+					aria-label={mode === "login" ? "Log in" : "Register account"}
 					disabled={isLoading}
 					style={{
 						width: "100%",
 						padding: "10px",
 						fontSize: "16px",
-						backgroundColor: isLoading ? "#ccc" : "#007bff",
+						backgroundColor: isLoading ? "#ccc" : "var(--color-primary)",
 						color: "#fff",
 						border: "none",
-						borderRadius: "4px",
+						borderRadius: "var(--radius-button)",
 						cursor: isLoading ? "not-allowed" : "pointer",
 					}}
 				>
@@ -155,12 +156,15 @@ export function Auth() {
 			<div style={{ marginTop: "15px", textAlign: "center" }}>
 				<button
 					type="button"
+					aria-label={
+						mode === "login" ? "Switch to registration" : "Switch to login"
+					}
 					onClick={toggleMode}
 					disabled={isLoading}
 					style={{
 						background: "none",
 						border: "none",
-						color: "#007bff",
+						color: "var(--color-primary)",
 						textDecoration: "underline",
 						cursor: isLoading ? "not-allowed" : "pointer",
 					}}

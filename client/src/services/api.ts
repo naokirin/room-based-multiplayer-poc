@@ -1,3 +1,8 @@
+import {
+	AuthResponseSchema,
+	ProfileResponseSchema,
+	RefreshResponseSchema,
+} from "../schemas/api";
 import type {
 	Announcement,
 	ApiError,
@@ -94,35 +99,39 @@ class ApiClient {
 		return response.json();
 	}
 
-	// Auth
+	// Auth (with runtime validation)
 	async register(
 		email: string,
 		password: string,
 		displayName: string,
 	): Promise<AuthResponse> {
-		return this.request<AuthResponse>("/auth/register", {
+		const data = await this.request<unknown>("/auth/register", {
 			method: "POST",
 			body: JSON.stringify({
 				user: { email, password, display_name: displayName },
 			}),
 		});
+		return AuthResponseSchema.parse(data);
 	}
 
 	async login(email: string, password: string): Promise<AuthResponse> {
-		return this.request<AuthResponse>("/auth/login", {
+		const data = await this.request<unknown>("/auth/login", {
 			method: "POST",
 			body: JSON.stringify({ email, password }),
 		});
+		return AuthResponseSchema.parse(data);
 	}
 
 	async refresh(): Promise<RefreshResponse> {
-		return this.request<RefreshResponse>("/auth/refresh", {
+		const data = await this.request<unknown>("/auth/refresh", {
 			method: "POST",
 		});
+		return RefreshResponseSchema.parse(data);
 	}
 
 	async getProfile(): Promise<{ user: User }> {
-		return this.request<{ user: User }>("/profile");
+		const data = await this.request<unknown>("/profile");
+		return ProfileResponseSchema.parse(data);
 	}
 
 	// Game types

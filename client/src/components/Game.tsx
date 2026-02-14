@@ -147,13 +147,14 @@ export function Game() {
 				</div>
 				<button
 					type="button"
+					aria-label="Leave game and return to lobby"
 					onClick={handleLeaveGame}
 					style={{
-						padding: "8px 16px",
-						backgroundColor: "#dc3545",
+						padding: "var(--padding-button)",
+						backgroundColor: "var(--color-danger)",
 						color: "#fff",
 						border: "none",
-						borderRadius: "4px",
+						borderRadius: "var(--radius-button)",
 						cursor: "pointer",
 					}}
 				>
@@ -229,14 +230,15 @@ export function Game() {
 								</p>
 								<button
 									type="button"
+									aria-label="Retry reconnecting to game"
 									onClick={() => reconnectToRoom()}
 									style={{
 										padding: "8px 20px",
 										fontSize: "14px",
-										backgroundColor: "#007bff",
+										backgroundColor: "var(--color-primary)",
 										color: "#fff",
 										border: "none",
-										borderRadius: "4px",
+										borderRadius: "var(--radius-button)",
 										cursor: "pointer",
 									}}
 								>
@@ -309,14 +311,15 @@ export function Game() {
 
 						<button
 							type="button"
+							aria-label="Return to lobby"
 							onClick={handleCloseResult}
 							style={{
 								padding: "12px 30px",
 								fontSize: "16px",
-								backgroundColor: "#007bff",
+								backgroundColor: "var(--color-primary)",
 								color: "#fff",
 								border: "none",
-								borderRadius: "4px",
+								borderRadius: "var(--radius-button)",
 								cursor: "pointer",
 							}}
 						>

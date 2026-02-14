@@ -88,6 +88,7 @@ function App() {
 					</span>
 					<button
 						type="button"
+						aria-label="Retry connection to server"
 						onClick={handleRetryConnection}
 						disabled={retrying}
 						style={{
@@ -95,7 +96,7 @@ function App() {
 							backgroundColor: "rgba(255,255,255,0.25)",
 							color: "#fff",
 							border: "1px solid rgba(255,255,255,0.5)",
-							borderRadius: "4px",
+							borderRadius: "var(--radius-button)",
 							cursor: retrying ? "not-allowed" : "pointer",
 						}}
 					>

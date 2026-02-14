@@ -682,6 +682,11 @@ export class GameRenderer {
 		this.cardClickCallback = callback;
 	}
 
+	/**
+	 * Teardown for PixiJS v8. Uses app.stop?() and app._cancelResize as workarounds
+	 * for clean shutdown (avoids updateLocalTransform on null). Re-verify with future
+	 * Pixi versions if upgrade breaks unmount. (CODE_REVIEW Suggestion 11)
+	 */
 	destroy(): void {
 		this.destroyed = true;
 

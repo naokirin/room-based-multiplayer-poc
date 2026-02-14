@@ -11,6 +11,23 @@
 	text-rendering: optimizeLegibility;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+
+	/* Shared UI tokens (CODE_REVIEW Suggestion 9) */
+	--color-primary: #007bff;
+	--color-primary-hover: #0056b3;
+	--color-danger: #dc3545;
+	--color-danger-hover: #c82333;
+	--color-success: #28a745;
+	--color-success-bg: #d4edda;
+	--color-success-text: #155724;
+	--color-neutral: #6c757d;
+	--color-warning-bg: #fff3cd;
+	--color-warning-border: #ffc107;
+	--color-error-bg: #f8d7da;
+	--color-error-border: #dc3545;
+	--radius-button: 4px;
+	--radius-card: 8px;
+	--padding-button: 8px 16px;
 }
 
 a {
