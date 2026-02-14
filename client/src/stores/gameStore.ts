@@ -11,10 +11,19 @@ interface GameResult {
   reason: string;
 }
 
+/** Shown in center after a card is played (both players see who played what) */
+export interface LastPlayedCard {
+  actorId: string;
+  actorDisplayName: string;
+  card: Card;
+}
+
 interface GameStoreState {
   roomId: string | null;
   gameState: GameState | null;
   myHand: Card[];
+  /** Card just played, shown in center until next turn */
+  lastPlayedCard: LastPlayedCard | null;
   currentTurn: string | null;
   turnNumber: number;
   turnTimeRemaining: number;
@@ -63,11 +72,30 @@ const startTurnTimer = (updateFn: () => void) => {
   turnTimerId = window.setInterval(updateFn, 1000);
 };
 
+function serverCardToCard(server: {
+  id: string;
+  name: string;
+  effects?: Array<{ effect: string; value?: number }>;
+}): Card {
+  const effects = server.effects ?? [];
+  const first = effects[0];
+  const effect = (first?.effect ?? "deal_damage") as Card["effect"];
+  const value = first?.value ?? 0;
+  return {
+    id: server.id,
+    name: server.name,
+    effect,
+    value,
+    effects: effects.map((e) => ({ effect: e.effect, value: e.value ?? 0 })),
+  };
+}
+
 export const useGameStore = create<GameStore>((set, get) => ({
   // State
   roomId: null,
   gameState: null,
   myHand: [],
+  lastPlayedCard: null,
   currentTurn: null,
   turnNumber: 0,
   turnTimeRemaining: 0,
@@ -383,7 +411,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   handleActionApplied: (payload: unknown) => {
     const data = payload as {
       actor_id: string;
-      effects: Array<{ type: string; [key: string]: unknown }>;
+      effects: Array<{
+        type: string;
+        player_id?: string;
+        card?: { id: string; name: string; effects?: Array<{ effect: string; value?: number }> };
+        [key: string]: unknown;
+      }>;
       players: Record<string, PlayerState>;
     };
 
@@ -399,9 +432,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
       players: updatedPlayers,
     };
 
+    // Extract last played card for center display (both players see who played what)
+    const cardPlayedEffect = data.effects?.find((e) => e.type === "card_played");
+    const serverCard = cardPlayedEffect?.card;
+    const actorDisplayName =
+      (data.actor_id && updatedPlayers[data.actor_id]?.display_name) ?? "Player";
+    const lastPlayedCard: LastPlayedCard | null =
+      serverCard && data.actor_id
+        ? {
+            actorId: data.actor_id,
+            actorDisplayName,
+            card: serverCardToCard(serverCard),
+          }
+        : null;
+
     set({
       gameState: updatedGameState,
       players: updatedPlayers,
+      lastPlayedCard,
     });
   },
 
@@ -457,6 +505,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       turnNumber: data.turn_number,
       turnTimeRemaining,
       isMyTurn,
+      lastPlayedCard: null,
     };
 
     // If we drew a card, add it to our hand
@@ -569,6 +618,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       roomId: null,
       gameState: null,
       myHand: [],
+      lastPlayedCard: null,
       currentTurn: null,
       turnNumber: 0,
       turnTimeRemaining: 0,

@@ -85,11 +85,19 @@ defmodule GameServer.Games.SimpleCardBattle do
 
     final_game_state = put_in(updated_game_state, [:players, player_id], updated_player_state)
 
+    # Include full card for client display (both players see who played what)
+    card_for_display = %{
+      "id" => card["id"],
+      "name" => card["name"],
+      "effects" => Map.get(card, "effects", [])
+    }
+
     card_played_effect = %{
       type: "card_played",
       player_id: player_id,
       card_id: card_id,
-      card_name: card["name"]
+      card_name: card["name"],
+      card: card_for_display
     }
 
     {:ok, final_game_state, [card_played_effect | effects]}

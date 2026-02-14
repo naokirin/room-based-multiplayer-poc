@@ -7,6 +7,7 @@ import {
   FederatedPointerEvent,
 } from "pixi.js";
 import type { GameState, Card, PlayerState } from "../types";
+import type { LastPlayedCard } from "../stores/gameStore";
 import { MAX_HP } from "../types";
 
 interface RendererOptions {
@@ -26,6 +27,7 @@ export class GameRenderer {
     myHand: Card[];
     isMyTurn: boolean;
     myUserId: string;
+    lastPlayedCard?: LastPlayedCard;
   } | null = null;
 
   constructor(container: HTMLElement, options: RendererOptions = {}) {
@@ -66,9 +68,16 @@ export class GameRenderer {
 
         // Render any state that arrived before initialization completed
         if (this.pendingState) {
-          const { gameState, myHand, isMyTurn, myUserId } = this.pendingState;
+          const { gameState, myHand, isMyTurn, myUserId, lastPlayedCard } =
+            this.pendingState;
           this.pendingState = null;
-          this.updateState(gameState, myHand, isMyTurn, myUserId);
+          this.updateState(
+            gameState,
+            myHand,
+            isMyTurn,
+            myUserId,
+            lastPlayedCard
+          );
         }
       });
   }
@@ -77,11 +86,18 @@ export class GameRenderer {
     gameState: GameState | null,
     myHand: Card[],
     isMyTurn: boolean,
-    myUserId: string
+    myUserId: string,
+    lastPlayedCard?: LastPlayedCard
   ): void {
     // Buffer state if not yet initialized; will render when init completes
     if (!this.initialized || !this.stage) {
-      this.pendingState = { gameState, myHand, isMyTurn, myUserId };
+      this.pendingState = {
+        gameState,
+        myHand,
+        isMyTurn,
+        myUserId,
+        lastPlayedCard,
+      };
       return;
     }
 
@@ -106,6 +122,11 @@ export class GameRenderer {
 
     // Render turn indicator (center-top)
     this.renderTurnIndicator(isMyTurn, gameState.turn_number);
+
+    // Render played card in center (both players see who played what)
+    if (lastPlayedCard) {
+      this.renderPlayedCardCenter(lastPlayedCard);
+    }
 
     // Render my info and hand (bottom)
     if (myPlayer) {
@@ -379,6 +400,37 @@ export class GameRenderer {
     turnText.y = 30;
     turnText.anchor.set(0.5);
     container.addChild(turnText);
+
+    this.stage.addChild(container);
+  }
+
+  private renderPlayedCardCenter(last: LastPlayedCard): void {
+    if (!this.stage) return;
+
+    const centerX = this.app.screen.width / 2;
+    const container = new Container();
+    container.y = 155;
+
+    const labelStyle = new TextStyle({
+      fontFamily: "Arial",
+      fontSize: 18,
+      fill: 0xe0e0e0,
+      align: "center",
+    });
+    const labelText = new Text({
+      text: `${last.actorDisplayName} が 「${last.card.name}」 を出しました`,
+      style: labelStyle,
+    });
+    labelText.x = centerX;
+    labelText.anchor.set(0.5, 0);
+    container.addChild(labelText);
+
+    const cardWidth = 100;
+    const cardHeight = 130;
+    const cardGraphic = this.createCard(last.card, cardWidth, cardHeight, false);
+    cardGraphic.x = centerX - cardWidth / 2;
+    cardGraphic.y = 28;
+    container.addChild(cardGraphic);
 
     this.stage.addChild(container);
   }

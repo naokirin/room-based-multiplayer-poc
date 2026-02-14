@@ -5,6 +5,9 @@ import { useChatStore } from "../stores/chatStore";
 import { GameRenderer } from "../game/GameRenderer";
 import { Chat } from "./Chat";
 
+/** 勝敗ダイアログを出すまでの待ち時間（最後に出したカードを表示する時間） */
+const RESULT_DIALOG_DELAY_MS = 2500;
+
 export function Game() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GameRenderer | null>(null);
@@ -12,6 +15,7 @@ export function Game() {
   const {
     gameState,
     myHand,
+    lastPlayedCard,
     isMyTurn,
     status,
     turnTimeRemaining,
@@ -71,14 +75,22 @@ export function Game() {
   useEffect(() => {
     if (!rendererRef.current) return;
     const myUserId = user?.id ?? "";
-    rendererRef.current.updateState(gameState, myHand, isMyTurn, myUserId);
-  }, [gameState, myHand, isMyTurn, user]);
+    rendererRef.current.updateState(
+      gameState,
+      myHand,
+      isMyTurn,
+      myUserId,
+      lastPlayedCard ?? undefined
+    );
+  }, [gameState, myHand, isMyTurn, user, lastPlayedCard]);
 
-  // Show result modal when game ends
+  // 勝敗がついたら最後のカードを表示してからダイアログを表示
   useEffect(() => {
-    if (status === "finished" || status === "aborted") {
+    if (status !== "finished" && status !== "aborted") return;
+    const timerId = window.setTimeout(() => {
       setShowResult(true);
-    }
+    }, RESULT_DIALOG_DELAY_MS);
+    return () => clearTimeout(timerId);
   }, [status]);
 
   const handleLeaveGame = () => {

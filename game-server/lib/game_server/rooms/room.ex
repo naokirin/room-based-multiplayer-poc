@@ -20,6 +20,7 @@ defmodule GameServer.Rooms.Room do
   alias GameServer.Redis
 
   @turn_time_limit 30
+  @reveal_delay_ms 2_500
   @disconnect_timeout 60_000
   @reconnect_timeout 60_000
   @termination_delay 30_000
@@ -418,6 +419,16 @@ defmodule GameServer.Rooms.Room do
   end
 
   @impl true
+  def handle_info({:advance_turn_after_reveal, next_player_id}, state) do
+    if state.status == :playing do
+      state = advance_turn(state, next_player_id)
+      {:noreply, state}
+    else
+      {:noreply, state}
+    end
+  end
+
+  @impl true
   def handle_info(:disconnect_timeout, state) do
     if all_players_disconnected?(state) do
       Logger.info("All players disconnected for too long, aborting room #{state.room_id}")
@@ -607,9 +618,18 @@ defmodule GameServer.Rooms.Room do
             deck_count: length(acting_player_state.deck)
           })
 
-          # Advance turn (includes auto-draw for next player)
+          # Cancel turn timer during reveal so it does not tick
+          state =
+            if state.turn_timer_ref do
+              Process.cancel_timer(state.turn_timer_ref)
+              %{state | turn_timer_ref: nil}
+            else
+              state
+            end
+
+          # Advance turn after reveal delay so both players can see the played card
           next_player_id = get_next_player_id(state)
-          state = advance_turn(state, next_player_id)
+          Process.send_after(self(), {:advance_turn_after_reveal, next_player_id}, @reveal_delay_ms)
 
           {:reply, :ok, state}
 
