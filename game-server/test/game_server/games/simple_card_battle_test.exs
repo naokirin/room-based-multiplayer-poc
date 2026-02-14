@@ -308,6 +308,48 @@ defmodule GameServer.Games.SimpleCardBattleTest do
       assert draw_effect.count == 1
     end
 
+    test "discard_opponent removes cards from opponent hand", %{game_state: game_state} do
+      strip_card = %{
+        "id" => "strip_1",
+        "name" => "Strip",
+        "effects" => [%{"effect" => "discard_opponent", "value" => 1}]
+      }
+
+      hand_with_strip = [strip_card | Enum.take(game_state.players[@player1_id].hand, 2)]
+      game_state = put_in(game_state, [:players, @player1_id, :hand], hand_with_strip)
+      opponent_initial_count = length(game_state.players[@player2_id].hand)
+
+      action = %{"action" => "play_card", "card_id" => strip_card["id"]}
+      {:ok, updated_state, effects} = SimpleCardBattle.apply_action(game_state, @player1_id, action)
+
+      assert length(updated_state.players[@player2_id].hand) == opponent_initial_count - 1
+      discard_effect = Enum.find(effects, fn e -> e.type == "opponent_discarded" end)
+      assert discard_effect != nil
+      assert discard_effect.target_id == @player2_id
+      assert discard_effect.count == 1
+    end
+
+    test "reshuffle_hand returns hand to deck and draws same number", %{game_state: game_state} do
+      mulligan_card = %{
+        "id" => "mulligan_1",
+        "name" => "Mulligan",
+        "effects" => [%{"effect" => "reshuffle_hand"}]
+      }
+
+      hand_with_mulligan = [mulligan_card | Enum.take(game_state.players[@player1_id].hand, 2)]
+      game_state = put_in(game_state, [:players, @player1_id, :hand], hand_with_mulligan)
+      hand_size_before = 2
+
+      action = %{"action" => "play_card", "card_id" => mulligan_card["id"]}
+      {:ok, updated_state, effects} = SimpleCardBattle.apply_action(game_state, @player1_id, action)
+
+      assert length(updated_state.players[@player1_id].hand) == hand_size_before
+      reshuffle_effect = Enum.find(effects, fn e -> e.type == "hand_reshuffled" end)
+      assert reshuffle_effect != nil
+      assert reshuffle_effect.player_id == @player1_id
+      assert reshuffle_effect.count == hand_size_before
+    end
+
     test "played card is moved to discard pile", %{game_state: game_state} do
       card = List.first(game_state.players[@player1_id].hand)
       action = %{"action" => "play_card", "card_id" => card["id"]}

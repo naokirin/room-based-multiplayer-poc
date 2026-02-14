@@ -64,7 +64,7 @@ export interface RoomPlayer {
 
 // Card effect entry (for single or composite cards)
 export interface CardEffect {
-  effect: "deal_damage" | "heal" | "draw_card";
+  effect: "deal_damage" | "heal" | "draw_card" | "discard_opponent" | "reshuffle_hand";
   value: number;
 }
 
@@ -72,7 +72,7 @@ export interface CardEffect {
 export interface Card {
   id: string;
   name: string;
-  effect: "deal_damage" | "heal" | "draw_card";
+  effect: "deal_damage" | "heal" | "draw_card" | "discard_opponent" | "reshuffle_hand";
   value: number;
   /** When present, card has multiple effects (composite). First element matches effect/value. */
   effects?: CardEffect[];

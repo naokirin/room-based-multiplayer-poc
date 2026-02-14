@@ -7,7 +7,7 @@ defmodule GameServer.Games.SimpleCardBattle do
   - Players draw 3 cards from a shuffled deck at game start
   - Hand limit: 5 cards (draws that would exceed are capped)
   - Turn-based gameplay (players alternate turns)
-  - Card effects: deal_damage, heal, draw_card (and composite cards with multiple effects)
+  - Card effects: deal_damage, heal, draw_card, discard_opponent, reshuffle_hand (and composite)
   - Win conditions: reduce opponent HP to 0 or opponent runs out of cards (no deck reshuffle)
   - Lose condition: disconnect/forfeit
   """
@@ -219,6 +219,69 @@ defmodule GameServer.Games.SimpleCardBattle do
     {updated_state, [effect]}
   end
 
+  defp apply_single_effect(game_state, player_id, %{"effect" => "discard_opponent", "value" => count}) do
+    opponent_id = get_opponent_id(game_state, player_id)
+    opponent_state = get_in(game_state, [:players, opponent_id])
+    hand = opponent_state.hand
+    discard_count = min(count, length(hand))
+
+    if discard_count == 0 do
+      effect = %{type: "opponent_discarded", target_id: opponent_id, count: 0, discarded_card_ids: []}
+      {game_state, [effect]}
+    else
+      to_discard = hand |> Enum.shuffle() |> Enum.take(discard_count)
+      new_hand = hand -- to_discard
+      new_discard = to_discard ++ (opponent_state.discard || [])
+      updated_opponent =
+        opponent_state
+        |> Map.put(:hand, new_hand)
+        |> Map.put(:discard, new_discard)
+
+      updated_state = put_in(game_state, [:players, opponent_id], updated_opponent)
+      discarded_ids = Enum.map(to_discard, & &1["id"])
+
+      effect = %{
+        type: "opponent_discarded",
+        target_id: opponent_id,
+        count: discard_count,
+        discarded_card_ids: discarded_ids
+      }
+
+      {updated_state, [effect]}
+    end
+  end
+
+  defp apply_single_effect(game_state, player_id, %{"effect" => "reshuffle_hand"}) do
+    player_state = get_in(game_state, [:players, player_id])
+    hand = player_state.hand
+    hand_size = length(hand)
+
+    if hand_size == 0 do
+      effect = %{type: "hand_reshuffled", player_id: player_id, count: 0}
+      {game_state, [effect]}
+    else
+      combined = hand ++ player_state.deck
+      shuffled_deck = Enum.shuffle(combined)
+      draw_count = min(hand_size, @max_hand_size)
+      {drawn_cards, remaining_deck} = Enum.split(shuffled_deck, draw_count)
+
+      updated_player_state =
+        player_state
+        |> Map.put(:hand, drawn_cards)
+        |> Map.put(:deck, remaining_deck)
+
+      updated_state = put_in(game_state, [:players, player_id], updated_player_state)
+
+      effect = %{
+        type: "hand_reshuffled",
+        player_id: player_id,
+        count: length(drawn_cards)
+      }
+
+      {updated_state, [effect]}
+    end
+  end
+
   defp apply_single_effect(game_state, _player_id, _effect) do
     # Unknown effect, skip
     {game_state, []}
@@ -233,9 +296,9 @@ defmodule GameServer.Games.SimpleCardBattle do
   end
 
   defp default_deck do
-    # 15-card deck: fewer Attack, base cards, and composite-effect cards
+    # 15-card deck: fewer Attack, base cards, Strip/Mulligan (replacing old Draw), composites
     attack_cards =
-      for i <- 1..4 do
+      for i <- 1..3 do
         %{
           "id" => "dmg_#{i}",
           "name" => "Attack",
@@ -252,18 +315,29 @@ defmodule GameServer.Games.SimpleCardBattle do
         }
       end
 
-    draw_cards =
+    # Opponent discards N cards from hand (replaces old 2-draw)
+    strip_cards =
       for i <- 1..2 do
         %{
-          "id" => "draw_#{i}",
-          "name" => "Draw",
-          "effects" => [%{"effect" => "draw_card", "value" => 2}]
+          "id" => "strip_#{i}",
+          "name" => "Strip",
+          "effects" => [%{"effect" => "discard_opponent", "value" => 1}]
+        }
+      end
+
+    # Return hand to deck, shuffle, draw same number (replaces old 2-draw)
+    mulligan_cards =
+      for i <- 1..2 do
+        %{
+          "id" => "mulligan_#{i}",
+          "name" => "Mulligan",
+          "effects" => [%{"effect" => "reshuffle_hand"}]
         }
       end
 
     # Composite: 2 damage + 1 draw
     strike_cards =
-      for i <- 1..3 do
+      for i <- 1..2 do
         %{
           "id" => "strike_#{i}",
           "name" => "Strike",
@@ -300,6 +374,6 @@ defmodule GameServer.Games.SimpleCardBattle do
         }
       end
 
-    attack_cards ++ heal_cards ++ draw_cards ++ strike_cards ++ burst_cards ++ vamp_cards
+    attack_cards ++ heal_cards ++ strip_cards ++ mulligan_cards ++ strike_cards ++ burst_cards ++ vamp_cards
   end
 end

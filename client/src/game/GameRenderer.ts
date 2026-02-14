@@ -429,8 +429,10 @@ export class GameRenderer {
           fontWeight: "bold",
           align: "right",
         });
+        const valueStr =
+          e.effect === "reshuffle_hand" ? "—" : e.value.toString();
         const valueText = new Text({
-          text: e.value.toString(),
+          text: valueStr,
           style: valueStyle,
         });
         valueText.x = width - 6;
@@ -461,8 +463,10 @@ export class GameRenderer {
         fill: this.getEffectColor(card.effect),
         fontWeight: "bold",
       });
+      const valueStr =
+        card.effect === "reshuffle_hand" ? "—" : (card.value != null ? card.value : 0).toString();
       const valueText = new Text({
-        text: (card.value != null ? card.value : 0).toString(),
+        text: valueStr,
         style: valueStyle,
       });
       valueText.x = width / 2;
@@ -482,6 +486,10 @@ export class GameRenderer {
         return "Heal";
       case "draw_card":
         return "Draw";
+      case "discard_opponent":
+        return "Discard";
+      case "reshuffle_hand":
+        return "Reshuffle";
       default:
         return effect;
     }
@@ -495,6 +503,10 @@ export class GameRenderer {
         return "❤";
       case "draw_card":
         return "📄";
+      case "discard_opponent":
+        return "✂";
+      case "reshuffle_hand":
+        return "🔀";
       default:
         return "?";
     }
@@ -508,6 +520,10 @@ export class GameRenderer {
         return "❤️ Heal";
       case "draw_card":
         return "📄 Draw";
+      case "discard_opponent":
+        return "✂️ Discard";
+      case "reshuffle_hand":
+        return "🔀 Reshuffle";
       default:
         return effect;
     }
@@ -521,6 +537,10 @@ export class GameRenderer {
         return 0x51cf66;
       case "draw_card":
         return 0x4dabf7;
+      case "discard_opponent":
+        return 0xda77f2;
+      case "reshuffle_hand":
+        return 0xffd43b;
       default:
         return 0xffffff;
     }
