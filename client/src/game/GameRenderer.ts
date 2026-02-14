@@ -163,22 +163,90 @@ export class GameRenderer {
     hpBar.y = 35;
     container.addChild(hpBar);
 
-    // Card count
-    const cardCountStyle = new TextStyle({
+    // Opponent hand: show hand_count as card backs (face-down cards)
+    const handCardWidth = 28;
+    const handCardHeight = 36;
+    const handCardOverlap = 10; // 重なって見えるオフセット
+    const maxHandCardsVisible = 10; // 表示する最大枚数（それ以上は数字で補足）
+    const handCount = Math.min(player.hand_count, maxHandCardsVisible);
+    const handStartX = 240;
+    const handY = 32;
+
+    for (let i = 0; i < handCount; i++) {
+      const cardBack = this.createCardBack(handCardWidth, handCardHeight);
+      cardBack.x = handStartX + i * (handCardWidth - handCardOverlap);
+      cardBack.y = handY;
+      container.addChild(cardBack);
+    }
+
+    // 手札が max を超える場合は「+N」を表示
+    if (player.hand_count > maxHandCardsVisible) {
+      const extraStyle = new TextStyle({
+        fontFamily: "Arial",
+        fontSize: 12,
+        fill: 0xcccccc,
+      });
+      const extraText = new Text({
+        text: `+${player.hand_count - maxHandCardsVisible}`,
+        style: extraStyle,
+      });
+      extraText.x =
+        handStartX +
+        handCount * (handCardWidth - handCardOverlap) +
+        handCardWidth / 2;
+      extraText.y = handY + handCardHeight / 2;
+      extraText.anchor.set(0.5, 0.5);
+      container.addChild(extraText);
+    }
+
+    // Deck count (right of hand cards)
+    const handVisualWidth =
+      handCount * (handCardWidth - handCardOverlap) + handCardWidth;
+    const deckLabelX =
+      handStartX +
+      handVisualWidth +
+      (player.hand_count > maxHandCardsVisible ? 24 : 12);
+    const deckCountStyle = new TextStyle({
       fontFamily: "Arial",
       fontSize: 14,
       fill: 0xaaaaaa,
     });
-
-    const cardCountText = new Text({
-      text: `Hand: ${player.hand_count} | Deck: ${player.deck_count}`,
-      style: cardCountStyle,
+    const deckCountText = new Text({
+      text: `Deck: ${player.deck_count}`,
+      style: deckCountStyle,
     });
-    cardCountText.x = 240;
-    cardCountText.y = 35;
-    container.addChild(cardCountText);
+    deckCountText.x = deckLabelX;
+    deckCountText.y = 35;
+    container.addChild(deckCountText);
 
     this.stage.addChild(container);
+  }
+
+  /** 相手の手札枚数用の「カード裏」見た目（中身は見せない） */
+  private createCardBack(width: number, height: number): Container {
+    const container = new Container();
+    const bg = new Graphics();
+    // 角を少し丸くしたカード裏
+    const radius = 4;
+    bg.roundRect(0, 0, width, height, radius);
+    bg.fill(0x2d3748);
+    bg.stroke({ width: 1.5, color: 0x4a5568 });
+    container.addChild(bg);
+    // 中央に「？」マークで裏向きであることを示す
+    const backStyle = new TextStyle({
+      fontFamily: "Arial",
+      fontSize: 14,
+      fill: 0x718096,
+    });
+    const backText = new Text({
+      text: "?",
+      style: backStyle,
+    });
+    backText.x = width / 2;
+    backText.y = height / 2;
+    backText.anchor.set(0.5, 0.5);
+    container.addChild(backText);
+    return container;
   }
 
   private renderMyInfo(player: PlayerState): void {
