@@ -1,8 +1,6 @@
 module Api
   module V1
     class RoomsController < ApplicationController
-      before_action :authenticate_user!
-
       # GET /api/v1/rooms/:id/ws_endpoint
       # T093: Return WebSocket endpoint info for reconnection
       def ws_endpoint

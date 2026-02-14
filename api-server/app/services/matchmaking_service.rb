@@ -220,8 +220,8 @@ class MatchmakingService
       REDIS.exists?("active_game:#{user_id}")
     end
 
-    # Seconds after which a room still in "preparing" is considered stale (e.g. stack was restarted)
-    PREPARING_STALE_THRESHOLD = 30
+    # Room still in "preparing" after this is considered stale (e.g. stack was restarted)
+    PREPARING_STALE_THRESHOLD = 30.seconds
     # ready/playing room with no update for this long is considered stale (e.g. stack was restarted)
     ROOM_INACTIVE_STALE_THRESHOLD = 5.minutes
 
@@ -234,7 +234,7 @@ class MatchmakingService
       return true unless room
       return true if room.finished? || room.aborted? || room.failed?
       # Room stuck in preparing (e.g. game-server restarted before room was ready)
-      return true if room.preparing? && room.created_at < PREPARING_STALE_THRESHOLD.seconds.ago
+      return true if room.preparing? && room.created_at < PREPARING_STALE_THRESHOLD.ago
       # ready/playing but no recent activity (e.g. stack was restarted, game-server state is gone)
       return true if (room.ready? || room.playing?) && room.updated_at < ROOM_INACTIVE_STALE_THRESHOLD.ago
 

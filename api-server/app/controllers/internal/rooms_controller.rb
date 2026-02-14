@@ -5,6 +5,13 @@ module Internal
       room_id = params[:room_id]
       node_name = params[:node_name]
 
+      if room_id.blank?
+        return render json: { error: "bad_request", message: "room_id is required" }, status: :bad_request
+      end
+      if node_name.blank?
+        return render json: { error: "bad_request", message: "node_name is required" }, status: :bad_request
+      end
+
       room = Room.find_by(id: room_id)
       unless room
         return render json: {
@@ -76,6 +83,7 @@ module Internal
       winner_id = params[:winner_id]
       turns_played = params[:turns_played] || 0
       duration_seconds = params[:duration_seconds] || 0
+      # player_results: Hash of user_id (string) => result (e.g. "win", "lose", "draw") from Phoenix
       player_results = params[:player_results] || {}
 
       # Create GameResult record
