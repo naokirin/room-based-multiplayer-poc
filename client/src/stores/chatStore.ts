@@ -1,13 +1,7 @@
 import { create } from "zustand";
 import { socketManager } from "../services/socket";
-
-interface ChatMessage {
-	id: string;
-	sender_id: string;
-	sender_name: string;
-	content: string;
-	sent_at: string;
-}
+import type { ChatMessage } from "../types";
+import { getErrorMessage } from "../utils/error";
 
 interface ChatStoreState {
 	messages: ChatMessage[];
@@ -51,10 +45,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
 			set({ isLoading: false });
 		} catch (err: unknown) {
-			const error = err as { message?: string };
 			set({
 				isLoading: false,
-				error: error.message || "Failed to send message",
+				error: getErrorMessage(err, "Failed to send message"),
 			});
 			throw err;
 		}
@@ -62,12 +55,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
 	addMessage: (message: ChatMessage) => {
 		const currentMessages = get().messages;
+		const messageId = message.message_id;
 
-		// Ignore or update duplicate messages with the same id
-		const exists = currentMessages.some((m) => m.id === message.id);
+		// Ignore or update duplicate messages with the same message_id
+		const exists = currentMessages.some((m) => m.message_id === messageId);
 		if (exists) {
 			const updatedMessages = currentMessages.map((m) =>
-				m.id === message.id ? message : m,
+				m.message_id === messageId ? message : m,
 			);
 			set({ messages: updatedMessages });
 			return;
@@ -89,7 +83,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 			return;
 		}
 
-		// Set up chat message listener
+		// Set up chat message listener (server sends message_id per types/index.ts)
 		socketManager.onEvent("chat:new_message", (payload) => {
 			const message = payload as ChatMessage;
 			get().addMessage(message);

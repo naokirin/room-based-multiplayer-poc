@@ -132,6 +132,11 @@ export interface ApiError {
 	retry_after?: number;
 }
 
+/** Thrown by api.request() when response.ok is false. */
+export interface ApiRequestError extends ApiError {
+	status?: number;
+}
+
 export interface ValidationErrors {
 	errors: Record<string, string[]>;
 }

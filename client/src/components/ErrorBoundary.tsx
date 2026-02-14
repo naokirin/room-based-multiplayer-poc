@@ -52,7 +52,9 @@ export class ErrorBoundary extends Component<Props, State> {
 				>
 					<h2 style={{ margin: "0 0 16px 0" }}>Something went wrong</h2>
 					<p style={{ margin: "0 0 24px 0", color: "#aaa" }}>
-						{this.state.error.message}
+						{this.state.error instanceof Error
+							? this.state.error.message
+							: String(this.state.error)}
 					</p>
 					<div
 						style={{ display: "flex", gap: "12px", justifyContent: "center" }}

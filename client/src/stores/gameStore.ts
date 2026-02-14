@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { socketManager } from "../services/socket";
 import type { Card, GameState, PlayerState } from "../types";
 import { MAX_HP } from "../types";
+import { getErrorMessage } from "../utils/error";
 import { useAuthStore } from "./authStore";
 
 type GameStatus = "waiting" | "playing" | "finished" | "aborted";
@@ -193,8 +194,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
 			localStorage.setItem(ROOM_ID_KEY, roomId);
 		} catch (err: unknown) {
-			const error = err as { message?: string };
-			const msg = error.message || "Failed to join room";
+			const msg = getErrorMessage(err, "Failed to join room");
 			const friendlyMessage =
 				msg.includes("WebSocket") || msg.includes("connection")
 					? "Could not connect to the game server. Please ensure the game server is running (e.g. port 4000)."
@@ -231,7 +231,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				throw new Error("Failed to get WebSocket endpoint");
 			}
 
-			const data = await response.json();
+			let data: { ws_url?: string };
+			try {
+				data = await response.json();
+			} catch {
+				throw new Error("Invalid response from server");
+			}
+			if (typeof data?.ws_url !== "string") {
+				throw new Error("Missing ws_url in response");
+			}
 			const wsUrl = data.ws_url;
 
 			// Reconnect WebSocket and wait for connection
@@ -324,9 +332,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				}
 			}
 		} catch (err: unknown) {
-			const error = err as { message?: string };
 			set({
-				error: error.message || "Failed to reconnect",
+				error: getErrorMessage(err, "Failed to reconnect"),
 				isReconnecting: false,
 			});
 			throw err;
@@ -343,8 +350,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		try {
 			socketManager.pushAction("play_card", cardId, target);
 		} catch (err: unknown) {
-			const error = err as { message?: string };
-			set({ error: error.message || "Failed to play card" });
+			set({ error: getErrorMessage(err, "Failed to play card") });
 		}
 	},
 

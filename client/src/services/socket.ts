@@ -127,7 +127,9 @@ class SocketManager {
 				})
 				.receive("error", (response) => {
 					console.error("Failed to join room", response);
-					reject(new Error(response.reason || "Failed to join room"));
+					const reason =
+						(response as { reason?: string }).reason ?? "Failed to join room";
+					reject(new Error(reason));
 				})
 				.receive("timeout", () => {
 					console.error("Room join timeout");

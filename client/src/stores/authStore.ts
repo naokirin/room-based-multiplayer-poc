@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { api } from "../services/api";
 import type { User } from "../types";
+import { getErrorMessage } from "../utils/error";
 
 interface AuthState {
 	user: User | null;
@@ -86,10 +87,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 			// Schedule auto-refresh
 			scheduleRefresh(get().refreshToken);
 		} catch (err: unknown) {
-			const error = err as { message?: string };
 			set({
 				isLoading: false,
-				error: error.message || "Login failed",
+				error: getErrorMessage(err, "Login failed"),
 			});
 			throw err;
 		}
@@ -120,10 +120,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 			// Schedule auto-refresh
 			scheduleRefresh(get().refreshToken);
 		} catch (err: unknown) {
-			const error = err as { message?: string };
 			set({
 				isLoading: false,
-				error: error.message || "Registration failed",
+				error: getErrorMessage(err, "Registration failed"),
 			});
 			throw err;
 		}
@@ -225,7 +224,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 				} catch (err) {
 					if (api.isNetworkError(err)) {
 						// Server not reachable (e.g. API not running); keep user from cache, show banner
-						console.warn("Server unreachable:", err.message);
+						console.warn("Server unreachable:", getErrorMessage(err));
 						set({ serverUnreachable: true });
 					} else {
 						// Token invalid or other error, logout

@@ -1,5 +1,7 @@
 import type {
 	Announcement,
+	ApiError,
+	ApiRequestError,
 	AuthResponse,
 	GameType,
 	MatchmakingMatchedResponse,
@@ -25,7 +27,7 @@ class ApiClient {
 
 	/**
 	 * Thrown when the request could not reach the server (e.g. connection refused/reset).
-	 * Callers can check `err.isNetworkError` to show a "server unreachable" message
+	 * Callers can check `api.isNetworkError(err)` to show a "server unreachable" message
 	 * instead of treating as auth failure.
 	 */
 	static isNetworkError(
@@ -37,6 +39,13 @@ class ApiClient {
 			"isNetworkError" in err &&
 			(err as { isNetworkError?: boolean }).isNetworkError === true
 		);
+	}
+
+	/** Instance helper for static isNetworkError (for callers using api singleton). */
+	isNetworkError(
+		err: unknown,
+	): err is { isNetworkError: true; message: string } {
+		return ApiClient.isNetworkError(err);
 	}
 
 	private async request<T>(
@@ -67,11 +76,19 @@ class ApiClient {
 		}
 
 		if (!response.ok) {
-			const error = await response.json().catch(() => ({
-				error: "unknown",
-				message: response.statusText,
-			}));
-			throw { status: response.status, ...error };
+			const body = await response.json().catch(
+				(): ApiError => ({
+					error: "unknown",
+					message: response.statusText,
+				}),
+			);
+			const thrown: ApiRequestError = {
+				status: response.status,
+				error: body.error ?? "unknown",
+				message: body.message ?? response.statusText,
+			};
+			if (body.retry_after != null) thrown.retry_after = body.retry_after;
+			throw thrown;
 		}
 
 		return response.json();

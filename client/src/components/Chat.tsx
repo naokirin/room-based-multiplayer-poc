@@ -50,7 +50,7 @@ export const Chat: React.FC = () => {
 				) : (
 					messages.map((msg) => (
 						<div
-							key={msg.id}
+							key={msg.message_id}
 							className={`chat-message ${
 								msg.sender_id === currentUser?.id ? "own-message" : ""
 							}`}

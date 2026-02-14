@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { api } from "../services/api";
 import type { GameType } from "../types";
+import { getErrorMessage } from "../utils/error";
 
 type MatchmakingStatus = "idle" | "queued" | "matched" | "timeout" | "error";
 
@@ -68,10 +69,9 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 				isLoading: false,
 			});
 		} catch (err: unknown) {
-			const error = err as { message?: string };
 			set({
 				isLoading: false,
-				error: error.message || "Failed to fetch game types",
+				error: getErrorMessage(err, "Failed to fetch game types"),
 			});
 		}
 	},
@@ -106,11 +106,10 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 				startPolling(get().checkStatus);
 			}
 		} catch (err: unknown) {
-			const error = err as { message?: string };
 			set({
 				matchmakingStatus: "error",
 				isLoading: false,
-				error: error.message || "Failed to join queue",
+				error: getErrorMessage(err, "Failed to join queue"),
 			});
 		}
 	},
@@ -125,9 +124,8 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 				error: null,
 			});
 		} catch (err: unknown) {
-			const error = err as { message?: string };
 			set({
-				error: error.message || "Failed to cancel queue",
+				error: getErrorMessage(err, "Failed to cancel queue"),
 			});
 		}
 	},
@@ -170,11 +168,10 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 			}
 			// If still queued, continue polling (timer keeps running)
 		} catch (err: unknown) {
-			const error = err as { message?: string };
 			clearPollTimer();
 			set({
 				matchmakingStatus: "error",
-				error: error.message || "Failed to check status",
+				error: getErrorMessage(err, "Failed to check status"),
 			});
 		}
 	},

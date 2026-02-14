@@ -49,12 +49,15 @@ export function Game() {
 		});
 
 		renderer.onCardClick((cardId) => {
-			// For MVP, auto-target opponent for damage cards
-			// In full implementation, show target selection UI
-			const card = myHand.find((c) => c.id === cardId);
-			if (card?.effect === "deal_damage" && gameState) {
-				const myUserId = user?.id;
-				const opponentId = Object.keys(gameState.players).find(
+			// Read current state at click time to avoid stale closure (CODE_REVIEW Warning 2)
+			const { myHand: currentHand, gameState: currentState } =
+				useGameStore.getState();
+			const currentUser = useAuthStore.getState().user;
+
+			const card = currentHand.find((c) => c.id === cardId);
+			if (card?.effect === "deal_damage" && currentState) {
+				const myUserId = currentUser?.id;
+				const opponentId = Object.keys(currentState.players).find(
 					(id) => id !== myUserId,
 				);
 				playCard(cardId, opponentId);
@@ -69,7 +72,7 @@ export function Game() {
 			renderer.destroy();
 			rendererRef.current = null;
 		};
-	}, []);
+	}, [playCard]);
 
 	// Update renderer when game state changes (guard: user may be null briefly)
 	useEffect(() => {
