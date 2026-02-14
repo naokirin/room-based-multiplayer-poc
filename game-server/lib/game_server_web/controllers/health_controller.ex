@@ -19,7 +19,7 @@ defmodule GameServerWeb.HealthController do
   end
 
   defp check_redis do
-    case Redix.command(:redix, ["PING"]) do
+    case GameServer.Redis.command(["PING"]) do
       {:ok, "PONG"} -> "ok"
       _ -> "error"
     end

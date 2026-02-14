@@ -50,7 +50,7 @@ defmodule GameServer.MixProject do
       {:plug_attack, "~> 0.4"},
       {:redix, "~> 1.5"},
       {:finch, "~> 0.19"},
-      {:tesla, "~> 1.8"},
+      {:req, "~> 0.5"},
       {:uuid, "~> 1.1"},
       {:cachex, "~> 3.6"},
       {:mox, "~> 1.1", only: :test}

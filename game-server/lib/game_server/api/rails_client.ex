@@ -2,35 +2,14 @@ defmodule GameServer.Api.RailsClient do
   @moduledoc """
   HTTP client for communicating with Rails internal API.
 
-  Uses Tesla with Finch adapter and automatic retry with exponential backoff.
+  Uses Req with Finch adapter and automatic retry for transient errors.
   All requests include the X-Internal-Api-Key header for authentication.
 
   Base URL and API key are read at runtime so that Docker/runtime env (e.g.
   RAILS_INTERNAL_URL=http://api-server:3001) are applied correctly.
   """
 
-  use Tesla
-
   @max_retries 3
-  @retry_delay 500
-
-  plug Tesla.Middleware.JSON
-  plug Tesla.Middleware.Headers, [
-    {"content-type", "application/json"}
-  ]
-  plug GameServer.Api.RailsClient.RuntimeHeaders
-
-  plug Tesla.Middleware.Retry,
-    delay: @retry_delay,
-    max_retries: @max_retries,
-    max_delay: 5_000,
-    should_retry: fn
-      {:ok, %{status: status}} when status in [500, 502, 503, 504] -> true
-      {:ok, _} -> false
-      {:error, _} -> true
-    end
-
-  adapter Tesla.Adapter.Finch, name: GameServer.Finch
 
   @doc """
   Notify Rails that a room is ready.
@@ -50,16 +29,7 @@ defmodule GameServer.Api.RailsClient do
       status: "ready"
     }
 
-    case post("/internal/rooms", body) do
-      {:ok, %Tesla.Env{status: status, body: response_body}} when status in 200..299 ->
-        {:ok, response_body}
-
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        {:error, {:http_error, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+    post("/internal/rooms", body)
   end
 
   @doc """
@@ -80,16 +50,7 @@ defmodule GameServer.Api.RailsClient do
       player_ids: player_ids
     }
 
-    case put("/internal/rooms/#{room_id}/started", body) do
-      {:ok, %Tesla.Env{status: status, body: response_body}} when status in 200..299 ->
-        {:ok, response_body}
-
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        {:error, {:http_error, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+    put("/internal/rooms/#{room_id}/started", body)
   end
 
   @doc """
@@ -108,16 +69,7 @@ defmodule GameServer.Api.RailsClient do
       result: result_data
     }
 
-    case put("/internal/rooms/#{room_id}/finished", body) do
-      {:ok, %Tesla.Env{status: status, body: response_body}} when status in 200..299 ->
-        {:ok, response_body}
-
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        {:error, {:http_error, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+    put("/internal/rooms/#{room_id}/finished", body)
   end
 
   @doc """
@@ -136,16 +88,7 @@ defmodule GameServer.Api.RailsClient do
       reason: reason
     }
 
-    case put("/internal/rooms/#{room_id}/aborted", body) do
-      {:ok, %Tesla.Env{status: status, body: response_body}} when status in 200..299 ->
-        {:ok, response_body}
-
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        {:error, {:http_error, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+    put("/internal/rooms/#{room_id}/aborted", body)
   end
 
   @doc """
@@ -164,36 +107,78 @@ defmodule GameServer.Api.RailsClient do
     }
 
     case post("/internal/auth/verify", body) do
-      {:ok, %Tesla.Env{status: 200, body: response_body}} ->
+      {:ok, response_body} ->
         {:ok, response_body}
 
-      {:ok, %Tesla.Env{status: 401}} ->
+      {:error, {:http_error, 401, _}} ->
         {:error, :unauthorized}
-
-      {:ok, %Tesla.Env{status: status, body: body}} ->
-        {:error, {:http_error, status, body}}
 
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  # Tesla middleware: sets base URL and X-Internal-Api-Key at request time (runtime env).
-  defmodule RuntimeHeaders do
-    @moduledoc false
-    @behaviour Tesla.Middleware
+  # Private: build base URL and headers from runtime env
+  defp base_url do
+    System.get_env("RAILS_INTERNAL_URL", "http://localhost:3001")
+    |> String.trim_trailing("/")
+  end
 
-    @impl true
-    def call(env, next, _opts) do
-      base =
-        System.get_env("RAILS_INTERNAL_URL", "http://localhost:3001")
-        |> String.trim_trailing("/")
+  defp internal_headers do
+    key = System.get_env("INTERNAL_API_KEY", "")
+    [{"content-type", "application/json"}, {"x-internal-api-key", key}]
+  end
 
-      key = System.get_env("INTERNAL_API_KEY", "")
-      url = if String.starts_with?(env.url, "http"), do: env.url, else: base <> env.url
-      headers = [{"x-internal-api-key", key} | env.headers]
-      modified = %{env | url: url, headers: headers}
-      Tesla.run(modified, next)
+  defp req_options do
+    [
+      base_url: base_url(),
+      headers: internal_headers(),
+      finch: GameServer.Finch,
+      retry: :transient,
+      max_retries: @max_retries,
+      retry_delay: fn attempt -> 500 * :math.pow(2, attempt) |> round() end
+    ]
+  end
+
+  defp post(path, body) do
+    req = Req.new(req_options())
+
+    case Req.post(req, url: path, json: body) do
+      {:ok, %Req.Response{status: status, body: response_body}} when status in 200..299 ->
+        {:ok, response_body}
+
+      {:ok, %Req.Response{status: status, body: body}} ->
+        {:error, {:http_error, status, body}}
+
+      {:error, %Req.TransportError{reason: reason}} ->
+        {:error, reason}
+
+      {:error, %Req.HTTPError{reason: reason}} ->
+        {:error, reason}
+
+      {:error, other} ->
+        {:error, other}
+    end
+  end
+
+  defp put(path, body) do
+    req = Req.new(req_options())
+
+    case Req.put(req, url: path, json: body) do
+      {:ok, %Req.Response{status: status, body: response_body}} when status in 200..299 ->
+        {:ok, response_body}
+
+      {:ok, %Req.Response{status: status, body: body}} ->
+        {:error, {:http_error, status, body}}
+
+      {:error, %Req.TransportError{reason: reason}} ->
+        {:error, reason}
+
+      {:error, %Req.HTTPError{reason: reason}} ->
+        {:error, reason}
+
+      {:error, other} ->
+        {:error, other}
     end
   end
 end
