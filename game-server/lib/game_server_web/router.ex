@@ -5,9 +5,10 @@ defmodule GameServerWeb.Router do
     plug :accepts, ["json"]
   end
 
+  # Internal scope: currently only /internal/health (no auth). When adding
+  # other internal routes, add API key auth to this pipeline.
   pipeline :internal do
     plug :accepts, ["json"]
-    # Internal API key auth will be added later
   end
 
   # Public health check (e.g. Docker, load balancers). No auth.

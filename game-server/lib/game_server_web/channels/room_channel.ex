@@ -166,6 +166,7 @@ defmodule GameServerWeb.RoomChannel do
                   socket =
                     socket
                     |> assign(:room_id, room_id)
+                    |> assign(:chat_messages, [])
                     |> assign(:last_action_at, System.monotonic_time(:millisecond) - @rate_limit_window)
 
                   {:ok, room_state, socket}
@@ -205,6 +206,7 @@ defmodule GameServerWeb.RoomChannel do
               socket =
                 socket
                 |> assign(:room_id, room_id)
+                |> assign(:chat_messages, [])
                 |> assign(:last_action_at, 0)
 
               {:ok, full_state, socket}

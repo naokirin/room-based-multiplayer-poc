@@ -58,6 +58,13 @@ defmodule GameServer.Games.SimpleCardBattleTest do
       assert game_state.players[@player1_id].discard == []
       assert game_state.players[@player2_id].discard == []
     end
+
+    test "returns error for non-two players" do
+      assert SimpleCardBattle.init_state(%{}, []) == {:error, :invalid_player_count}
+      assert SimpleCardBattle.init_state(%{}, [@player1_id]) == {:error, :invalid_player_count}
+      assert SimpleCardBattle.init_state(%{}, [@player1_id, @player2_id, "3"]) ==
+               {:error, :invalid_player_count}
+    end
   end
 
   describe "validate_action/3" do

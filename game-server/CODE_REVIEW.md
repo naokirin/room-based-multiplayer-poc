@@ -36,77 +36,39 @@
 
 ## Warning（できるだけ直す）
 
-### 3. Room.rejoin の hand_count が冗長
+### 3. Room.rejoin の hand_count が冗長 — **修正済み (2026-02-15)**
 
-**ファイル**: `lib/game_server/rooms/room.ex` 付近 252 行
-
-**内容**:  
-`if(player_id == user_id, do: length(game_player_state[:hand]), else: length(game_player_state[:hand]))` は両分岐が同じ式のため、単に `length(game_player_state[:hand])` でよい。
-
-**推奨**: 上記のように簡略化する（可読性と意図の明確化）。
+**対応**: `length(game_player_state[:hand] || [])` に簡略化。
 
 ---
 
-### 4. Room モジュールが長い（責務の集中）
+### 4. Room モジュールが長い（責務の集中） — **一部対応 (2026-02-15)**
 
-**ファイル**: `lib/game_server/rooms/room.ex`（約 530 行）
-
-**内容**: 1 モジュールに「参加/離脱/切断/再接続」「ゲーム進行・ターン・タイマー」「チャット」「nonce」「Rails 通知」が集中している。機能的には正しいが、ファイルが長く変更時の影響範囲が大きい。
-
-**推奨**: 段階的にでも責務を分離するとよい。
-- 例: タイマー開始/キャンセルを `RoomTimers` のようなヘルパーに切り出す。
-- 例: Rails 通知の一連の呼び出しを `RoomRailsNotifier` のような薄いラッパーにまとめる（既存の `RailsClient` を呼ぶだけでも可）。
+**対応**: Rails 通知を `GameServer.Rooms.RoomNotifier` に切り出し。Room は Notifier を呼ぶだけに変更。タイマー分離は未実施。
 
 ---
 
-### 5. RoomChannel の join で `chat_messages` を assign していない
+### 5. RoomChannel の join で `chat_messages` を assign していない — **修正済み (2026-02-15)**
 
-**ファイル**: `lib/game_server_web/channels/room_channel.ex`
-
-**内容**: `check_chat_rate_limit/1` は `Map.get(socket.assigns, :chat_messages, [])` で未設定時は `[]` を使うため動作上は問題ないが、レート制限用の状態が「join 時に明示的に初期化されていない」形になっている。
-
-**推奨**: `handle_room_token_join` / `handle_reconnect_token_join` のいずれでも、`assign(:chat_messages, [])` をしておくと、レート制限の意図がコード上で明確になる。
+**対応**: `handle_room_token_join` と `handle_reconnect_token_join` の成功時に `assign(:chat_messages, [])` を追加。
 
 ---
 
-### 6. SimpleCardBattle.init_state/2 の 2 人以外のケース
+### 6. SimpleCardBattle.init_state/2 の 2 人以外のケース — **修正済み (2026-02-15)**
 
-**ファイル**: `lib/game_server/games/simple_card_battle.ex`
-
-**内容**: `init_state(config, player_ids) when length(player_ids) == 2` のみ定義されている。1 人や 3 人で呼ばれると FunctionClauseError になる。
-
-**推奨**: 現状が「2 人用のみ保証」の設計であれば、`@doc` に「player_ids は長さ 2 のリストである必要がある」と明記する。または、ガードでない clause を追加し `{:error, :invalid_player_count}` などを返すようにする（呼び出し元の Room でどう扱うかと合わせて検討）。
+**対応**: `@doc` を追加し、`length(player_ids) != 2` の clause で `{:error, :invalid_player_count}` を返すようにした。テストを追加。
 
 ---
 
-### 7. JWT テストの setup と環境変数
+### 7. JWT テストの setup と環境変数 — **修正済み (2026-02-15)**
 
-**ファイル**: `test/game_server/auth/jwt_test.exs`
-
-**内容**: `setup` で `JWT_SECRET` を設定し、`on_exit` で同じ値を再度 `put_env` している。元の値を保存して復元しているわけではないため、並行実行や他テストで別の値が設定されている場合に影響しうる。
-
-**推奨**: テスト開始時に元の値を保存し、`on_exit` で復元する。
-
-```elixir
-setup do
-  previous = System.get_env("JWT_SECRET")
-  System.put_env("JWT_SECRET", @jwt_secret)
-  on_exit(fn ->
-    if previous, do: System.put_env("JWT_SECRET", previous), else: System.delete_env("JWT_SECRET")
-  end)
-  :ok
-end
-```
+**対応**: テスト開始時に `System.get_env("JWT_SECRET")` を保存し、`on_exit` で復元または `delete_env` するように変更。
 
 ---
 
-### 8. internal パイプラインに認証が無い
+### 8. internal パイプラインに認証が無い — **対応済み (2026-02-15)**
 
-**ファイル**: `lib/game_server_web/router.ex`
-
-**内容**: コメントに「Internal API key auth will be added later」とあるが、`/internal/health` は現状認証なしで公開されている。health のみなら許容できるが、今後 internal に認証が必要なルートを足す場合はパイプラインで API key 等を検証する必要がある。
-
-**推奨**: 現状は「internal は health のみで、認証は未実装」と README や設計メモに明記しておく。internal に別ルートを追加するタイミングで、API key チェック用の Plug をパイプラインに追加する。
+**対応**: Router のコメントを「internal は現状 health のみ・認証なし。他ルート追加時に API key を追加すること」に更新。プロジェクト README の Key Design Decisions に同趣旨を追記。
 
 ---
 
@@ -132,17 +94,13 @@ end
 
 ---
 
-### 11. テストが不足している箇所
+### 11. テストが不足している箇所 — **一部対応済み (2026-02-15)**
 
-**対象**: 次のモジュールにテストが無い。
+**対応**: 以下を追加した。
+- **HealthController**: `test/game_server_web/controllers/health_controller_test.exs` — GET /health の 200/503 と body のキー（status, node_name, active_rooms, connected_players, uptime_seconds）を検証。
+- **RoomChannel**: `test/support/channel_case.ex` と `test/game_server_web/channels/room_channel_test.exs` — join（missing_token / invalid token / 有効 room_token で成功）、game:action（missing_nonce）、room:leave をテスト。
 
-- `GameServerWeb.RoomChannel`（join with room_token / reconnect_token, game:action, chat:send, rate limit, leave, disconnect）
-- `GameServer.Rooms.Room`（GenServer のため、start_link から join/leave/action までの主要シナリオをテストするとよい）
-- `GameServer.Consumers.RoomCreationConsumer`（Redis に依存するため、Mox 等で Redis をスタブするか、integration タグで最小限のテストを検討）
-- `GameServer.Subscribers.RoomCommandsSubscriber`（同様に Redis PubSub に依存）
-- `GameServerWeb.HealthController`（ConnCase で GET /health の 200/503 と body のキー程度）
-
-**推奨**: 重要度の高い順に、RoomChannel（join + 1〜2 イベント）、HealthController、Room の主要フローを ExUnit で追加すると、リグレッション防止と設計の明確化に役立つ。
+**未実施**: Room GenServer の主要フロー、RoomCreationConsumer、RoomCommandsSubscriber のテストは未追加（必要に応じて検討）。
 
 ---
 
@@ -165,7 +123,7 @@ end
 | エラーハンドリング（{:ok}/{:error}） | ✅ 一貫している |
 | Ecto 使用 | N/A（DB なし） |
 | Channel（join/terminate, メッセージ処理） | ✅ 適切。assign の初期化だけ改善余地 |
-| テスト（ExUnit, describe, setup） | ⚠️ 主要ドメインはカバー、Channel/Room/Controller 等は不足 |
+| テスト（ExUnit, describe, setup） | ✅ HealthController・RoomChannel を追加。Room/Consumer/Subscriber は未追加 |
 | 設定・秘密情報（env） | ✅ JWT_SECRET 等は env から取得 |
 | ファイルサイズ・責務 | ⚠️ Room が長いため、将来的な分割を推奨 |
 
@@ -175,7 +133,7 @@ end
 
 1. ~~**必須**: HealthController の Redis 呼び出しを `GameServer.Redis` 経由に変更。~~ → 対応済み
 2. ~~**必須**: AGENTS.md と HTTP クライアント（Tesla vs Req）の記述を一致させる。~~ → Req 統一済み
-3. **推奨**: Room の hand_count 冗長分岐の削除、RoomChannel の `chat_messages` 初期 assign、JWT テストの環境変数復元。
-4. **余裕があれば**: Room の責務分割、SimpleCardBattle の 2 人以外のドキュメント/返却値、Channel と HealthController のテスト追加。
+3. ~~**推奨**: Room の hand_count 冗長分岐の削除、RoomChannel の `chat_messages` 初期 assign、JWT テストの環境変数復元。~~ → 対応済み
+4. ~~**余裕があれば**: Channel と HealthController のテスト追加。~~ → 対応済み。Room のタイマー責務分割は未実施。
 
 以上で game-server のコードレビューを完了とする。

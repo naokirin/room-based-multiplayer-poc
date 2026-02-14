@@ -19,6 +19,17 @@ defmodule GameServer.Games.SimpleCardBattle do
   @max_hp 10
   @max_hand_size 5
 
+  @doc """
+  Initializes game state for exactly two players.
+
+  `player_ids` must be a list of exactly two player IDs. Returns
+  `{:error, :invalid_player_count}` for any other length.
+  """
+  @impl true
+  def init_state(_config, player_ids) when length(player_ids) != 2 do
+    {:error, :invalid_player_count}
+  end
+
   @impl true
   def init_state(config, player_ids) when length(player_ids) == 2 do
     [player1_id, player2_id] = player_ids

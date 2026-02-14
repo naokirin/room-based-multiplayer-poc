@@ -15,8 +15,8 @@ defmodule GameServer.Rooms.Room do
   use GenServer
   require Logger
 
-  alias GameServer.Api.RailsClient
   alias GameServer.Games.SimpleCardBattle
+  alias GameServer.Rooms.RoomNotifier
   alias GameServer.Redis
   alias GameServer.Rooms.RoomBroadcast
 
@@ -137,14 +137,7 @@ defmodule GameServer.Rooms.Room do
 
     # Notify Rails that room is ready
     node_name = Atom.to_string(Node.self())
-
-    case RailsClient.room_ready(room_id, node_name) do
-      {:ok, _} ->
-        Logger.info("Room #{room_id} ready on node #{node_name}")
-
-      {:error, reason} ->
-        Logger.error("Failed to notify Rails of room ready: #{inspect(reason)}")
-    end
+    RoomNotifier.notify_room_ready(room_id, node_name)
 
     {:ok, state}
   end
@@ -249,7 +242,7 @@ defmodule GameServer.Rooms.Room do
                 display_name: pinfo.display_name,
                 connected: pinfo.connected,
                 hp: game_player_state[:hp],
-                hand_count: if(player_id == user_id, do: length(game_player_state[:hand]), else: length(game_player_state[:hand])),
+                hand_count: length(game_player_state[:hand] || []),
                 deck_count: length(game_player_state[:deck])
               }
 
@@ -341,15 +334,7 @@ defmodule GameServer.Rooms.Room do
   @impl true
   def handle_cast({:admin_terminate, reason}, state) do
     Logger.info("Room #{state.room_id} admin terminated: #{reason}")
-
-    case RailsClient.room_aborted(state.room_id, to_string(reason)) do
-      {:ok, _} ->
-        Logger.info("Room #{state.room_id} aborted successfully")
-
-      {:error, err} ->
-        Logger.error("Failed to notify Rails of room abort: #{inspect(err)}")
-    end
-
+    RoomNotifier.notify_room_aborted(state.room_id, reason)
     state = %{state | status: :aborted}
     RoomBroadcast.broadcast_to_room(state.players, "room:aborted", %{reason: reason})
     Process.send_after(self(), :terminate_room, @termination_delay)
@@ -392,15 +377,7 @@ defmodule GameServer.Rooms.Room do
         if all_players_disconnected?(state) do
           if all_left_voluntarily?(state) do
             Logger.info("All players left voluntarily, aborting room #{state.room_id} immediately")
-
-            case RailsClient.room_aborted(state.room_id, "all_players_left") do
-              {:ok, _} ->
-                Logger.info("Room #{state.room_id} aborted successfully")
-
-              {:error, reason} ->
-                Logger.error("Failed to notify Rails of room abort: #{inspect(reason)}")
-            end
-
+            RoomNotifier.notify_room_aborted(state.room_id, "all_players_left")
             state = %{state | status: :aborted}
             Process.send_after(self(), :terminate_room, @termination_delay)
             state
@@ -451,15 +428,7 @@ defmodule GameServer.Rooms.Room do
   def handle_info(:disconnect_timeout, state) do
     if all_players_disconnected?(state) do
       Logger.info("All players disconnected for too long, aborting room #{state.room_id}")
-
-      case RailsClient.room_aborted(state.room_id, "all_players_disconnected") do
-        {:ok, _} ->
-          Logger.info("Room #{state.room_id} aborted successfully")
-
-        {:error, reason} ->
-          Logger.error("Failed to notify Rails of room abort: #{inspect(reason)}")
-      end
-
+      RoomNotifier.notify_room_aborted(state.room_id, "all_players_disconnected")
       state = %{state | status: :aborted}
 
       # Schedule termination
@@ -548,14 +517,7 @@ defmodule GameServer.Rooms.Room do
 
         # Notify Rails
         started_at = DateTime.utc_now() |> DateTime.to_iso8601()
-
-        case RailsClient.room_started(state.room_id, started_at, player_ids) do
-          {:ok, _} ->
-            Logger.info("Room #{state.room_id} started successfully")
-
-          {:error, reason} ->
-            Logger.error("Failed to notify Rails of room start: #{inspect(reason)}")
-        end
+        RoomNotifier.notify_room_started(state.room_id, started_at, player_ids)
 
         # Broadcast game started with each player's hand
         Enum.each(state.players, fn {user_id, pinfo} ->
@@ -722,13 +684,7 @@ defmodule GameServer.Rooms.Room do
     RoomBroadcast.broadcast_to_room(state.players, "game:ended", result_data)
 
     # Notify Rails
-    case RailsClient.room_finished(state.room_id, result_data) do
-      {:ok, _} ->
-        Logger.info("Room #{state.room_id} finished successfully")
-
-      {:error, reason} ->
-        Logger.error("Failed to notify Rails of room finish: #{inspect(reason)}")
-    end
+    RoomNotifier.notify_room_finished(state.room_id, result_data)
 
     # Cancel turn timer
     if state.turn_timer_ref do

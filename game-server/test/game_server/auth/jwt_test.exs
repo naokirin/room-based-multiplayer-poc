@@ -6,8 +6,11 @@ defmodule GameServer.Auth.JWTTest do
   @jwt_secret "test-jwt-secret"
 
   setup do
+    previous = System.get_env("JWT_SECRET")
     System.put_env("JWT_SECRET", @jwt_secret)
-    on_exit(fn -> System.put_env("JWT_SECRET", @jwt_secret) end)
+    on_exit(fn ->
+      if previous, do: System.put_env("JWT_SECRET", previous), else: System.delete_env("JWT_SECRET")
+    end)
     :ok
   end
 
