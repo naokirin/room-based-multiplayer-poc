@@ -13,7 +13,7 @@ module AdminAuthenticatable
 
   def require_admin!
     unless current_admin
-      redirect_to admin_login_path, alert: "Please log in as admin"
+      redirect_to admin_login_path, alert: I18n.t("admin.login_required")
       nil
     end
   end

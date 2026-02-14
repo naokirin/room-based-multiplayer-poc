@@ -1,6 +1,8 @@
 module Api
   module V1
-    class HealthController < ActionController::API
+    class HealthController < ApplicationController
+      skip_before_action :authenticate_user!, only: [:show]
+
       def show
         db_status = check_database
         redis_status = check_redis

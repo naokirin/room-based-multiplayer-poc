@@ -25,7 +25,7 @@ module Admin
     # POST /admin/rooms/:id/terminate
     def terminate
       unless @room.status.in?(%w[preparing ready playing])
-        redirect_to admin_room_path(@room), alert: "Room is not active and cannot be terminated"
+        redirect_to admin_room_path(@room), alert: I18n.t("admin.rooms.not_active_terminate")
         return
       end
 
@@ -40,7 +40,7 @@ module Admin
       REDIS.publish("room_commands", JSON.generate(command))
       audit_log(action: "admin.room.terminate", target: @room, metadata: { reason: "admin_terminated" })
 
-      redirect_to admin_room_path(@room), notice: "Terminate command sent to game server"
+      redirect_to admin_room_path(@room), notice: I18n.t("admin.rooms.terminate_success")
     end
 
     private

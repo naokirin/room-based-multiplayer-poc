@@ -14,10 +14,10 @@ module Admin
       if user&.authenticate(params[:password]) && user.admin?
         session[:admin_user_id] = user.id
         audit_log(action: "admin.login.success", target: user)
-        redirect_to admin_root_path, notice: "Logged in successfully"
+        redirect_to admin_root_path, notice: I18n.t("admin.sessions.login_success")
       else
         audit_log(action: "admin.login.failure", metadata: { email: params[:email] })
-        flash.now[:alert] = "Invalid email or password, or not an admin"
+        flash.now[:alert] = I18n.t("admin.sessions.login_failure")
         render :new, status: :unprocessable_entity
       end
     end
@@ -25,7 +25,7 @@ module Admin
     # DELETE /admin/logout
     def destroy
       session.delete(:admin_user_id)
-      redirect_to admin_login_path, notice: "Logged out successfully"
+      redirect_to admin_login_path, notice: I18n.t("admin.sessions.logout_success")
     end
   end
 end

@@ -20,12 +20,43 @@
 # at https://guides.rubyonrails.org/i18n.html.
 #
 # Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
+# booleans: true, false, on, off, yes, no. Therefore, these strings
+# must be quoted to be interpreted as strings.
 
 en:
   hello: "Hello world"
+
+  # API v1 error and message strings
+  api:
+    v1:
+      errors:
+        not_found: "Resource not found"
+        internal_server_error: "An unexpected error occurred"
+        invalid_credentials: "Invalid email or password"
+        account_frozen: "Your account has been suspended"
+        unauthorized: "Invalid or expired token"
+        forbidden: "Account is frozen"
+        invalid_game_type: "Game type not found or inactive"
+        matchmaking_error: "Unknown matchmaking status"
+        status_error: "Unable to retrieve status"
+        room_not_found: "Room with ID %{id} not found"
+        room_not_active: "Room is not active (status: %{status})"
+
+  # Admin flash and alerts
+  admin:
+    login_required: "Please log in as admin"
+    sessions:
+      login_success: "Logged in successfully"
+      login_failure: "Invalid email or password, or not an admin"
+      logout_success: "Logged out successfully"
+    users:
+      cannot_freeze_admin: "Cannot freeze admin users"
+      freeze_success: "User has been frozen"
+      unfreeze_success: "User has been unfrozen"
+    rooms:
+      not_active_terminate: "Room is not active and cannot be terminated"
+      terminate_success: "Terminate command sent to game server"
+    announcements:
+      create_success: "Announcement created successfully"
+      update_success: "Announcement updated successfully"
+      destroy_success: "Announcement deleted"

@@ -22,7 +22,7 @@ module Admin
       @announcement.admin = current_admin
 
       if @announcement.save
-        redirect_to admin_announcement_path(@announcement), notice: "Announcement created successfully"
+        redirect_to admin_announcement_path(@announcement), notice: I18n.t("admin.announcements.create_success")
       else
         render :new, status: :unprocessable_entity
       end
@@ -35,7 +35,7 @@ module Admin
     # PATCH/PUT /admin/announcements/:id
     def update
       if @announcement.update(announcement_params)
-        redirect_to admin_announcement_path(@announcement), notice: "Announcement updated successfully"
+        redirect_to admin_announcement_path(@announcement), notice: I18n.t("admin.announcements.update_success")
       else
         render :edit, status: :unprocessable_entity
       end
@@ -44,7 +44,7 @@ module Admin
     # DELETE /admin/announcements/:id
     def destroy
       @announcement.destroy
-      redirect_to admin_announcements_path, notice: "Announcement deleted"
+      redirect_to admin_announcements_path, notice: I18n.t("admin.announcements.destroy_success")
     end
 
     private

@@ -7,7 +7,7 @@ module Api
         unless game_type
           return render json: {
             error: "invalid_game_type",
-            message: "Game type not found or inactive"
+            message: I18n.t("api.v1.errors.invalid_game_type")
           }, status: :not_found
         end
 
@@ -49,7 +49,7 @@ module Api
         else
           render json: {
             error: "matchmaking_error",
-            message: "Unknown matchmaking status"
+            message: I18n.t("api.v1.errors.matchmaking_error")
           }, status: :internal_server_error
         end
       end
@@ -89,7 +89,7 @@ module Api
         else
           render json: {
             error: "status_error",
-            message: "Unable to retrieve status"
+            message: I18n.t("api.v1.errors.status_error")
           }, status: :internal_server_error
         end
       end

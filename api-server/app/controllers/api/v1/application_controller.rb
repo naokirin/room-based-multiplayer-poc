@@ -1,5 +1,8 @@
 module Api
   module V1
+    # Base controller for API v1. All error responses use the format:
+    #   { error: "<code>", message: "<human-readable>" }
+    # (except unprocessable_entity which uses { errors: <ActiveRecord errors> })
     class ApplicationController < ActionController::API
       include Authenticatable
       include Auditable
@@ -12,7 +15,7 @@ module Api
       private
 
       def not_found
-        render json: { error: "not_found", message: "Resource not found" }, status: :not_found
+        render_api_error("not_found", I18n.t("api.v1.errors.not_found"), :not_found)
       end
 
       def unprocessable_entity(exception)
@@ -20,12 +23,16 @@ module Api
       end
 
       def bad_request(exception)
-        render json: { error: "bad_request", message: exception.message }, status: :bad_request
+        render_api_error("bad_request", exception.message, :bad_request)
       end
 
       def internal_server_error(exception)
         Rails.logger.error("[API Error] #{exception.class}: #{exception.message}\n#{exception.backtrace&.first(5)&.join("\n")}")
-        render json: { error: "internal_server_error", message: "An unexpected error occurred" }, status: :internal_server_error
+        render_api_error("internal_server_error", I18n.t("api.v1.errors.internal_server_error"), :internal_server_error)
+      end
+
+      def render_api_error(code, message, status)
+        render json: { error: code, message: message }, status: status
       end
     end
   end

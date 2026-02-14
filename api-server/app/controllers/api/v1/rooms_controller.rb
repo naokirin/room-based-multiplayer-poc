@@ -9,7 +9,7 @@ module Api
         unless room
           return render json: {
             error: "room_not_found",
-            message: "Room with ID #{params[:id]} not found"
+            message: I18n.t("api.v1.errors.room_not_found", id: params[:id])
           }, status: :not_found
         end
 
@@ -17,7 +17,7 @@ module Api
         unless %w[waiting ready playing].include?(room.status)
           return render json: {
             error: "room_not_active",
-            message: "Room is not active (status: #{room.status})"
+            message: I18n.t("api.v1.errors.room_not_active", status: room.status)
           }, status: :not_found
         end
 

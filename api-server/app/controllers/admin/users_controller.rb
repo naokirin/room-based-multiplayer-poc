@@ -30,20 +30,20 @@ module Admin
     # POST /admin/users/:id/freeze
     def freeze
       if @user.admin?
-        redirect_to admin_user_path(@user), alert: "Cannot freeze admin users"
+        redirect_to admin_user_path(@user), alert: I18n.t("admin.users.cannot_freeze_admin")
         return
       end
 
       @user.freeze_account!(reason: params[:reason] || "Frozen by admin")
       audit_log(action: "admin.user.freeze", target: @user, metadata: { reason: params[:reason] })
-      redirect_to admin_user_path(@user), notice: "User has been frozen"
+      redirect_to admin_user_path(@user), notice: I18n.t("admin.users.freeze_success")
     end
 
     # POST /admin/users/:id/unfreeze
     def unfreeze
       @user.unfreeze_account!
       audit_log(action: "admin.user.unfreeze", target: @user)
-      redirect_to admin_user_path(@user), notice: "User has been unfrozen"
+      redirect_to admin_user_path(@user), notice: I18n.t("admin.users.unfreeze_success")
     end
 
     private

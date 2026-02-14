@@ -29,10 +29,10 @@ module Authenticatable
   end
 
   def render_unauthorized
-    render json: { error: "unauthorized", message: "Invalid or expired token" }, status: :unauthorized
+    render json: { error: "unauthorized", message: I18n.t("api.v1.errors.unauthorized") }, status: :unauthorized
   end
 
   def render_forbidden
-    render json: { error: "forbidden", message: "Account is frozen" }, status: :forbidden
+    render json: { error: "forbidden", message: I18n.t("api.v1.errors.forbidden") }, status: :forbidden
   end
 end

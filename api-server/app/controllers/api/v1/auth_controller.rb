@@ -22,12 +22,12 @@ module Api
 
         unless user&.authenticate(params[:password])
           audit_log(action: "user.login.failure", metadata: { email: params[:email] })
-          return render json: { error: "invalid_credentials", message: "Invalid email or password" }, status: :unauthorized
+          return render json: { error: "invalid_credentials", message: I18n.t("api.v1.errors.invalid_credentials") }, status: :unauthorized
         end
 
         if user.account_frozen?
           audit_log(action: "user.login.frozen", target: user)
-          return render json: { error: "account_frozen", message: "Your account has been suspended" }, status: :unauthorized
+          return render json: { error: "account_frozen", message: I18n.t("api.v1.errors.account_frozen") }, status: :unauthorized
         end
 
         audit_log(action: "user.login.success", target: user)
