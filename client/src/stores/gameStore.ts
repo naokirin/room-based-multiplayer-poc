@@ -1,4 +1,14 @@
 import { create } from "zustand";
+import {
+	ActionAppliedPayloadSchema,
+	GameAbortedPayloadSchema,
+	GameEndedPayloadSchema,
+	GameStartedPayloadSchema,
+	HandUpdatedPayloadSchema,
+	ReconnectTokenPayloadSchema,
+	TurnChangedPayloadSchema,
+} from "../schemas/gameEvents";
+import { api } from "../services/api";
 import { socketManager } from "../services/socket";
 import type { Card, GameState, PlayerState } from "../types";
 import { MAX_HP } from "../types";
@@ -170,17 +180,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			const response = await socketManager.joinChannel();
 
 			// Handle reconnect token from join response (T096)
-			if (
-				response &&
-				typeof response === "object" &&
-				"reconnect_token" in response
-			) {
-				const reconnectToken = (response as { reconnect_token?: string })
-					.reconnect_token;
-				if (reconnectToken) {
-					set({ reconnectToken });
-					localStorage.setItem(RECONNECT_TOKEN_KEY, reconnectToken);
-				}
+			const joinTokenResult = ReconnectTokenPayloadSchema.safeParse(
+				response && typeof response === "object" ? response : undefined,
+			);
+			if (joinTokenResult.success && joinTokenResult.data.reconnect_token) {
+				const token = joinTokenResult.data.reconnect_token;
+				set({ reconnectToken: token });
+				localStorage.setItem(RECONNECT_TOKEN_KEY, token);
 			}
 
 			// Store room info (T096)
@@ -216,31 +222,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				throw new Error("Missing reconnection data");
 			}
 
-			// Get WebSocket endpoint from API
-			const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
-			const response = await fetch(
-				`${apiUrl}/api/v1/rooms/${roomId}/ws_endpoint`,
-				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				},
-			);
-
-			if (!response.ok) {
-				throw new Error("Failed to get WebSocket endpoint");
-			}
-
-			let data: { ws_url?: string };
-			try {
-				data = await response.json();
-			} catch {
-				throw new Error("Invalid response from server");
-			}
-			if (typeof data?.ws_url !== "string") {
-				throw new Error("Missing ws_url in response");
-			}
-			const wsUrl = data.ws_url;
+			// Get WebSocket endpoint from API (use api client for consistency)
+			api.setToken(token);
+			const { ws_url: wsUrl } = await api.getWsEndpoint(roomId);
 
 			// Reconnect WebSocket and wait for connection
 			socketManager.setDisconnectCallback(() => {
@@ -308,17 +292,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				});
 
 				// Update reconnect token if server returned a new one
+				const rejoinTokenResult = ReconnectTokenPayloadSchema.safeParse(
+					rejoinResponse && typeof rejoinResponse === "object"
+						? rejoinResponse
+						: undefined,
+				);
 				if (
-					rejoinResponse &&
-					typeof rejoinResponse === "object" &&
-					"reconnect_token" in rejoinResponse
+					rejoinTokenResult.success &&
+					rejoinTokenResult.data.reconnect_token
 				) {
-					const newToken = (rejoinResponse as { reconnect_token?: string })
-						.reconnect_token;
-					if (newToken) {
-						set({ reconnectToken: newToken });
-						localStorage.setItem(RECONNECT_TOKEN_KEY, newToken);
-					}
+					const newToken = rejoinTokenResult.data.reconnect_token;
+					set({ reconnectToken: newToken });
+					localStorage.setItem(RECONNECT_TOKEN_KEY, newToken);
 				}
 
 				// Restart turn timer if needed
@@ -355,27 +340,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 
 	handleGameStarted: (payload: unknown) => {
-		const data = payload as {
-			your_hand?: Card[];
-			your_hp?: number;
-			your_deck_count?: number;
-			your_display_name?: string;
-			opponent_id?: string;
-			opponent_display_name?: string;
-			opponent_hp?: number;
-			opponent_hand_count?: number;
-			opponent_deck_count?: number;
-			current_turn?: string;
-			turn_number?: number;
-			turn_time_remaining?: number;
-		};
-
-		if (!data || data.current_turn === undefined) {
+		const result = GameStartedPayloadSchema.safeParse(payload);
+		if (!result.success || result.data.current_turn === undefined) {
+			if (!result.success) {
+				console.warn("Invalid game:started payload:", result.error.flatten());
+			}
 			return;
 		}
+		const data = result.data;
 
 		const myUserId = useAuthStore.getState().user?.id ?? "";
-		const myHand = data.your_hand ?? [];
+		const myHand = (data.your_hand ?? []).map(serverCardToCard);
 		const currentTurn = data.current_turn;
 		const turnNumber = data.turn_number ?? 1;
 		const turnTimeRemaining = data.turn_time_remaining ?? 30;
@@ -428,21 +403,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 
 	handleActionApplied: (payload: unknown) => {
-		const data = payload as {
-			actor_id: string;
-			effects: Array<{
-				type: string;
-				player_id?: string;
-				card?: {
-					id: string;
-					name: string;
-					effects?: Array<{ effect: string; value?: number }>;
-				};
-				[key: string]: unknown;
-			}>;
-			players: Record<string, PlayerState>;
-		};
-
+		const result = ActionAppliedPayloadSchema.safeParse(payload);
+		if (!result.success) {
+			console.warn(
+				"Invalid game:action_applied payload:",
+				result.error.flatten(),
+			);
+			return;
+		}
+		const data = result.data;
 		if (!data.players) return;
 
 		// Merge updated player states into existing gameState
@@ -468,7 +437,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				? {
 						actorId: data.actor_id,
 						actorDisplayName,
-						card: serverCardToCard(serverCard),
+						card: serverCardToCard({
+							id: serverCard.id,
+							name: serverCard.name,
+							effects: serverCard.effects,
+						}),
 					}
 				: null;
 
@@ -480,12 +453,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 
 	handleHandUpdated: (payload: unknown) => {
-		const data = payload as {
-			hand: Card[];
-			deck_count: number;
-		};
-
-		if (!data.hand) return;
+		const result = HandUpdatedPayloadSchema.safeParse(payload);
+		if (!result.success) {
+			console.warn(
+				"Invalid game:hand_updated payload:",
+				result.error.flatten(),
+			);
+			return;
+		}
+		const data = result.data;
+		const handAsCards = data.hand.map((c) =>
+			serverCardToCard({ id: c.id, name: c.name, effects: c.effects }),
+		);
 
 		const myUserId = useAuthStore.getState().user?.id ?? "";
 		const currentGameState = get().gameState;
@@ -498,12 +477,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 					...currentGameState.players,
 					[myUserId]: {
 						...myPlayer,
-						hand_count: data.hand.length,
+						hand_count: handAsCards.length,
 						deck_count: data.deck_count ?? myPlayer.deck_count,
 					},
 				};
 				set({
-					myHand: data.hand,
+					myHand: handAsCards,
 					gameState: { ...currentGameState, players: updatedPlayers },
 					players: updatedPlayers,
 				});
@@ -511,16 +490,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			}
 		}
 
-		set({ myHand: data.hand });
+		set({ myHand: handAsCards });
 	},
 
 	handleTurnChanged: (payload: unknown) => {
-		const data = payload as {
-			current_turn: string;
-			turn_number: number;
-			turn_time_remaining?: number;
-			drawn_card?: Card;
-		};
+		const result = TurnChangedPayloadSchema.safeParse(payload);
+		if (!result.success) {
+			console.warn(
+				"Invalid game:turn_changed payload:",
+				result.error.flatten(),
+			);
+			return;
+		}
+		const data = result.data;
 
 		const myUserId = useAuthStore.getState().user?.id;
 		const isMyTurn = data.current_turn === myUserId;
@@ -537,7 +519,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		// If we drew a card, add it to our hand
 		if (data.drawn_card) {
 			const currentHand = get().myHand;
-			updates.myHand = [...currentHand, data.drawn_card];
+			const drawnCard = serverCardToCard({
+				id: data.drawn_card.id,
+				name: data.drawn_card.name,
+				effects: data.drawn_card.effects,
+			});
+			updates.myHand = [...currentHand, drawnCard];
 		}
 
 		// Keep gameState in sync
@@ -563,10 +550,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 
 	handleGameEnded: (payload: unknown) => {
-		const data = payload as {
-			winner_id: string | null;
-			reason: string;
-		};
+		const result = GameEndedPayloadSchema.safeParse(payload);
+		if (!result.success) {
+			console.warn("Invalid game:ended payload:", result.error.flatten());
+			return;
+		}
+		const data = result.data;
 
 		clearTurnTimer();
 
@@ -584,9 +573,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 
 	handleGameAborted: (payload: unknown) => {
-		const data = payload as {
-			reason: string;
-		};
+		const result = GameAbortedPayloadSchema.safeParse(payload);
+		if (!result.success) {
+			console.warn("Invalid game:aborted payload:", result.error.flatten());
+			return;
+		}
+		const data = result.data;
 
 		clearTurnTimer();
 
@@ -604,12 +596,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 
 	handleReconnectToken: (payload: unknown) => {
-		const data = payload as {
-			reconnect_token: string;
-		};
-
-		set({ reconnectToken: data.reconnect_token });
-		localStorage.setItem(RECONNECT_TOKEN_KEY, data.reconnect_token);
+		const result = ReconnectTokenPayloadSchema.safeParse(payload);
+		if (!result.success) {
+			console.warn("Invalid reconnect_token payload:", result.error.flatten());
+			return;
+		}
+		const token = result.data.reconnect_token;
+		set({ reconnectToken: token });
+		localStorage.setItem(RECONNECT_TOKEN_KEY, token);
 	},
 
 	handleDisconnected: () => {

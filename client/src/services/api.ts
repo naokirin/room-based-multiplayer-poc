@@ -1,17 +1,17 @@
 import {
+	AnnouncementsResponseSchema,
 	AuthResponseSchema,
+	GameTypesResponseSchema,
+	MatchmakingJoinResponseSchema,
+	MatchmakingStatusResponseSchema,
 	ProfileResponseSchema,
 	RefreshResponseSchema,
+	WsEndpointResponseSchema,
 } from "../schemas/api";
 import type {
-	Announcement,
 	ApiError,
 	ApiRequestError,
 	AuthResponse,
-	GameType,
-	MatchmakingMatchedResponse,
-	MatchmakingQueuedResponse,
-	MatchmakingStatusResponse,
 	RefreshResponse,
 	User,
 } from "../types";
@@ -53,6 +53,10 @@ class ApiClient {
 		return ApiClient.isNetworkError(err);
 	}
 
+	/**
+	 * Low-level request. Returns unvalidated JSON; callers must parse with Zod
+	 * (or otherwise validate) when the response shape must be trusted.
+	 */
 	private async request<T>(
 		path: string,
 		options: RequestInit = {},
@@ -134,23 +138,24 @@ class ApiClient {
 		return ProfileResponseSchema.parse(data);
 	}
 
-	// Game types
-	async getGameTypes(): Promise<{ game_types: GameType[] }> {
-		return this.request<{ game_types: GameType[] }>("/game_types");
+	// Game types (with runtime validation)
+	async getGameTypes() {
+		const data = await this.request<unknown>("/game_types");
+		return GameTypesResponseSchema.parse(data);
 	}
 
-	// Matchmaking
-	async joinMatchmaking(
-		gameTypeId: string,
-	): Promise<MatchmakingQueuedResponse | MatchmakingMatchedResponse> {
-		return this.request("/matchmaking/join", {
+	// Matchmaking (with runtime validation)
+	async joinMatchmaking(gameTypeId: string) {
+		const data = await this.request<unknown>("/matchmaking/join", {
 			method: "POST",
 			body: JSON.stringify({ game_type_id: gameTypeId }),
 		});
+		return MatchmakingJoinResponseSchema.parse(data);
 	}
 
-	async getMatchmakingStatus(): Promise<MatchmakingStatusResponse> {
-		return this.request<MatchmakingStatusResponse>("/matchmaking/status");
+	async getMatchmakingStatus() {
+		const data = await this.request<unknown>("/matchmaking/status");
+		return MatchmakingStatusResponseSchema.parse(data);
 	}
 
 	async cancelMatchmaking(): Promise<{ status: string }> {
@@ -159,16 +164,16 @@ class ApiClient {
 		});
 	}
 
-	// Rooms
-	async getWsEndpoint(
-		roomId: string,
-	): Promise<{ ws_url: string; node_name: string; room_status: string }> {
-		return this.request(`/rooms/${roomId}/ws_endpoint`);
+	// Rooms (with runtime validation)
+	async getWsEndpoint(roomId: string) {
+		const data = await this.request<unknown>(`/rooms/${roomId}/ws_endpoint`);
+		return WsEndpointResponseSchema.parse(data);
 	}
 
-	// Announcements
-	async getAnnouncements(): Promise<{ announcements: Announcement[] }> {
-		return this.request<{ announcements: Announcement[] }>("/announcements");
+	// Announcements (with runtime validation)
+	async getAnnouncements() {
+		const data = await this.request<unknown>("/announcements");
+		return AnnouncementsResponseSchema.parse(data);
 	}
 }
 

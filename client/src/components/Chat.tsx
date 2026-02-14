@@ -10,7 +10,8 @@ export const Chat: React.FC = () => {
 	const { messages, isLoading, error, sendMessage } = useChatStore();
 	const currentUser = useAuthStore((state) => state.user);
 
-	// Auto-scroll to bottom when new messages arrive
+	// Auto-scroll to bottom when new messages arrive (intentionally depend on messages)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: scroll when message list changes
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, [messages]);
