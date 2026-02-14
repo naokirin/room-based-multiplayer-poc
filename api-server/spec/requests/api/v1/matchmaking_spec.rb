@@ -329,16 +329,36 @@ RSpec.describe "Api::V1::Matchmaking", type: :request do
       end
     end
 
-    context "when missing game_type_id" do
-      it "returns bad_request error" do
+    context "when game_type_id omitted and user in queue" do
+      before do
+        queue_entry = { user_id: user.id, queued_at: Time.current.iso8601 }.to_json
+        REDIS.lpush("matchmaking:queue:#{game_type.id}", queue_entry)
+        REDIS.hset("matchmaking:user:#{user.id}", "game_type_id", game_type.id)
+        REDIS.hset("matchmaking:user:#{user.id}", "queued_at", Time.current.iso8601)
+      end
+
+      it "cancels using queue state and returns ok" do
         delete "/api/v1/matchmaking/cancel",
                headers: { "Authorization" => "Bearer #{token}" },
                as: :json
 
-        expect(response).to have_http_status(:bad_request)
+        expect(response).to have_http_status(:ok)
         json = response.parsed_body
-        expect(json["error"]).to eq("missing_parameter")
-        expect(json["message"]).to include("game_type_id is required")
+        expect(json["status"]).to eq("cancelled")
+        expect(json["user_id"]).to eq(user.id)
+        expect(REDIS.exists?("matchmaking:user:#{user.id}")).to be_falsey
+      end
+    end
+
+    context "when game_type_id omitted and user not in queue" do
+      it "returns ok with cancelled status (idempotent)" do
+        delete "/api/v1/matchmaking/cancel",
+               headers: { "Authorization" => "Bearer #{token}" },
+               as: :json
+
+        expect(response).to have_http_status(:ok)
+        json = response.parsed_body
+        expect(json["status"]).to eq("cancelled")
       end
     end
 

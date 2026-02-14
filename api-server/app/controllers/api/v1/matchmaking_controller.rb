@@ -95,16 +95,13 @@ module Api
       end
 
       # DELETE /api/v1/matchmaking/cancel
+      # game_type_id is optional; when omitted, the server resolves it from the user's queue state.
       def cancel
-        game_type_id = params[:game_type_id]
-        unless game_type_id
-          return render json: {
-            error: "missing_parameter",
-            message: "game_type_id is required"
-          }, status: :bad_request
-        end
-
-        result = MatchmakingService.cancel_queue(current_user.id, game_type_id)
+        result = if params[:game_type_id].present?
+                   MatchmakingService.cancel_queue(current_user.id, params[:game_type_id])
+                 else
+                   MatchmakingService.cancel_queue_by_user(current_user.id)
+                 end
 
         render json: {
           status: "cancelled",

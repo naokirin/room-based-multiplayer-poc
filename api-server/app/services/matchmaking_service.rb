@@ -135,6 +135,17 @@ class MatchmakingService
       }
     end
 
+    # Remove user from queue by user_id only (looks up game_type_id from Redis).
+    # Idempotent: returns cancelled even when not in queue.
+    def cancel_queue_by_user(user_id)
+      queue_info = get_queue_info(user_id)
+      if queue_info && queue_info["game_type_id"].present?
+        cancel_queue(user_id, queue_info["game_type_id"])
+      else
+        { status: :cancelled, data: { user_id: user_id } }
+      end
+    end
+
     # Remove user from queue
     def cancel_queue(user_id, game_type_id)
       queue_key = "matchmaking:queue:#{game_type_id}"
