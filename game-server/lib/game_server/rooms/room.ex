@@ -596,17 +596,17 @@ defmodule GameServer.Rooms.Room do
       # Check for game end
       case game_module.check_end_condition(new_game_state) do
         :continue ->
-          # Advance turn
-          next_player_id = get_next_player_id(state)
-          state = advance_turn(state, next_player_id)
-
-          # Send updated hand to acting player
-          player_state = get_in(new_game_state, [:players, user_id])
+          # Send updated hand to acting player (after card effects, before turn advance)
+          acting_player_state = get_in(new_game_state, [:players, user_id])
 
           send_to_player(state, user_id, "game:hand_updated", %{
-            hand: flatten_cards(player_state.hand),
-            deck_count: length(player_state.deck)
+            hand: flatten_cards(acting_player_state.hand),
+            deck_count: length(acting_player_state.deck)
           })
+
+          # Advance turn (includes auto-draw for next player)
+          next_player_id = get_next_player_id(state)
+          state = advance_turn(state, next_player_id)
 
           {:reply, :ok, state}
 
@@ -629,12 +629,32 @@ defmodule GameServer.Rooms.Room do
       |> Map.put(:current_turn, next_player_id)
       |> Map.put(:turn_number, new_turn_number)
 
+    # Auto-draw 1 card at the start of each turn
+    new_game_state =
+      case get_in(new_game_state, [:players, next_player_id, :deck]) do
+        [top_card | rest_deck] ->
+          new_game_state
+          |> update_in([:players, next_player_id, :hand], &(&1 ++ [top_card]))
+          |> put_in([:players, next_player_id, :deck], rest_deck)
+
+        _ ->
+          new_game_state
+      end
+
     state = %{state | game_state: new_game_state}
 
     broadcast_to_room(state, "game:turn_changed", %{
       current_turn: next_player_id,
       turn_number: new_turn_number,
       turn_time_remaining: @turn_time_limit
+    })
+
+    # Send updated hand to the next player (includes the auto-drawn card)
+    next_player_state = get_in(new_game_state, [:players, next_player_id])
+
+    send_to_player(state, next_player_id, "game:hand_updated", %{
+      hand: flatten_cards(next_player_state.hand),
+      deck_count: length(next_player_state.deck)
     })
 
     # Cancel old timer and start new one
