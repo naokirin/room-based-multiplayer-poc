@@ -3,8 +3,9 @@ defmodule GameServer.Games.SimpleCardBattleTest do
 
   alias GameServer.Games.SimpleCardBattle
 
-  @player1_id 1
-  @player2_id 2
+  # Use string IDs to match GameBehaviour and production (JWT user_id)
+  @player1_id "1"
+  @player2_id "2"
 
   describe "init_state/2" do
     test "creates players with 10 HP" do

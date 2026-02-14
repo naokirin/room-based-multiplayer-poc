@@ -1,18 +1,9 @@
 defmodule GameServerWeb.ConnCase do
   @moduledoc """
-  This module defines the test case to be used by
-  tests that require setting up a connection.
+  Test case for tests that require a connection (e.g. controller tests).
 
-  Such tests rely on `Phoenix.ConnTest` and also
-  import other functionality to make it easier
-  to build common data structures and query the data layer.
-
-  Finally, if the test case interacts with the database,
-  we enable the SQL sandbox, so changes done to the database
-  are reverted at the end of every test. If you are using
-  PostgreSQL, you can even run database tests asynchronously
-  by setting `use GameServerWeb.ConnCase, async: true`, although
-  this option is not recommended for other databases.
+  Uses `Phoenix.ConnTest` and provides a default `conn` in setup.
+  This project does not use Ecto/database; no SQL sandbox is configured.
   """
 
   use ExUnit.CaseTemplate

@@ -18,6 +18,7 @@ defmodule GameServer.Rooms.Room do
   alias GameServer.Api.RailsClient
   alias GameServer.Games.SimpleCardBattle
   alias GameServer.Redis
+  alias GameServer.Rooms.RoomBroadcast
 
   @turn_time_limit 30
   @reveal_delay_ms 2_500
@@ -192,7 +193,7 @@ defmodule GameServer.Rooms.Room do
       Process.monitor(channel_pid)
 
       # Broadcast player joined
-      broadcast_to_room(state, "player:joined", %{
+      RoomBroadcast.broadcast_to_room(state.players, "player:joined", %{
         user_id: user_id,
         display_name: display_name
       })
@@ -207,7 +208,7 @@ defmodule GameServer.Rooms.Room do
 
       # Return client-safe state (no PIDs; Jason cannot encode them)
       reply_state = %{
-        players: players_for_client(state.players),
+        players: RoomBroadcast.players_for_client(state.players),
         status: state.status,
         reconnect_token: reconnect_token
       }
@@ -232,7 +233,7 @@ defmodule GameServer.Rooms.Room do
       state = cancel_reconnect_timer_for_player(state, user_id)
 
       # Broadcast player reconnected (T091)
-      broadcast_to_room(state, "player:reconnected", %{user_id: user_id})
+      RoomBroadcast.broadcast_to_room(state.players, "player:reconnected", %{user_id: user_id})
 
       # Build full state with your_hand (T090)
       full_state =
@@ -259,7 +260,7 @@ defmodule GameServer.Rooms.Room do
             room_id: state.room_id,
             status: state.status,
             players: players_state,
-            your_hand: flatten_cards(player_game_state[:hand]),
+            your_hand: RoomBroadcast.flatten_cards(player_game_state[:hand]),
             current_turn: state.game_state.current_turn,
             turn_number: state.game_state.turn_number,
             turn_time_remaining: @turn_time_limit,
@@ -269,7 +270,7 @@ defmodule GameServer.Rooms.Room do
           %{
             room_id: state.room_id,
             status: state.status,
-            players: players_for_client(state.players),
+            players: RoomBroadcast.players_for_client(state.players),
             chat_messages: state.chat_messages
           }
         end
@@ -322,7 +323,7 @@ defmodule GameServer.Rooms.Room do
       state = %{state | chat_messages: updated_messages}
 
       # Broadcast to all players
-      broadcast_to_room(state, "chat:new_message", message)
+      RoomBroadcast.broadcast_to_room(state.players, "chat:new_message", message)
 
       {:reply, {:ok, message_id}, state}
     else
@@ -350,7 +351,7 @@ defmodule GameServer.Rooms.Room do
     end
 
     state = %{state | status: :aborted}
-    broadcast_to_room(state, "room:aborted", %{reason: reason})
+    RoomBroadcast.broadcast_to_room(state.players, "room:aborted", %{reason: reason})
     Process.send_after(self(), :terminate_room, @termination_delay)
     {:noreply, state}
   end
@@ -376,7 +377,7 @@ defmodule GameServer.Rooms.Room do
       state = %{state | players: updated_players}
 
       # Broadcast player disconnected (T088)
-      broadcast_to_room(state, "player:disconnected", %{user_id: user_id})
+      RoomBroadcast.broadcast_to_room(state.players, "player:disconnected", %{user_id: user_id})
 
       # Start reconnect timer for this player (T088)
       state =
@@ -424,7 +425,7 @@ defmodule GameServer.Rooms.Room do
       # Skip turn
       next_player_id = get_next_player_id(state)
 
-      broadcast_to_room(state, "game:turn_skipped", %{
+      RoomBroadcast.broadcast_to_room(state.players, "game:turn_skipped", %{
         turn_number: turn_number
       })
 
@@ -479,7 +480,7 @@ defmodule GameServer.Rooms.Room do
       Logger.info("Player #{user_id} failed to reconnect in time, removing from game")
 
       # Broadcast player left (T091)
-      broadcast_to_room(state, "player:left", %{user_id: user_id, reason: "reconnect_timeout"})
+      RoomBroadcast.broadcast_to_room(state.players, "player:left", %{user_id: user_id, reason: "reconnect_timeout"})
 
       # Call game behaviour's on_player_removed
       if state.status == :playing && state.game_state do
@@ -563,8 +564,8 @@ defmodule GameServer.Rooms.Room do
           opponent_game_state = get_in(game_state, [:players, opponent_id])
           opponent_info = Map.get(state.players, opponent_id)
 
-          send_to_player(state, user_id, "game:started", %{
-            your_hand: flatten_cards(player_state.hand),
+          RoomBroadcast.send_to_player(state.players, user_id, "game:started", %{
+            your_hand: RoomBroadcast.flatten_cards(player_state.hand),
             your_hp: player_state.hp,
             your_deck_count: length(player_state.deck),
             your_display_name: pinfo.display_name,
@@ -603,7 +604,7 @@ defmodule GameServer.Rooms.Room do
         opp_game_state = get_in(new_game_state, [:players, opp_id])
         opp_info = Map.get(state.players, opp_id)
 
-        send_to_player(state, player_id, "game:action_applied", %{
+        RoomBroadcast.send_to_player(state.players, player_id, "game:action_applied", %{
           actor_id: user_id,
           effects: effects,
           players: %{
@@ -631,8 +632,8 @@ defmodule GameServer.Rooms.Room do
           # Send updated hand to acting player (after card effects, before turn advance)
           acting_player_state = get_in(new_game_state, [:players, user_id])
 
-          send_to_player(state, user_id, "game:hand_updated", %{
-            hand: flatten_cards(acting_player_state.hand),
+          RoomBroadcast.send_to_player(state.players, user_id, "game:hand_updated", %{
+            hand: RoomBroadcast.flatten_cards(acting_player_state.hand),
             deck_count: length(acting_player_state.deck)
           })
 
@@ -687,7 +688,7 @@ defmodule GameServer.Rooms.Room do
 
     state = %{state | game_state: new_game_state}
 
-    broadcast_to_room(state, "game:turn_changed", %{
+    RoomBroadcast.broadcast_to_room(state.players, "game:turn_changed", %{
       current_turn: next_player_id,
       turn_number: new_turn_number,
       turn_time_remaining: @turn_time_limit
@@ -696,8 +697,8 @@ defmodule GameServer.Rooms.Room do
     # Send updated hand to the next player (includes the auto-drawn card)
     next_player_state = get_in(new_game_state, [:players, next_player_id])
 
-    send_to_player(state, next_player_id, "game:hand_updated", %{
-      hand: flatten_cards(next_player_state.hand),
+    RoomBroadcast.send_to_player(state.players, next_player_id, "game:hand_updated", %{
+      hand: RoomBroadcast.flatten_cards(next_player_state.hand),
       deck_count: length(next_player_state.deck)
     })
 
@@ -718,7 +719,7 @@ defmodule GameServer.Rooms.Room do
       ended_at: DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    broadcast_to_room(state, "game:ended", result_data)
+    RoomBroadcast.broadcast_to_room(state.players, "game:ended", result_data)
 
     # Notify Rails
     case RailsClient.room_finished(state.room_id, result_data) do
@@ -773,13 +774,6 @@ defmodule GameServer.Rooms.Room do
     end
   end
 
-  # Build players map for client (no channel_pid; PIDs are not JSON-serializable)
-  defp players_for_client(players) do
-    Map.new(players, fn {user_id, info} ->
-      {user_id, %{display_name: info.display_name, connected: info.connected}}
-    end)
-  end
-
   defp all_players_disconnected?(state) do
     Enum.all?(state.players, fn {_user_id, player_info} ->
       not player_info.connected
@@ -817,24 +811,6 @@ defmodule GameServer.Rooms.Room do
     end
   end
 
-  defp broadcast_to_room(state, event, payload) do
-    Enum.each(state.players, fn {_user_id, player_info} ->
-      if player_info.connected do
-        send(player_info.channel_pid, {:broadcast, event, payload})
-      end
-    end)
-  end
-
-  defp send_to_player(state, user_id, event, payload) do
-    case Map.get(state.players, user_id) do
-      %{connected: true, channel_pid: pid} ->
-        send(pid, {:broadcast, event, payload})
-
-      _ ->
-        :ok
-    end
-  end
-
   defp find_player_by_pid(state, pid) do
     case Enum.find(state.players, fn {_user_id, player_info} ->
            player_info.channel_pid == pid
@@ -847,22 +823,4 @@ defmodule GameServer.Rooms.Room do
   defp get_room_opponent_id(game_state, user_id) do
     Enum.find(game_state.player_order, &(&1 != user_id))
   end
-
-  defp flatten_card(card) do
-    effects_list = card["effects"] || []
-    first_effect = List.first(effects_list) || %{}
-    effects_for_client =
-      Enum.map(effects_list, fn e -> %{"effect" => e["effect"], "value" => e["value"] || 0} end)
-
-    %{
-      "id" => card["id"],
-      "name" => card["name"],
-      "effect" => first_effect["effect"],
-      "value" => first_effect["value"] || 0,
-      "effects" => effects_for_client
-    }
-  end
-
-  defp flatten_cards(nil), do: []
-  defp flatten_cards(cards), do: Enum.map(cards, &flatten_card/1)
 end
