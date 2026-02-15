@@ -137,6 +137,16 @@ infra/                      # Docker Compose, MySQL/Redis config
 specs/                      # Feature specifications and task plans
 ```
 
+## Documentation
+
+詳細なドキュメントは [docs/](docs/) ディレクトリを参照してください。
+
+| ドキュメント | 内容 |
+|------------|------|
+| [Architecture](docs/architecture.md) | システム全体構成図、サービス間接続、データフロー、ER図、ディレクトリ構造 |
+| [Sequences](docs/sequences.md) | 認証・マッチメイキング・ゲームルーム・再接続・チャット等のシーケンス図 |
+| [Tech Stack](docs/tech-stack.md) | 各サービスの技術スタック一覧、バージョン、セキュリティ |
+
 ## Key Design Decisions
 
 - **Server-authoritative**: All game actions validated on the game server
