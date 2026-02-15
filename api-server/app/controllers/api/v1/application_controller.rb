@@ -42,14 +42,15 @@ module Api
       # @param serializer_class [Class] Alba::Resource class (e.g. Api::V1::ErrorSerializer)
       # @param payload [Object] object passed to serializer (e.g. OpenStruct, ActiveRecord)
       # @param status [Symbol] HTTP status, default :ok
-      # @param root_key [nil, :default] nil => as_json(root_key: nil); :default => as_json (serializer root_key)
+      # @param root_key [nil, :default] nil => flat JSON (no wrapper key); :default => as_json (serializer default key)
       def render_with_serializer(serializer_class, payload, status: :ok, root_key: nil)
         render **serializer_render_options(serializer_class, payload, status: status, root_key: root_key)
       end
 
       # Returns { json:, status: } for use with render **options (e.g. in responders).
       def serializer_render_options(serializer_class, payload, status: :ok, root_key: nil)
-        json = (root_key == :default) ? serializer_class.new(payload).as_json : serializer_class.new(payload).as_json(root_key: root_key)
+        alba_root = (root_key == :default) ? nil : (root_key || "")
+        json = (root_key == :default) ? serializer_class.new(payload).as_json : serializer_class.new(payload).as_json(root_key: alba_root)
         { json: json, status: status }
       end
     end

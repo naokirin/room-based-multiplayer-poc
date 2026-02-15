@@ -78,6 +78,7 @@ module Api
       def build_join_queued_payload(result)
         data = result[:data]
         ::OpenStruct.new(
+          game_type_id: data[:game_type_id].to_s,
           queued_at: data[:queued_at].to_s,
           timeout_seconds: data[:timeout_seconds].to_i
         )
