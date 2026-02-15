@@ -31,7 +31,7 @@ class Setting
     end
 
     def default_game_server_ws_url
-      "ws://localhost:#{default_game_server_ws_port}/socket/websocket"
+      "ws://localhost:#{default_game_server_ws_port}/socket"
     end
 
     # --- Admin (config/x/admin.yml) ---

@@ -25,7 +25,7 @@ module Api
 
         ws_url =
           if room.node_name.present?
-            "ws://#{room.node_name}:#{Setting.default_game_server_ws_port}/socket/websocket"
+            "ws://#{room.node_name}:#{Setting.default_game_server_ws_port}/socket"
           else
             Setting.game_server_ws_url
           end

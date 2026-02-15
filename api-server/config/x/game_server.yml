@@ -1,7 +1,7 @@
 # 注意: game-server の Phoenix デフォルトポートおよび client の接続先と揃えること。
 default: &default
   default_ws_port: 4000
-  # default_ws_url は ENV["GAME_SERVER_WS_URL"] が未設定の場合に使う。ポートのみの場合は "ws://localhost:#{default_ws_port}/socket/websocket" を利用する。
+  # default_ws_url は ENV["GAME_SERVER_WS_URL"] が未設定の場合に使う。ポートのみの場合は "ws://localhost:#{default_ws_port}/socket" を利用する。
 
 development:
   <<: *default
