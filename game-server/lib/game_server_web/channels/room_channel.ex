@@ -18,7 +18,10 @@ defmodule GameServerWeb.RoomChannel do
   @rate_limit_window 1_000
   @chat_rate_limit_window 10_000
   @chat_rate_limit_count 5
+  # 注意: client のチャット入力 maxLength および api-server のチャット関連制限と揃えること。
   @max_chat_length 500
+  # Reconnect トークンを「使用済み」としてマークする際の Redis TTL（秒）。短い値で十分。
+  @reconnect_token_used_ttl_seconds 10
 
   @impl true
   def join("room:" <> room_id, params, socket) do
@@ -155,7 +158,7 @@ defmodule GameServerWeb.RoomChannel do
 
             if stored_room_id == room_id_str and stored_user_id == user_id_str and status == "pending" do
               # Mark token as used
-              Redis.command(["SETEX", redis_key, 10, Jason.encode!(%{status: "used"})])
+              Redis.command(["SETEX", redis_key, @reconnect_token_used_ttl_seconds, Jason.encode!(%{status: "used"})])
 
               # Get display name from params or use default
               display_name = Map.get(params, "display_name", "Player")

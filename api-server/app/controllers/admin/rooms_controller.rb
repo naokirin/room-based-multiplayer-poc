@@ -11,7 +11,7 @@ module Admin
       end
 
       @page = [params[:page].to_i, 1].max
-      @per_page = 25
+      @per_page = AppConstants::ADMIN_PER_PAGE
       @total_count = @rooms.count
       @rooms = @rooms.offset((@page - 1) * @per_page).limit(@per_page)
     end

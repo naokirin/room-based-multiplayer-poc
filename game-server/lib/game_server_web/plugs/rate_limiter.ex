@@ -6,10 +6,13 @@ defmodule GameServerWeb.Plugs.RateLimiter do
 
   use PlugAttack
 
+  @throttle_period_ms 60_000
+  @throttle_limit 60
+
   rule "throttle by ip", conn do
     throttle(conn.remote_ip,
-      period: 60_000,
-      limit: 60,
+      period: @throttle_period_ms,
+      limit: @throttle_limit,
       storage: {PlugAttack.Storage.Ets, GameServerWeb.Plugs.RateLimiter.Storage}
     )
   end

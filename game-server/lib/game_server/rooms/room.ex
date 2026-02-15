@@ -24,10 +24,13 @@ defmodule GameServer.Rooms.Room do
   alias GameServer.Rooms.RoomGameFlow
   alias GameServer.Rooms.RoomJoinRejoin
 
+  # 注意: turn_time_limit は client のデフォルト turn_time_remaining 表示と揃えること。
   @turn_time_limit 30
   @max_nonces_per_player 50
   @max_chat_messages 100
+  # 注意: reconnect_token_ttl は api-server が発行する reconnect トークンの有効期限と整合させること。
   @reconnect_token_ttl 300
+  @nonce_cache_ttl_minutes 5
 
   # Client API
 
@@ -369,7 +372,7 @@ defmodule GameServer.Rooms.Room do
 
     case Cachex.get(cache_name, key) do
       {:ok, nil} ->
-        Cachex.put(cache_name, key, true, ttl: :timer.minutes(5))
+        Cachex.put(cache_name, key, true, ttl: :timer.minutes(@nonce_cache_ttl_minutes))
         :ok
 
       {:ok, _} ->

@@ -1,4 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import {
+	AUTO_RECONNECT_DELAY_MS,
+	DEFAULT_CANVAS_HEIGHT,
+	DEFAULT_CANVAS_WIDTH,
+} from "../constants";
 import { GameRenderer } from "../game/GameRenderer";
 import { useAuthStore } from "../stores/authStore";
 import { useChatStore } from "../stores/chatStore";
@@ -44,8 +49,8 @@ export function Game() {
 		}
 
 		const renderer = new GameRenderer(canvasRef.current, {
-			width: 800,
-			height: 600,
+			width: DEFAULT_CANVAS_WIDTH,
+			height: DEFAULT_CANVAS_HEIGHT,
 		});
 
 		renderer.onCardClick((cardId) => {

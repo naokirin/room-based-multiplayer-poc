@@ -1,4 +1,8 @@
 import {
+	DEFAULT_TURN_NUMBER,
+	DEFAULT_TURN_TIME_REMAINING,
+} from "../constants";
+import {
 	ActionAppliedPayloadSchema,
 	GameAbortedPayloadSchema,
 	GameEndedPayloadSchema,
@@ -48,8 +52,8 @@ export function handleGameStarted(
 	const myUserId = useAuthStore.getState().user?.id ?? "";
 	const myHand = (data.your_hand ?? []).map(serverCardToCard);
 	const currentTurn = data.current_turn;
-	const turnNumber = data.turn_number ?? 1;
-	const turnTimeRemaining = data.turn_time_remaining ?? 30;
+	const turnNumber = data.turn_number ?? DEFAULT_TURN_NUMBER;
+	const turnTimeRemaining = data.turn_time_remaining ?? DEFAULT_TURN_TIME_REMAINING;
 	const isMyTurn = currentTurn === myUserId;
 	const opponentId = data.opponent_id ?? "opponent";
 
@@ -198,7 +202,7 @@ export function handleTurnChanged(
 
 	const myUserId = useAuthStore.getState().user?.id;
 	const isMyTurn = data.current_turn === myUserId;
-	const turnTimeRemaining = data.turn_time_remaining ?? 30;
+	const turnTimeRemaining = data.turn_time_remaining ?? DEFAULT_TURN_TIME_REMAINING;
 
 	const updates: Partial<GameStoreState> = {
 		currentTurn: data.current_turn,

@@ -88,7 +88,7 @@ export interface Card {
 	effects?: CardEffect[];
 }
 
-// Simple card battle: max HP (must match game-server)
+/** Simple card battle の最大 HP。注意: game-server の SimpleCardBattle @max_hp と値を揃えること。 */
 export const MAX_HP = 10;
 
 // Game state types

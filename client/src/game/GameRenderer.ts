@@ -5,6 +5,7 @@ import {
 	Text,
 	TextStyle,
 } from "pixi.js";
+import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH } from "../constants";
 import type { LastPlayedCard } from "../stores/gameStore";
 import type { Card, GameState } from "../types";
 import { createCard } from "./CardRenderer";
@@ -32,8 +33,8 @@ export class GameRenderer {
 
 	constructor(container: HTMLElement, options: RendererOptions = {}) {
 		this.containerRef = container;
-		const width = options.width || 800;
-		const height = options.height || 600;
+		const width = options.width ?? DEFAULT_CANVAS_WIDTH;
+		const height = options.height ?? DEFAULT_CANVAS_HEIGHT;
 
 		// Create PixiJS Application
 		this.app = new Application();

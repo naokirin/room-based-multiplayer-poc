@@ -10,6 +10,8 @@ defmodule GameServer.Api.RailsClient do
   """
 
   @max_retries 3
+  @retry_delay_base_ms 500
+  @retry_delay_exponent 2
 
   @doc """
   Notify Rails that a room is ready.
@@ -136,7 +138,9 @@ defmodule GameServer.Api.RailsClient do
       finch: GameServer.Finch,
       retry: :transient,
       max_retries: @max_retries,
-      retry_delay: fn attempt -> 500 * :math.pow(2, attempt) |> round() end
+      retry_delay: fn attempt ->
+        (@retry_delay_base_ms * :math.pow(@retry_delay_exponent, attempt)) |> round()
+      end
     ]
   end
 

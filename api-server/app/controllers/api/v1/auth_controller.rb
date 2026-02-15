@@ -10,7 +10,7 @@ module Api
           render json: {
             user: user_json(user),
             access_token: token,
-            expires_at: 1.hour.from_now.iso8601
+            expires_at: AppConstants::JWT_EXPIRATION.from_now.iso8601
           }, status: :created
         else
           render json: { errors: user.errors }, status: :unprocessable_entity
@@ -35,7 +35,7 @@ module Api
         render json: {
           user: user_json(user, include_role: true),
           access_token: token,
-          expires_at: 1.hour.from_now.iso8601
+          expires_at: AppConstants::JWT_EXPIRATION.from_now.iso8601
         }
       end
 
@@ -43,7 +43,7 @@ module Api
         token = JwtService.encode({ user_id: current_user.id })
         render json: {
           access_token: token,
-          expires_at: 1.hour.from_now.iso8601
+          expires_at: AppConstants::JWT_EXPIRATION.from_now.iso8601
         }
       end
 

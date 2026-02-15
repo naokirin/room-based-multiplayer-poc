@@ -1,4 +1,8 @@
 import { useEffect, useState } from "react";
+import {
+	DEFAULT_QUEUE_TIMEOUT_SECONDS,
+	ELAPSED_UPDATE_INTERVAL_MS,
+} from "../constants";
 import { api } from "../services/api";
 import { useAuthStore } from "../stores/authStore";
 import { useGameStore } from "../stores/gameStore";
@@ -24,7 +28,7 @@ export function Lobby() {
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
 	const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 	/** Use API timeout when queued; fallback if server did not send it */
-	const timeoutSeconds = queuedTimeoutSeconds ?? 60;
+	const timeoutSeconds = queuedTimeoutSeconds ?? DEFAULT_QUEUE_TIMEOUT_SECONDS;
 
 	useEffect(() => {
 		fetchGameTypes();
@@ -39,7 +43,7 @@ export function Lobby() {
 		if (matchmakingStatus === "queued" && queuedAt) {
 			const startTime = new Date(queuedAt).getTime();
 			const interval = setInterval(() => {
-				const elapsed = Math.floor((Date.now() - startTime) / 1000);
+				const elapsed = Math.floor((Date.now() - startTime) / ELAPSED_UPDATE_INTERVAL_MS);
 				setElapsedSeconds(elapsed);
 
 				// Auto-cancel when timeout is reached
@@ -47,7 +51,7 @@ export function Lobby() {
 					clearInterval(interval);
 					cancelQueue();
 				}
-			}, 1000);
+			}, ELAPSED_UPDATE_INTERVAL_MS);
 
 			return () => clearInterval(interval);
 		}

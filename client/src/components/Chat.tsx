@@ -1,5 +1,6 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { MAX_CHAT_INPUT_LENGTH } from "../constants";
 import { useAuthStore } from "../stores/authStore";
 import { useChatStore } from "../stores/chatStore";
 
@@ -75,7 +76,7 @@ export const Chat: React.FC = () => {
 					value={input}
 					onChange={(e) => setInput(e.target.value)}
 					placeholder="メッセージを入力..."
-					maxLength={500}
+					maxLength={MAX_CHAT_INPUT_LENGTH}
 					disabled={isLoading}
 					className="chat-input"
 				/>

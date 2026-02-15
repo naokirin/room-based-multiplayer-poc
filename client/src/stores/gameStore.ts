@@ -1,4 +1,9 @@
 import { create } from "zustand";
+import {
+	AUTO_RECONNECT_DELAY_MS,
+	DEFAULT_GAME_SERVER_WS_PORT,
+	TURN_TIMER_INTERVAL_MS,
+} from "../constants";
 import { ReconnectTokenPayloadSchema } from "../schemas/gameEvents";
 import { api } from "../services/api";
 import { socketManager } from "../services/socket";
@@ -27,7 +32,7 @@ const clearTurnTimer = () => {
 
 const startTurnTimer = (updateFn: () => void) => {
 	clearTurnTimer();
-	turnTimerId = window.setInterval(updateFn, 1000);
+	turnTimerId = window.setInterval(updateFn, TURN_TIMER_INTERVAL_MS);
 };
 
 function registerGameEventListeners(get: () => GameStore): void {
@@ -137,7 +142,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			const msg = getErrorMessage(err, "Failed to join room");
 			const friendlyMessage =
 				msg.includes("WebSocket") || msg.includes("connection")
-					? "Could not connect to the game server. Please ensure the game server is running (e.g. port 4000)."
+					? `Could not connect to the game server. Please ensure the game server is running (e.g. port ${DEFAULT_GAME_SERVER_WS_PORT}).`
 					: msg;
 			set({ error: friendlyMessage });
 			throw err;
@@ -284,7 +289,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 					console.error("Auto-reconnect failed:", error);
 				}
 			}
-		}, 2000);
+		}, AUTO_RECONNECT_DELAY_MS);
 	},
 
 	leaveRoom: () => {

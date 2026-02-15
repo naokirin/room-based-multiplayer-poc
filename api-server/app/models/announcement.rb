@@ -1,7 +1,7 @@
 class Announcement < ApplicationRecord
   belongs_to :admin, class_name: "User"
 
-  validates :title, presence: true, length: { maximum: 255 }
+  validates :title, presence: true, length: { maximum: AppConstants::ANNOUNCEMENT_TITLE_MAX_LENGTH }
   validates :body, presence: true
   validate :expires_at_after_published_at, if: -> { published_at.present? && expires_at.present? }
 

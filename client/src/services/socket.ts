@@ -1,6 +1,9 @@
 import { type Channel, Socket } from "phoenix";
 import { v4 as uuidv4 } from "uuid";
 
+/** Phoenix チャネル用プロトコルバージョン（game-server の user_socket と揃えること）。 */
+const SOCKET_PROTOCOL_VERSION = "1.0";
+
 type DisconnectCallback = () => void;
 
 class SocketManager {
@@ -22,7 +25,7 @@ class SocketManager {
 		this.socket = new Socket(wsUrl, {
 			params: {
 				token,
-				protocol_version: "1.0",
+				protocol_version: SOCKET_PROTOCOL_VERSION,
 			},
 		});
 
