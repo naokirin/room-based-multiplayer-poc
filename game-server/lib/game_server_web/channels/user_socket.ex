@@ -5,7 +5,7 @@ defmodule GameServerWeb.UserSocket do
 
   @supported_protocol_versions ["1.0"]
 
-  @impl true
+  @impl Phoenix.Socket
   def connect(%{"token" => token, "protocol_version" => version} = _params, socket, _connect_info) do
     with :ok <- validate_protocol_version(version),
          {:ok, claims} <- GameServer.Auth.JWT.verify_token(token) do
@@ -32,7 +32,7 @@ defmodule GameServerWeb.UserSocket do
     {:error, %{reason: "unauthorized"}}
   end
 
-  @impl true
+  @impl Phoenix.Socket
   def id(socket), do: "user_socket:#{socket.assigns.user_id}"
 
   defp validate_protocol_version(version) when version in @supported_protocol_versions, do: :ok

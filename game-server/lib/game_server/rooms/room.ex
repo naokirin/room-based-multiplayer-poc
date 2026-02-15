@@ -106,7 +106,7 @@ defmodule GameServer.Rooms.Room do
 
   # Server Callbacks
 
-  @impl true
+  @impl GenServer
   def init(opts) do
     room_id = Keyword.fetch!(opts, :room_id)
     game_type = Keyword.fetch!(opts, :game_type)
@@ -145,7 +145,7 @@ defmodule GameServer.Rooms.Room do
     {:ok, state}
   end
 
-  @impl true
+  @impl GenServer
   def handle_call({:join, user_id, display_name, channel_pid}, _from, state) do
     case RoomJoinRejoin.apply_join(
            state,
@@ -169,7 +169,7 @@ defmodule GameServer.Rooms.Room do
     end
   end
 
-  @impl true
+  @impl GenServer
   def handle_call({:rejoin, user_id, channel_pid}, _from, state) do
     case RoomJoinRejoin.apply_rejoin(state, user_id, channel_pid, @turn_time_limit) do
       {:ok, state, full_state} ->
@@ -181,7 +181,7 @@ defmodule GameServer.Rooms.Room do
     end
   end
 
-  @impl true
+  @impl GenServer
   def handle_call({:handle_action, user_id, action, nonce}, _from, state) do
     if state.status != :playing do
       {:reply, {:error, :game_not_started}, state}
@@ -197,12 +197,12 @@ defmodule GameServer.Rooms.Room do
     end
   end
 
-  @impl true
+  @impl GenServer
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
   end
 
-  @impl true
+  @impl GenServer
   def handle_call({:add_chat_message, user_id, content}, _from, state) do
     case RoomChat.add_message(state, user_id, content, @max_chat_messages) do
       {:ok, state, message_id} -> {:reply, {:ok, message_id}, state}
@@ -210,13 +210,13 @@ defmodule GameServer.Rooms.Room do
     end
   end
 
-  @impl true
+  @impl GenServer
   def handle_call(:get_chat_history, _from, state) do
     history = RoomChat.get_history(state)
     {:reply, history, state}
   end
 
-  @impl true
+  @impl GenServer
   def handle_cast({:admin_terminate, reason}, state) do
     Logger.info("Room #{state.room_id} admin terminated: #{reason}")
     RoomNotifier.notify_room_aborted(state.room_id, reason)
@@ -226,7 +226,7 @@ defmodule GameServer.Rooms.Room do
     {:noreply, state}
   end
 
-  @impl true
+  @impl GenServer
   def handle_cast({:leave_voluntarily, user_id}, state) do
     state =
       if Map.has_key?(state.players, user_id) do
@@ -238,13 +238,13 @@ defmodule GameServer.Rooms.Room do
     {:noreply, state}
   end
 
-  @impl true
+  @impl GenServer
   def handle_cast({:disconnect, user_id}, state) do
     state = RoomDisconnect.apply_disconnect(state, user_id, self())
     {:noreply, state}
   end
 
-  @impl true
+  @impl GenServer
   def handle_info({:turn_timeout, turn_number}, state) do
     if state.status == :playing and state.game_state.turn_number == turn_number do
       Logger.info("Turn timeout in room #{state.room_id}, skipping turn")
@@ -263,7 +263,7 @@ defmodule GameServer.Rooms.Room do
     end
   end
 
-  @impl true
+  @impl GenServer
   def handle_info({:advance_turn_after_reveal, next_player_id}, state) do
     if state.status == :playing do
       state = RoomGameFlow.advance_turn(state, next_player_id, self(), @turn_time_limit)
@@ -273,7 +273,7 @@ defmodule GameServer.Rooms.Room do
     end
   end
 
-  @impl true
+  @impl GenServer
   def handle_info(:disconnect_timeout, state) do
     if RoomDisconnect.all_players_disconnected?(state) do
       Logger.info("All players disconnected for too long, aborting room #{state.room_id}")
@@ -287,7 +287,7 @@ defmodule GameServer.Rooms.Room do
     end
   end
 
-  @impl true
+  @impl GenServer
   def handle_info({:reconnect_timeout, user_id}, state) do
     # T089: Handle reconnect timeout for a specific player
     player_info = Map.get(state.players, user_id)
@@ -320,7 +320,7 @@ defmodule GameServer.Rooms.Room do
     end
   end
 
-  @impl true
+  @impl GenServer
   def handle_info(:terminate_room, state) do
     Logger.info("Terminating room #{state.room_id}")
 
@@ -332,7 +332,7 @@ defmodule GameServer.Rooms.Room do
     {:stop, :normal, state}
   end
 
-  @impl true
+  @impl GenServer
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     # Channel process died, find which player and mark as disconnected
     case find_player_by_pid(state, pid) do

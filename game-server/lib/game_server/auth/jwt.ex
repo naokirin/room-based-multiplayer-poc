@@ -5,7 +5,7 @@ defmodule GameServer.Auth.JWT do
 
   use Joken.Config
 
-  @impl true
+  @impl Joken.Config
   def token_config do
     default_claims(skip: [:aud, :iss])
   end

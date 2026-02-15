@@ -23,7 +23,7 @@ defmodule GameServerWeb.RoomChannel do
   # Reconnect トークンを「使用済み」としてマークする際の Redis TTL（秒）。短い値で十分。
   @reconnect_token_used_ttl_seconds 10
 
-  @impl true
+  @impl Phoenix.Channel
   def join("room:" <> room_id, params, socket) do
     user_id = socket.assigns.user_id
 
@@ -39,7 +39,7 @@ defmodule GameServerWeb.RoomChannel do
     end
   end
 
-  @impl true
+  @impl Phoenix.Channel
   def handle_in("game:action", payload, socket) do
     user_id = socket.assigns.user_id
     room_id = socket.assigns.room_id
@@ -67,7 +67,7 @@ defmodule GameServerWeb.RoomChannel do
     end
   end
 
-  @impl true
+  @impl Phoenix.Channel
   def handle_in("room:leave", _payload, socket) do
     user_id = socket.assigns.user_id
     room_id = socket.assigns.room_id
@@ -76,7 +76,7 @@ defmodule GameServerWeb.RoomChannel do
     {:reply, :ok, socket}
   end
 
-  @impl true
+  @impl Phoenix.Channel
   def handle_in("chat:send", payload, socket) do
     user_id = socket.assigns.user_id
     room_id = socket.assigns.room_id
@@ -108,19 +108,19 @@ defmodule GameServerWeb.RoomChannel do
     end
   end
 
-  @impl true
+  @impl Phoenix.Channel
   def handle_info({:broadcast, event, payload}, socket) do
     push(socket, event, payload)
     {:noreply, socket}
   end
 
-  @impl true
+  @impl Phoenix.Channel
   def handle_info({:force_disconnect, reason}, socket) do
     push(socket, "force_disconnect", %{reason: reason})
     {:stop, :normal, socket}
   end
 
-  @impl true
+  @impl Phoenix.Channel
   def terminate(reason, socket) do
     Logger.debug("Channel terminating: #{inspect(reason)}")
 

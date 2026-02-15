@@ -14,7 +14,7 @@ defmodule GameServer.Subscribers.RoomCommandsSubscriber do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  @impl true
+  @impl GenServer
   def init(_opts) do
     redis_url = System.get_env("REDIS_URL", "redis://localhost:6379/0")
 
@@ -30,13 +30,13 @@ defmodule GameServer.Subscribers.RoomCommandsSubscriber do
     end
   end
 
-  @impl true
+  @impl GenServer
   def handle_info({:redix_pubsub, _pubsub, _ref, :subscribed, %{channel: channel}}, state) do
     Logger.info("[RoomCommandsSubscriber] Successfully subscribed to #{channel}")
     {:noreply, state}
   end
 
-  @impl true
+  @impl GenServer
   def handle_info(
         {:redix_pubsub, _pubsub, _ref, :message, %{channel: @channel, payload: payload}},
         state
@@ -52,13 +52,13 @@ defmodule GameServer.Subscribers.RoomCommandsSubscriber do
     {:noreply, state}
   end
 
-  @impl true
+  @impl GenServer
   def handle_info({:redix_pubsub, _pubsub, _ref, :disconnected, _info}, state) do
     Logger.warning("[RoomCommandsSubscriber] Redis disconnected, will auto-reconnect")
     {:noreply, state}
   end
 
-  @impl true
+  @impl GenServer
   def handle_info(_msg, state) do
     {:noreply, state}
   end

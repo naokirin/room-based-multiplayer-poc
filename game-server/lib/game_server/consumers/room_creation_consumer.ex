@@ -30,13 +30,13 @@ defmodule GameServer.Consumers.RoomCreationConsumer do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
-  @impl true
+  @impl GenServer
   def init(_state) do
     send(self(), :poll)
     {:ok, %{backoff: @initial_backoff}}
   end
 
-  @impl true
+  @impl GenServer
   def handle_info(:poll, state) do
     case Redix.command(:redix_brpop, ["BRPOP", @queue_key, @brpop_timeout],
            timeout: @redix_timeout

@@ -25,12 +25,12 @@ defmodule GameServer.Games.SimpleCardBattle do
   `player_ids` must be a list of exactly two player IDs. Returns
   `{:error, :invalid_player_count}` for any other length.
   """
-  @impl true
+  @impl GameServer.Games.GameBehaviour
   def init_state(_config, player_ids) when length(player_ids) != 2 do
     {:error, :invalid_player_count}
   end
 
-  @impl true
+  @impl GameServer.Games.GameBehaviour
   def init_state(config, player_ids) when length(player_ids) == 2 do
     [player1_id, player2_id] = player_ids
 
@@ -52,7 +52,7 @@ defmodule GameServer.Games.SimpleCardBattle do
     {:ok, game_state}
   end
 
-  @impl true
+  @impl GameServer.Games.GameBehaviour
   def validate_action(game_state, player_id, %{"action" => "play_card"} = action) do
     with :ok <- validate_player_turn(game_state, player_id),
          :ok <- validate_card_in_hand(game_state, player_id, action) do
@@ -64,7 +64,7 @@ defmodule GameServer.Games.SimpleCardBattle do
     {:error, "invalid_action"}
   end
 
-  @impl true
+  @impl GameServer.Games.GameBehaviour
   def apply_action(game_state, player_id, %{"action" => "play_card"} = action) do
     card_id = Map.get(action, "card_id")
     player_state = get_in(game_state, [:players, player_id])
@@ -114,7 +114,7 @@ defmodule GameServer.Games.SimpleCardBattle do
     {:ok, final_game_state, [card_played_effect | effects]}
   end
 
-  @impl true
+  @impl GameServer.Games.GameBehaviour
   def check_end_condition(game_state) do
     Enum.reduce_while(game_state.players, :continue, fn {player_id, player_state}, _acc ->
       opponent_id = get_opponent_id(game_state, player_id)
@@ -132,7 +132,7 @@ defmodule GameServer.Games.SimpleCardBattle do
     end)
   end
 
-  @impl true
+  @impl GameServer.Games.GameBehaviour
   def on_player_removed(game_state, player_id) do
     opponent_id = get_opponent_id(game_state, player_id)
     {:ended, opponent_id, "opponent_forfeit"}
