@@ -32,7 +32,23 @@ module Api
       end
 
       def render_api_error(code, message, status)
-        render json: { error: code, message: message }, status: status
+        payload = OpenStruct.new(error: code.to_s, message: message.to_s)
+        render_with_serializer(Api::V1::ErrorSerializer, payload, status: status)
+      end
+
+      # Renders JSON using an Alba serializer. Use from subclasses for success/error responses.
+      # @param serializer_class [Class] Alba::Resource class (e.g. Api::V1::ErrorSerializer)
+      # @param payload [Object] object passed to serializer (e.g. OpenStruct, ActiveRecord)
+      # @param status [Symbol] HTTP status, default :ok
+      # @param root_key [nil, :default] nil => as_json(root_key: nil); :default => as_json (serializer root_key)
+      def render_with_serializer(serializer_class, payload, status: :ok, root_key: nil)
+        render **serializer_render_options(serializer_class, payload, status: status, root_key: root_key)
+      end
+
+      # Returns { json:, status: } for use with render **options (e.g. in responders).
+      def serializer_render_options(serializer_class, payload, status: :ok, root_key: nil)
+        json = (root_key == :default) ? serializer_class.new(payload).as_json : serializer_class.new(payload).as_json(root_key: root_key)
+        { json: json, status: status }
       end
     end
   end

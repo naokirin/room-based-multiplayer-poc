@@ -3,16 +3,8 @@ module Api
     class GameTypesController < ApplicationController
       def index
         game_types = GameType.active
-        render json: {
-          game_types: game_types.map { |gt|
-            {
-              id: gt.id,
-              name: gt.name,
-              player_count: gt.player_count,
-              turn_time_limit: gt.turn_time_limit
-            }
-          }
-        }
+        payload = OpenStruct.new(game_types: game_types)
+        render_with_serializer(Api::V1::GameTypesIndexSerializer, payload, root_key: :default)
       end
     end
   end

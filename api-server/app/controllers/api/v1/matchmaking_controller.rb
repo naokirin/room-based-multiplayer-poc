@@ -13,25 +13,25 @@ module Api
         end
 
         result = MatchmakingService.join_queue(current_user.id, game_type.id)
-        render **join_response(result)
+        render_join_response(result)
       end
 
       # GET /api/v1/matchmaking/status
       def status
         result = MatchmakingService.queue_status(current_user.id)
-        render **status_response(result)
+        render_status_response(result)
       end
 
       # DELETE /api/v1/matchmaking/cancel
       # game_type_id is optional; when omitted, the server resolves it from the user's queue state.
       def cancel
         result = cancel_result
-        render **cancel_response(result)
+        render_cancel_response(result)
       end
 
       private
 
-      def join_response(result)
+      def render_join_response(result)
         case result[:status]
         when :matched then render_join_matched(result)
         when :queued then render_join_queued(result)
@@ -43,27 +43,27 @@ module Api
 
       def render_join_matched(result)
         payload = build_join_matched_payload(result)
-        { json: Matchmaking::JoinMatchedSerializer.new(payload).as_json(root_key: nil), status: :ok }
+        render_with_serializer(Matchmaking::JoinMatchedSerializer, payload, status: :ok)
       end
 
       def render_join_queued(result)
         payload = build_join_queued_payload(result)
-        { json: Matchmaking::JoinQueuedSerializer.new(payload).as_json(root_key: nil), status: :ok }
+        render_with_serializer(Matchmaking::JoinQueuedSerializer, payload, status: :ok)
       end
 
       def render_join_already_in_game(result)
         payload = build_join_already_in_game_payload(result)
-        { json: Matchmaking::JoinAlreadyInGameSerializer.new(payload).as_json(root_key: nil), status: :conflict }
+        render_with_serializer(Matchmaking::JoinAlreadyInGameSerializer, payload, status: :conflict)
       end
 
       def render_join_already_queued(result)
         payload = build_join_already_queued_payload(result)
-        { json: Matchmaking::JoinAlreadyQueuedSerializer.new(payload).as_json(root_key: nil), status: :conflict }
+        render_with_serializer(Matchmaking::JoinAlreadyQueuedSerializer, payload, status: :conflict)
       end
 
       def render_join_error
         payload = build_error_payload("matchmaking_error", I18n.t("api.v1.errors.matchmaking_error"))
-        { json: Api::V1::ErrorSerializer.new(payload).as_json(root_key: nil), status: :internal_server_error }
+        render_with_serializer(Api::V1::ErrorSerializer, payload, status: :internal_server_error)
       end
 
       def build_join_matched_payload(result)
@@ -97,7 +97,7 @@ module Api
         ::OpenStruct.new(queued_at: data[:queued_at].to_s)
       end
 
-      def status_response(result)
+      def render_status_response(result)
         case result[:status]
         when :matched then render_status_matched(result)
         when :queued then render_status_queued(result)
@@ -109,26 +109,26 @@ module Api
 
       def render_status_matched(result)
         payload = build_status_matched_payload(result)
-        { json: Matchmaking::StatusMatchedSerializer.new(payload).as_json(root_key: nil), status: :ok }
+        render_with_serializer(Matchmaking::StatusMatchedSerializer, payload, status: :ok)
       end
 
       def render_status_queued(result)
         payload = build_status_queued_payload(result)
-        { json: Matchmaking::StatusQueuedSerializer.new(payload).as_json(root_key: nil), status: :ok }
+        render_with_serializer(Matchmaking::StatusQueuedSerializer, payload, status: :ok)
       end
 
       def render_status_timeout(result)
         payload = build_status_timeout_payload(result)
-        { json: Matchmaking::StatusTimeoutSerializer.new(payload).as_json(root_key: nil), status: :ok }
+        render_with_serializer(Matchmaking::StatusTimeoutSerializer, payload, status: :ok)
       end
 
       def render_status_not_queued(_result)
-        { json: Matchmaking::StatusNotQueuedSerializer.new(nil).as_json(root_key: nil), status: :ok }
+        render_with_serializer(Matchmaking::StatusNotQueuedSerializer, nil, status: :ok)
       end
 
       def render_status_error
         payload = build_error_payload("status_error", I18n.t("api.v1.errors.status_error"))
-        { json: Api::V1::ErrorSerializer.new(payload).as_json(root_key: nil), status: :internal_server_error }
+        render_with_serializer(Api::V1::ErrorSerializer, payload, status: :internal_server_error)
       end
 
       def build_status_matched_payload(result)
@@ -160,14 +160,14 @@ module Api
         end
       end
 
-      def cancel_response(result)
+      def render_cancel_response(result)
         payload = ::OpenStruct.new(user_id: result[:data][:user_id].to_s)
-        { json: Matchmaking::CancelSerializer.new(payload).as_json(root_key: nil), status: :ok }
+        render_with_serializer(Matchmaking::CancelSerializer, payload, status: :ok)
       end
 
       def render_matchmaking_error(error_code, message, status)
         payload = build_error_payload(error_code, message)
-        render json: Api::V1::ErrorSerializer.new(payload).as_json(root_key: nil), status: status
+        render_with_serializer(Api::V1::ErrorSerializer, payload, status: status)
       end
 
       def build_error_payload(error_code, message)

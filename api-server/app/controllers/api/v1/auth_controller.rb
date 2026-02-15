@@ -1,17 +1,13 @@
 module Api
   module V1
     class AuthController < ApplicationController
-      skip_before_action :authenticate_user!, only: [:register, :login]
+      skip_before_action :authenticate_user!, only: [ :register, :login ]
 
       def register
         user = User.new(register_params)
         if user.save
-          token = JwtService.encode({ user_id: user.id })
-          render json: {
-            user: user_json(user),
-            access_token: token,
-            expires_at: Setting.jwt_expiration_seconds.seconds.from_now.iso8601
-          }, status: :created
+          payload = build_register_payload(user)
+          render_with_serializer(Api::V1::AuthRegisterSerializer, payload, status: :created)
         else
           render json: { errors: user.errors }, status: :unprocessable_entity
         end
@@ -22,29 +18,22 @@ module Api
 
         unless user&.authenticate(params[:password])
           audit_log(action: "user.login.failure", metadata: { email: params[:email] })
-          return render json: { error: "invalid_credentials", message: I18n.t("api.v1.errors.invalid_credentials") }, status: :unauthorized
+          return render_auth_error("invalid_credentials", I18n.t("api.v1.errors.invalid_credentials"), :unauthorized)
         end
 
         if user.account_frozen?
           audit_log(action: "user.login.frozen", target: user)
-          return render json: { error: "account_frozen", message: I18n.t("api.v1.errors.account_frozen") }, status: :unauthorized
+          return render_auth_error("account_frozen", I18n.t("api.v1.errors.account_frozen"), :unauthorized)
         end
 
         audit_log(action: "user.login.success", target: user)
-        token = JwtService.encode({ user_id: user.id })
-        render json: {
-          user: user_json(user, include_role: true),
-          access_token: token,
-          expires_at: Setting.jwt_expiration_seconds.seconds.from_now.iso8601
-        }
+        payload = build_login_payload(user)
+        render_with_serializer(Api::V1::AuthLoginSerializer, payload)
       end
 
       def refresh
-        token = JwtService.encode({ user_id: current_user.id })
-        render json: {
-          access_token: token,
-          expires_at: Setting.jwt_expiration_seconds.seconds.from_now.iso8601
-        }
+        payload = build_refresh_payload
+        render_with_serializer(Api::V1::AuthRefreshSerializer, payload)
       end
 
       private
@@ -53,17 +42,27 @@ module Api
         params.require(:user).permit(:email, :password, :display_name)
       end
 
-      def user_json(user, include_role: false)
-        json = {
-          id: user.id,
-          email: user.email,
-          display_name: user.display_name
-        }
-        if include_role
-          json[:role] = user.role
-          json[:status] = user.status
-        end
-        json
+      def build_register_payload(user)
+        expires_at = Setting.jwt_expiration_seconds.seconds.from_now.iso8601
+        token = JwtService.encode({ user_id: user.id })
+        OpenStruct.new(user: user, access_token: token, expires_at: expires_at)
+      end
+
+      def build_login_payload(user)
+        expires_at = Setting.jwt_expiration_seconds.seconds.from_now.iso8601
+        token = JwtService.encode({ user_id: user.id })
+        OpenStruct.new(user: user, access_token: token, expires_at: expires_at)
+      end
+
+      def build_refresh_payload
+        expires_at = Setting.jwt_expiration_seconds.seconds.from_now.iso8601
+        token = JwtService.encode({ user_id: current_user.id })
+        OpenStruct.new(access_token: token, expires_at: expires_at)
+      end
+
+      def render_auth_error(code, message, status)
+        payload = OpenStruct.new(error: code, message: message)
+        render_with_serializer(Api::V1::ErrorSerializer, payload, status: status)
       end
     end
   end
