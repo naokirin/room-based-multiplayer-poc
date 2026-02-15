@@ -1,3 +1,5 @@
+require "ostruct"
+
 module Api
   module V1
     # Base controller for API v1. All error responses use the format:

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_12_000010) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_15_000000) do
   create_table "announcements", id: { type: :string, limit: 36 }, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "admin_id", limit: 36, null: false
@@ -23,7 +23,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_12_000010) do
     t.index ["admin_id"], name: "index_announcements_on_admin_id"
   end
 
-  create_table "audit_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "audit_logs", id: { type: :string, limit: 36 }, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "action", limit: 100, null: false
     t.string "actor_id", limit: 36
     t.integer "actor_type", null: false
