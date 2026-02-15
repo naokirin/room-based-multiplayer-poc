@@ -38,7 +38,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
   describe "POST /api/v1/auth/login" do
     let!(:user) { create(:user, email: "test@example.com", password: "password123") }
 
-    it "returns token for valid credentials" do
+    it "returns token for valid credentials (uses OpenStruct in response payload)" do
       post "/api/v1/auth/login", params: { email: "test@example.com", password: "password123" }, as: :json
 
       expect(response).to have_http_status(:ok)
@@ -47,14 +47,31 @@ RSpec.describe "Api::V1::Auth", type: :request do
       expect(json["user"]["role"]).to eq("player")
       expect(json["user"]["status"]).to eq("active")
       expect(json["access_token"]).to be_present
+      expect(json["expires_at"]).to be_present
     end
 
-    it "returns 401 for invalid password" do
+    it "creates audit log with UUID and allows repeated logins without duplicate key error" do
+      post "/api/v1/auth/login", params: { email: "test@example.com", password: "password123" }, as: :json
+      expect(response).to have_http_status(:ok)
+
+      logs = AuditLog.where(action: "user.login.success")
+      expect(logs.size).to eq(1)
+      expect(logs.first.id).to match(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i)
+
+      post "/api/v1/auth/login", params: { email: "test@example.com", password: "password123" }, as: :json
+      expect(response).to have_http_status(:ok)
+
+      expect(AuditLog.where(action: "user.login.success").count).to eq(2)
+      expect(AuditLog.pluck(:id).uniq.size).to eq(2)
+    end
+
+    it "returns 401 for invalid password (error response uses OpenStruct)" do
       post "/api/v1/auth/login", params: { email: "test@example.com", password: "wrong" }, as: :json
 
       expect(response).to have_http_status(:unauthorized)
       json = response.parsed_body
       expect(json["error"]).to eq("invalid_credentials")
+      expect(json["message"]).to be_present
     end
 
     it "returns 401 for frozen account" do
