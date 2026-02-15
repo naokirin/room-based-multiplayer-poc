@@ -7,9 +7,8 @@ module Api
       include Alba::Resource
 
       attributes status: %i[String]
-      nested_attribute :services do
-        attributes database: %i[String],
-                   redis: %i[String]
+      attribute :services do |obj|
+        { database: obj.services.database.to_s, redis: obj.services.redis.to_s }
       end
     end
   end
