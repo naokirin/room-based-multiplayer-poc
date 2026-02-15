@@ -1,6 +1,6 @@
-# アーキテクチャ概要
+# Architecture Overview
 
-## システム全体構成
+## System Overview
 
 ```mermaid
 graph TB
@@ -28,7 +28,7 @@ graph TB
     GAME -- "Internal API (HTTP)<br/>/internal/*" --> API
 ```
 
-## サービス間接続の詳細
+## Service Connection Details
 
 ```mermaid
 flowchart LR
@@ -40,9 +40,9 @@ flowchart LR
 
     subgraph API ["API Server (:3001)"]
         direction TB
-        A_PUBLIC["/api/v1/*<br/>認証・マッチメイキング・プロフィール"]
-        A_INTERNAL["/internal/*<br/>Room・Auth内部API"]
-        A_ADMIN["/admin/*<br/>管理画面"]
+        A_PUBLIC["/api/v1/*<br/>Auth, Matchmaking, Profile"]
+        A_INTERNAL["/internal/*<br/>Room & Auth Internal API"]
+        A_ADMIN["/admin/*<br/>Admin Panel"]
     end
 
     subgraph Game ["Game Server (:4000)"]
@@ -80,11 +80,11 @@ flowchart LR
     A_ADMIN -- "PUBLISH" --> R_PS
 ```
 
-## データフロー（3層構造）
+## Data Flow (3-Layer Architecture)
 
 ```mermaid
 graph TB
-    subgraph Persistent ["永続層:<br/> MySQL (Rails管理)"]
+    subgraph Persistent ["Persistent Layer:<br/> MySQL (Managed by Rails)"]
         T1["users"]
         T2["rooms / room_players"]
         T3["matches / match_players"]
@@ -94,28 +94,28 @@ graph TB
         T7["audit_logs"]
     end
 
-    subgraph Temporary ["一時層:<br/> Redis (共有)"]
-        R1["match_queue:{game_type_id}<br/>(List) マッチング待機キュー"]
-        R2["room_creation_queue<br/>(List) Room作成命令"]
-        R3["room_token:{token}<br/>(Hash, TTL 5分) Room参加認証"]
-        R4["reconnect:{room_id}:{user_id}<br/>(String, TTL 24h) 再接続トークン"]
-        R5["active_game:{user_id}<br/>(String) 二重参加防止"]
-        R6["room_commands<br/>(PubSub) Room操作コマンド"]
-        R7["persist_failed:{room_id}<br/>(String, TTL 7日) 結果保存失敗リカバリ"]
+    subgraph Temporary ["Temporary Layer:<br/> Redis (Shared)"]
+        R1["match_queue:{game_type_id}<br/>(List) Matchmaking wait queue"]
+        R2["room_creation_queue<br/>(List) Room creation commands"]
+        R3["room_token:{token}<br/>(Hash, TTL 5min) Room join auth"]
+        R4["reconnect:{room_id}:{user_id}<br/>(String, TTL 24h) Reconnect token"]
+        R5["active_game:{user_id}<br/>(String) Duplicate join prevention"]
+        R6["room_commands<br/>(PubSub) Room operation commands"]
+        R7["persist_failed:{room_id}<br/>(String, TTL 7d) Result save failure recovery"]
     end
 
-    subgraph Runtime ["ランタイム層:<br/> Elixir Process Memory"]
+    subgraph Runtime ["Runtime Layer:<br/> Elixir Process Memory"]
         P1["RoomState GenServer"]
         P2["players: HP, hand, deck, connected"]
         P3["current_turn, turn_number"]
-        P4["chat_messages (ring buffer, 最大100件)"]
-        P5["nonce_cache (player毎 最大50件)"]
+        P4["chat_messages (ring buffer, max 100)"]
+        P5["nonce_cache (max 50 per player)"]
     end
 
     Persistent --- Temporary --- Runtime
 ```
 
-## ER図
+## ER Diagram
 
 ```mermaid
 erDiagram
@@ -205,62 +205,62 @@ erDiagram
         datetime created_at
     }
 
-    users ||--o{ room_players : "参加"
-    users ||--o{ match_players : "マッチング"
-    users ||--o{ audit_logs : "操作ログ"
-    game_types ||--o{ rooms : "ゲーム種別"
-    game_types ||--o{ matches : "マッチング"
-    game_types ||--o{ cards : "カード"
-    rooms ||--o{ room_players : "プレイヤー"
-    rooms ||--o| game_results : "結果"
-    matches ||--o{ match_players : "プレイヤー"
+    users ||--o{ room_players : "joins"
+    users ||--o{ match_players : "matchmaking"
+    users ||--o{ audit_logs : "action logs"
+    game_types ||--o{ rooms : "game type"
+    game_types ||--o{ matches : "matchmaking"
+    game_types ||--o{ cards : "cards"
+    rooms ||--o{ room_players : "players"
+    rooms ||--o| game_results : "result"
+    matches ||--o{ match_players : "players"
 ```
 
-## ディレクトリ構造
+## Directory Structure
 
 ```
 room-based-multiplayer-poc/
-├── client/                     # TypeScript/React/PixiJS Webクライアント
+├── client/                     # TypeScript/React/PixiJS web client
 │   └── src/
-│       ├── components/         # Auth, Lobby, Game, Chat 画面コンポーネント
-│       ├── stores/             # Zustand 状態管理 (auth, lobby, game, chat)
-│       ├── services/           # WebSocket接続・REST API呼び出し
-│       ├── game/               # PixiJS ゲーム描画ロジック
-│       ├── schemas/            # Zod バリデーションスキーマ
-│       └── types/              # TypeScript型定義
+│       ├── components/         # Auth, Lobby, Game, Chat screen components
+│       ├── stores/             # Zustand state management (auth, lobby, game, chat)
+│       ├── services/           # WebSocket connection & REST API calls
+│       ├── game/               # PixiJS game rendering logic
+│       ├── schemas/            # Zod validation schemas
+│       └── types/              # TypeScript type definitions
 │
-├── api-server/                 # Ruby on Rails API + 管理画面
+├── api-server/                 # Ruby on Rails API + Admin panel
 │   └── app/
 │       ├── controllers/
-│       │   ├── api/v1/         # 認証・マッチメイキング・プロフィール
-│       │   ├── admin/          # 管理画面 (users, rooms, announcements)
-│       │   └── internal/       # Phoenix → Rails 内部API
-│       ├── models/             # User, Room, GameType, Match, Card等
-│       ├── serializers/        # Alba JSONシリアライザ
+│       │   ├── api/v1/         # Auth, matchmaking, profile
+│       │   ├── admin/          # Admin panel (users, rooms, announcements)
+│       │   └── internal/       # Phoenix → Rails internal API
+│       ├── models/             # User, Room, GameType, Match, Card, etc.
+│       ├── serializers/        # Alba JSON serializers
 │       ├── services/           # Matchmaking, RoomCreation, JWT
-│       └── jobs/               # バックグラウンドジョブ
+│       └── jobs/               # Background jobs
 │
-├── game-server/                # Elixir/Phoenix ゲームサーバー
+├── game-server/                # Elixir/Phoenix game server
 │   └── lib/
 │       ├── game_server/
 │       │   ├── rooms/          # Room GenServer, Supervisor
-│       │   ├── games/          # Game Behaviour, SimpleCardBattle実装
-│       │   ├── consumers/      # Redis BRPOP (Room作成)
-│       │   └── subscribers/    # Redis PubSub (Room操作コマンド)
+│       │   ├── games/          # Game Behaviour, SimpleCardBattle implementation
+│       │   ├── consumers/      # Redis BRPOP (Room creation)
+│       │   └── subscribers/    # Redis PubSub (Room operation commands)
 │       └── game_server_web/
 │           └── channels/       # UserSocket, RoomChannel
 │
-├── infra/                      # Docker Compose, MySQL/Redis設定
-├── specs/                      # 機能仕様書
-└── docs/                       # プロジェクトドキュメント
+├── infra/                      # Docker Compose, MySQL/Redis config
+├── specs/                      # Feature specifications
+└── docs/                       # Project documentation
 ```
 
-## 設計原則
+## Design Principles
 
-| レイヤー | 責務 | やらないこと |
-|---------|------|------------|
-| **Client** | 表示・入力のみ | ゲームロジック、バリデーション |
-| **Rails (API Server)** | 認証、マッチメイキング、永続化、管理 | ゲーム状態管理、リアルタイム通信 |
-| **Phoenix (Game Server)** | ゲーム実行、ルーム管理、チャット、再接続 | データ永続化、ユーザー管理 |
+| Layer | Responsibilities | Out of Scope |
+|-------|-----------------|--------------|
+| **Client** | Display and input only | Game logic, validation |
+| **Rails (API Server)** | Auth, matchmaking, persistence, admin | Game state management, real-time communication |
+| **Phoenix (Game Server)** | Game execution, room management, chat, reconnection | Data persistence, user management |
 
-すべてのゲームアクションはサーバー側で検証される **サーバーオーソリタティブ** アーキテクチャです。
+This is a **server-authoritative** architecture where all game actions are validated server-side.

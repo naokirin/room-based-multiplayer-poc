@@ -1,6 +1,6 @@
-# 技術スタック
+# Technology Stack
 
-## 概要図
+## Overview Diagram
 
 ```mermaid
 graph LR
@@ -41,86 +41,86 @@ graph LR
     Game --> Infra
 ```
 
-## Client (Webフロントエンド)
+## Client (Web Frontend)
 
-| カテゴリ | 技術 | バージョン | 用途 |
-|---------|------|----------|------|
-| 言語 | TypeScript | ~5.9.3 | 型安全な開発 |
-| UIフレームワーク | React | ^19.2.0 | コンポーネントベースUI |
-| ゲーム描画 | PixiJS | ^8.16.0 | 2Dゲーム描画エンジン |
-| 状態管理 | Zustand | ^5.0.11 | 軽量ストア (auth, lobby, game, chat) |
-| WebSocket | Phoenix.js | ^1.8.3 | Phoenix Channel クライアント |
-| バリデーション | Zod | ^4.3.6 | ランタイムスキーマバリデーション |
-| ID生成 | UUID | ^13.0.0 | nonce等のUUID生成 |
-| ビルド | Vite | ^7.3.1 | 高速バンドラー + HMR |
-| Linter/Formatter | Biome | ^2.3.14 | Lint + Format 統合ツール |
-| テスト | Vitest | ^3.2.4 | Vite ネイティブテストランナー |
-| テスト | Testing Library | - | React コンポーネントテスト |
+| Category | Technology | Version | Purpose |
+|----------|-----------|---------|---------|
+| Language | TypeScript | ~5.9.3 | Type-safe development |
+| UI Framework | React | ^19.2.0 | Component-based UI |
+| Game Rendering | PixiJS | ^8.16.0 | 2D game rendering engine |
+| State Management | Zustand | ^5.0.11 | Lightweight store (auth, lobby, game, chat) |
+| WebSocket | Phoenix.js | ^1.8.3 | Phoenix Channel client |
+| Validation | Zod | ^4.3.6 | Runtime schema validation |
+| ID Generation | UUID | ^13.0.0 | UUID generation for nonces, etc. |
+| Build | Vite | ^7.3.1 | Fast bundler + HMR |
+| Linter/Formatter | Biome | ^2.3.14 | Integrated lint + format tool |
+| Testing | Vitest | ^3.2.4 | Vite-native test runner |
+| Testing | Testing Library | - | React component testing |
 
 ## API Server (Ruby on Rails)
 
-| カテゴリ | 技術 | バージョン | 用途 |
-|---------|------|----------|------|
-| 言語 | Ruby | 3.3+ | サーバーサイド言語 |
-| フレームワーク | Rails | ~8.1.2 | REST API + 管理画面 |
-| Webサーバー | Puma | >= 5.0 | マルチスレッドHTTPサーバー |
-| DB | MySQL2 | ~0.5 | MySQL接続アダプター |
-| キャッシュ/キュー | Redis | ~5.0 | キュー操作 / KV / PubSub |
-| 認証 | JWT (ruby-jwt) | - | JWTトークン発行・検証 |
-| パスワード | BCrypt | ~3.1.7 | パスワードハッシュ |
-| JSON | Alba | - | 高速JSONシリアライザ |
-| セキュリティ | Rack::Attack | - | レート制限 |
-| CORS | Rack-CORS | - | クロスオリジン対応 |
-| テスト | RSpec | - | BDDテストフレームワーク |
-| テスト | Factory Bot | - | テストデータ生成 |
-| テスト | Shoulda Matchers | - | モデルバリデーションテスト |
+| Category | Technology | Version | Purpose |
+|----------|-----------|---------|---------|
+| Language | Ruby | 3.3+ | Server-side language |
+| Framework | Rails | ~8.1.2 | REST API + Admin panel |
+| Web Server | Puma | >= 5.0 | Multi-threaded HTTP server |
+| DB | MySQL2 | ~0.5 | MySQL connection adapter |
+| Cache/Queue | Redis | ~5.0 | Queue operations / KV / PubSub |
+| Auth | JWT (ruby-jwt) | - | JWT token issuance & verification |
+| Password | BCrypt | ~3.1.7 | Password hashing |
+| JSON | Alba | - | High-performance JSON serializer |
+| Security | Rack::Attack | - | Rate limiting |
+| CORS | Rack-CORS | - | Cross-origin support |
+| Testing | RSpec | - | BDD test framework |
+| Testing | Factory Bot | - | Test data generation |
+| Testing | Shoulda Matchers | - | Model validation testing |
 
 ## Game Server (Elixir/Phoenix)
 
-| カテゴリ | 技術 | バージョン | 用途 |
-|---------|------|----------|------|
-| 言語 | Elixir | ~1.17+ | 関数型・並行処理言語 |
-| ランタイム | Erlang/OTP | 27+ | BEAM VM |
-| フレームワーク | Phoenix | ~1.8.3 | WebSocket + Channel |
-| HTTPサーバー | Bandit | ~1.5 | Elixir ネイティブHTTPサーバー |
-| JSON | Jason | ~1.2 | 高速JSONパーサー |
-| JWT | Joken | ~2.6 | JWT検証 |
-| Redis | Redix | ~1.5 | Redis接続 |
-| HTTP | Req + Finch | ~0.5 / ~0.19 | Rails内部API呼び出し |
-| キャッシュ | Cachex | ~3.6 | インメモリキャッシュ |
-| セキュリティ | PlugAttack | ~0.4 | レート制限 |
-| ID | UUID | ~1.1 | UUID生成 |
-| テスト | ExUnit | - | 標準テストフレームワーク |
-| テスト | Mox | ~1.1 | Behaviour ベースモック |
+| Category | Technology | Version | Purpose |
+|----------|-----------|---------|---------|
+| Language | Elixir | ~1.17+ | Functional & concurrent language |
+| Runtime | Erlang/OTP | 27+ | BEAM VM |
+| Framework | Phoenix | ~1.8.3 | WebSocket + Channels |
+| HTTP Server | Bandit | ~1.5 | Elixir-native HTTP server |
+| JSON | Jason | ~1.2 | High-performance JSON parser |
+| JWT | Joken | ~2.6 | JWT verification |
+| Redis | Redix | ~1.5 | Redis connection |
+| HTTP | Req + Finch | ~0.5 / ~0.19 | Rails internal API calls |
+| Cache | Cachex | ~3.6 | In-memory cache |
+| Security | PlugAttack | ~0.4 | Rate limiting |
+| ID | UUID | ~1.1 | UUID generation |
+| Testing | ExUnit | - | Standard test framework |
+| Testing | Mox | ~1.1 | Behaviour-based mocking |
 
-## インフラストラクチャ
+## Infrastructure
 
-| 技術 | バージョン | 用途 |
-|------|----------|------|
-| Docker | - | コンテナ化 |
-| Docker Compose | - | マルチサービスオーケストレーション |
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| Docker | - | Containerization |
+| Docker Compose | - | Multi-service orchestration |
 | MySQL | 8.0 | RDB (users, rooms, matches, game_results) |
-| Redis | 7-alpine | キュー / KV / PubSub / キャッシュ |
+| Redis | 7-alpine | Queue / KV / PubSub / Cache |
 
-## ネットワーク構成
+## Network Configuration
 
-| サービス | ポート | プロトコル |
-|---------|-------|----------|
+| Service | Port | Protocol |
+|---------|------|----------|
 | Client (Vite dev server) | 3000 | HTTP |
 | API Server (Puma) | 3001 | HTTP (REST API) |
 | Game Server (Bandit) | 4000 | HTTP + WebSocket |
 | MySQL | 3306 | TCP |
 | Redis | 6379 | TCP |
 
-すべてのサービスは Docker Compose の `app-network` (bridge) で接続されます。
+All services are connected via the Docker Compose `app-network` (bridge).
 
-## セキュリティ
+## Security
 
-| 機能 | 実装 |
-|------|------|
-| 認証 | JWT (HS256, TTL 1時間, 共有シークレット) |
-| パスワード | BCrypt ハッシュ |
-| レート制限 | Rack::Attack (Rails) / PlugAttack (Phoenix) |
+| Feature | Implementation |
+|---------|---------------|
+| Auth | JWT (HS256, TTL 1 hour, shared secret) |
+| Password | BCrypt hash |
+| Rate Limiting | Rack::Attack (Rails) / PlugAttack (Phoenix) |
 | CORS | rack-cors |
-| Replay攻撃対策 | UUID nonce (game:action) |
-| 内部API認証 | 共有 INTERNAL_API_KEY ヘッダー |
+| Replay Attack Prevention | UUID nonce (game:action) |
+| Internal API Auth | Shared INTERNAL_API_KEY header |
