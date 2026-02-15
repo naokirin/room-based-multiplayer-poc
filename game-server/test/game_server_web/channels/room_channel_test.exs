@@ -13,8 +13,11 @@ defmodule GameServerWeb.RoomChannelTest do
     # Ensure JWT_SECRET is set for any test that might use connect/3 later
     previous = System.get_env("JWT_SECRET")
     System.put_env("JWT_SECRET", "test-secret")
+
     on_exit(fn ->
-      if previous, do: System.put_env("JWT_SECRET", previous), else: System.delete_env("JWT_SECRET")
+      if previous,
+        do: System.put_env("JWT_SECRET", previous),
+        else: System.delete_env("JWT_SECRET")
     end)
 
     on_exit(fn ->
@@ -31,14 +34,18 @@ defmodule GameServerWeb.RoomChannelTest do
   describe "join/3" do
     test "returns error when neither room_token nor reconnect_token is provided" do
       socket = build_socket(@user1_id)
+
       assert {:error, %{reason: "missing_token"}} =
                subscribe_and_join(socket, RoomChannel, "room:#{@room_id}", %{})
     end
 
     test "returns error when room_token is invalid or not in Redis" do
       socket = build_socket(@user1_id)
+
       assert {:error, %{reason: reason}} =
-               subscribe_and_join(socket, RoomChannel, "room:#{@room_id}", %{"room_token" => "invalid-token"})
+               subscribe_and_join(socket, RoomChannel, "room:#{@room_id}", %{
+                 "room_token" => "invalid-token"
+               })
 
       assert reason in ["invalid_token", "invalid_token_data", "token_mismatch", "redis_error"]
     end
@@ -55,11 +62,12 @@ defmodule GameServerWeb.RoomChannelTest do
       assert {:ok, _pid} = RoomSupervisor.start_room(room_opts)
 
       # Set room_token in Redis (must match room_id and user_id)
-      token_value = Jason.encode!(%{
-        "room_id" => @room_id,
-        "user_id" => @user1_id,
-        "status" => "pending"
-      })
+      token_value =
+        Jason.encode!(%{
+          "room_id" => @room_id,
+          "user_id" => @user1_id,
+          "status" => "pending"
+        })
 
       redis_key = "room_token:valid-token-#{@room_id}"
       assert {:ok, _} = Redis.command(["SETEX", redis_key, 300, token_value])
@@ -83,13 +91,23 @@ defmodule GameServerWeb.RoomChannelTest do
     test "replies missing_nonce when nonce is not provided" do
       # Use a room that exists so we get past rate limit and into the nonce check
       room_id = "room-no-nonce-#{System.unique_integer([:positive])}"
-      room_opts = [room_id: room_id, game_type: "simple_card_battle", player_ids: [@user1_id, @user2_id]]
+
+      room_opts = [
+        room_id: room_id,
+        game_type: "simple_card_battle",
+        player_ids: [@user1_id, @user2_id]
+      ]
+
       assert {:ok, _pid} = RoomSupervisor.start_room(room_opts)
-      token_value = Jason.encode!(%{"room_id" => room_id, "user_id" => @user1_id, "status" => "pending"})
+
+      token_value =
+        Jason.encode!(%{"room_id" => room_id, "user_id" => @user1_id, "status" => "pending"})
+
       redis_key = "room_token:no-nonce-#{room_id}"
       assert {:ok, _} = Redis.command(["SETEX", redis_key, 300, token_value])
 
       socket = build_socket(@user1_id)
+
       assert {:ok, _reply, socket} =
                subscribe_and_join(socket, RoomChannel, "room:#{room_id}", %{
                  "room_token" => "no-nonce-#{room_id}",
@@ -110,13 +128,22 @@ defmodule GameServerWeb.RoomChannelTest do
   describe "handle_in room:leave" do
     @tag :integration
     test "replies ok when leaving after join", %{} do
-      room_opts = [room_id: @room_id, game_type: "simple_card_battle", player_ids: [@user1_id, @user2_id]]
+      room_opts = [
+        room_id: @room_id,
+        game_type: "simple_card_battle",
+        player_ids: [@user1_id, @user2_id]
+      ]
+
       assert {:ok, _pid} = RoomSupervisor.start_room(room_opts)
-      token_value = Jason.encode!(%{"room_id" => @room_id, "user_id" => @user1_id, "status" => "pending"})
+
+      token_value =
+        Jason.encode!(%{"room_id" => @room_id, "user_id" => @user1_id, "status" => "pending"})
+
       redis_key = "room_token:leave-test-#{@room_id}"
       assert {:ok, _} = Redis.command(["SETEX", redis_key, 300, token_value])
 
       socket = build_socket(@user1_id)
+
       assert {:ok, _reply, socket} =
                subscribe_and_join(socket, RoomChannel, "room:#{@room_id}", %{
                  "room_token" => "leave-test-#{@room_id}",
@@ -128,5 +155,4 @@ defmodule GameServerWeb.RoomChannelTest do
       assert_reply ref, :ok
     end
   end
-
 end

@@ -43,7 +43,9 @@ export function Lobby() {
 		if (matchmakingStatus === "queued" && queuedAt) {
 			const startTime = new Date(queuedAt).getTime();
 			const interval = setInterval(() => {
-				const elapsed = Math.floor((Date.now() - startTime) / ELAPSED_UPDATE_INTERVAL_MS);
+				const elapsed = Math.floor(
+					(Date.now() - startTime) / ELAPSED_UPDATE_INTERVAL_MS,
+				);
 				setElapsedSeconds(elapsed);
 
 				// Auto-cancel when timeout is reached

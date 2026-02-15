@@ -6,7 +6,8 @@ defmodule GameServer.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {PlugAttack.Storage.Ets, name: GameServerWeb.Plugs.RateLimiter.Storage, clean_period: 60_000},
+      {PlugAttack.Storage.Ets,
+       name: GameServerWeb.Plugs.RateLimiter.Storage, clean_period: 60_000},
       GameServerWeb.Telemetry,
       GameServer.Redis,
       {Registry, keys: :unique, name: GameServer.RoomRegistry},
@@ -15,7 +16,12 @@ defmodule GameServer.Application do
       {Phoenix.PubSub, name: GameServer.PubSub},
       GameServer.Rooms.RoomSupervisor,
       # Dedicated Redix connection for BRPOP (blocking command must not share connection)
-      %{id: :redix_brpop, start: {Redix, :start_link, [System.get_env("REDIS_URL", "redis://localhost:6379/0"), [name: :redix_brpop]]}},
+      %{
+        id: :redix_brpop,
+        start:
+          {Redix, :start_link,
+           [System.get_env("REDIS_URL", "redis://localhost:6379/0"), [name: :redix_brpop]]}
+      },
       GameServer.Consumers.RoomCreationConsumer,
       GameServer.Subscribers.RoomCommandsSubscriber,
       GameServerWeb.Endpoint

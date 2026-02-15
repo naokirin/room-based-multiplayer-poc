@@ -238,19 +238,29 @@ defmodule GameServer.Games.SimpleCardBattle do
     {updated_state, [effect]}
   end
 
-  defp apply_single_effect(game_state, player_id, %{"effect" => "discard_opponent", "value" => count}) do
+  defp apply_single_effect(game_state, player_id, %{
+         "effect" => "discard_opponent",
+         "value" => count
+       }) do
     opponent_id = get_opponent_id(game_state, player_id)
     opponent_state = get_in(game_state, [:players, opponent_id])
     hand = opponent_state.hand
     discard_count = min(count, length(hand))
 
     if discard_count == 0 do
-      effect = %{type: "opponent_discarded", target_id: opponent_id, count: 0, discarded_card_ids: []}
+      effect = %{
+        type: "opponent_discarded",
+        target_id: opponent_id,
+        count: 0,
+        discarded_card_ids: []
+      }
+
       {game_state, [effect]}
     else
       to_discard = hand |> Enum.shuffle() |> Enum.take(discard_count)
       new_hand = hand -- to_discard
       new_discard = to_discard ++ (opponent_state.discard || [])
+
       updated_opponent =
         opponent_state
         |> Map.put(:hand, new_hand)
@@ -393,6 +403,7 @@ defmodule GameServer.Games.SimpleCardBattle do
         }
       end
 
-    attack_cards ++ heal_cards ++ strip_cards ++ mulligan_cards ++ strike_cards ++ burst_cards ++ vamp_cards
+    attack_cards ++
+      heal_cards ++ strip_cards ++ mulligan_cards ++ strike_cards ++ burst_cards ++ vamp_cards
   end
 end

@@ -25,7 +25,9 @@ defmodule GameServerWeb.ChannelCase do
   """
   defmacro build_socket(user_id \\ "test-user") do
     quote do
-      socket(GameServerWeb.UserSocket, "user_socket:#{unquote(user_id)}", %{user_id: unquote(user_id)})
+      socket(GameServerWeb.UserSocket, "user_socket:#{unquote(user_id)}", %{
+        user_id: unquote(user_id)
+      })
     end
   end
 end

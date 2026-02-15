@@ -128,7 +128,8 @@ defmodule GameServer.Rooms.RoomGameFlow do
     max_hand = max_hand_size_for_game(state.game_type)
 
     new_game_state =
-      case {get_in(new_game_state, [:players, next_player_id, :deck]), length(next_hand) < max_hand} do
+      case {get_in(new_game_state, [:players, next_player_id, :deck]),
+            length(next_hand) < max_hand} do
         {[top_card | rest_deck], true} ->
           new_game_state
           |> update_in([:players, next_player_id, :hand], &(&1 ++ [top_card]))

@@ -30,8 +30,14 @@ defmodule GameServerWeb.Plugs.RateLimiter do
     conn
     |> Plug.Conn.put_resp_header("x-ratelimit-limit", to_string(data[:limit]))
     |> Plug.Conn.put_resp_header("x-ratelimit-remaining", "0")
-    |> Plug.Conn.put_resp_header("retry-after", to_string(div(data[:expires_at] - System.system_time(:millisecond), 1_000)))
-    |> Plug.Conn.send_resp(429, Jason.encode!(%{error: "rate_limited", message: "Too many requests"}))
+    |> Plug.Conn.put_resp_header(
+      "retry-after",
+      to_string(div(data[:expires_at] - System.system_time(:millisecond), 1_000))
+    )
+    |> Plug.Conn.send_resp(
+      429,
+      Jason.encode!(%{error: "rate_limited", message: "Too many requests"})
+    )
     |> Plug.Conn.halt()
   end
 

@@ -51,6 +51,7 @@ defmodule GameServer.Rooms.RoomBroadcast do
   def flatten_card(card) do
     effects_list = card["effects"] || []
     first_effect = List.first(effects_list) || %{}
+
     effects_for_client =
       Enum.map(effects_list, fn e -> %{"effect" => e["effect"], "value" => e["value"] || 0} end)
 

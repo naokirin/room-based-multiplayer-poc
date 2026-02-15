@@ -16,7 +16,7 @@ module Authenticatable
 
     @current_user = User.find_by(id: payload[:user_id])
     return render_unauthorized unless @current_user
-    return render_forbidden if @current_user.account_frozen?
+    render_forbidden if @current_user.account_frozen?
   end
 
   def current_user

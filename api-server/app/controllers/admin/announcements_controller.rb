@@ -1,6 +1,6 @@
 module Admin
   class AnnouncementsController < ApplicationController
-    before_action :set_announcement, only: [:show, :edit, :update, :destroy]
+    before_action :set_announcement, only: [ :show, :edit, :update, :destroy ]
 
     # GET /admin/announcements
     def index

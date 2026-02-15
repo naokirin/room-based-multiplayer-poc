@@ -1,6 +1,6 @@
 module Admin
   class RoomsController < ApplicationController
-    before_action :set_room, only: [:show, :terminate]
+    before_action :set_room, only: [ :show, :terminate ]
 
     # GET /admin/rooms
     def index
@@ -10,7 +10,7 @@ module Admin
         @rooms = @rooms.where(status: params[:status])
       end
 
-      @page = [params[:page].to_i, 1].max
+      @page = [ params[:page].to_i, 1 ].max
       @per_page = Setting.admin_per_page
       @total_count = @rooms.count
       @rooms = @rooms.offset((@page - 1) * @per_page).limit(@per_page)

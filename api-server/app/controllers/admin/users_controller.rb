@@ -1,6 +1,6 @@
 module Admin
   class UsersController < ApplicationController
-    before_action :set_user, only: [:show, :freeze, :unfreeze]
+    before_action :set_user, only: [ :show, :freeze, :unfreeze ]
 
     # GET /admin/users
     def index
@@ -11,7 +11,7 @@ module Admin
         @users = @users.where("display_name LIKE :q OR email LIKE :q", q: search_term)
       end
 
-      @page = [params[:page].to_i, 1].max
+      @page = [ params[:page].to_i, 1 ].max
       @per_page = Setting.admin_per_page
       @total_count = @users.count
       @users = @users.offset((@page - 1) * @per_page).limit(@per_page)

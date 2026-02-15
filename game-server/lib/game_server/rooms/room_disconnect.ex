@@ -49,7 +49,11 @@ defmodule GameServer.Rooms.RoomDisconnect do
           RoomTimers.schedule_terminate(room_pid)
           state
         else
-          %{state | disconnect_timer_ref: RoomTimers.start_disconnect_timer(room_pid, state.disconnect_timer_ref)}
+          %{
+            state
+            | disconnect_timer_ref:
+                RoomTimers.start_disconnect_timer(room_pid, state.disconnect_timer_ref)
+          }
         end
       else
         state

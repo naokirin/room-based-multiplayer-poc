@@ -62,6 +62,7 @@ defmodule GameServer.Games.SimpleCardBattleTest do
     test "returns error for non-two players" do
       assert SimpleCardBattle.init_state(%{}, []) == {:error, :invalid_player_count}
       assert SimpleCardBattle.init_state(%{}, [@player1_id]) == {:error, :invalid_player_count}
+
       assert SimpleCardBattle.init_state(%{}, [@player1_id, @player2_id, "3"]) ==
                {:error, :invalid_player_count}
     end
@@ -292,7 +293,11 @@ defmodule GameServer.Games.SimpleCardBattleTest do
         game_state
         |> put_in([:players, @player1_id, :hand], full_hand)
         |> put_in([:players, @player1_id, :deck], [
-          %{"id" => "draw_1", "name" => "Draw", "effects" => [%{"effect" => "draw_card", "value" => 2}]}
+          %{
+            "id" => "draw_1",
+            "name" => "Draw",
+            "effects" => [%{"effect" => "draw_card", "value" => 2}]
+          }
           | Enum.take(game_state.players[@player1_id].deck, 10)
         ])
 
@@ -307,7 +312,9 @@ defmodule GameServer.Games.SimpleCardBattleTest do
       game_state = put_in(game_state, [:players, @player1_id, :hand], hand_with_draw)
 
       action = %{"action" => "play_card", "card_id" => draw_card["id"]}
-      {:ok, updated_state, effects} = SimpleCardBattle.apply_action(game_state, @player1_id, action)
+
+      {:ok, updated_state, effects} =
+        SimpleCardBattle.apply_action(game_state, @player1_id, action)
 
       # Hand was 5, we removed 1 (the Draw card) = 4 slots. Draw 2 would give 6, but cap is 5, so we draw only 1
       assert length(updated_state.players[@player1_id].hand) == 5
@@ -328,7 +335,9 @@ defmodule GameServer.Games.SimpleCardBattleTest do
       opponent_initial_count = length(game_state.players[@player2_id].hand)
 
       action = %{"action" => "play_card", "card_id" => strip_card["id"]}
-      {:ok, updated_state, effects} = SimpleCardBattle.apply_action(game_state, @player1_id, action)
+
+      {:ok, updated_state, effects} =
+        SimpleCardBattle.apply_action(game_state, @player1_id, action)
 
       assert length(updated_state.players[@player2_id].hand) == opponent_initial_count - 1
       discard_effect = Enum.find(effects, fn e -> e.type == "opponent_discarded" end)
@@ -349,7 +358,9 @@ defmodule GameServer.Games.SimpleCardBattleTest do
       hand_size_before = 2
 
       action = %{"action" => "play_card", "card_id" => mulligan_card["id"]}
-      {:ok, updated_state, effects} = SimpleCardBattle.apply_action(game_state, @player1_id, action)
+
+      {:ok, updated_state, effects} =
+        SimpleCardBattle.apply_action(game_state, @player1_id, action)
 
       assert length(updated_state.players[@player1_id].hand) == hand_size_before
       reshuffle_effect = Enum.find(effects, fn e -> e.type == "hand_reshuffled" end)

@@ -147,7 +147,13 @@ defmodule GameServer.Rooms.Room do
 
   @impl true
   def handle_call({:join, user_id, display_name, channel_pid}, _from, state) do
-    case RoomJoinRejoin.apply_join(state, user_id, display_name, channel_pid, @reconnect_token_ttl) do
+    case RoomJoinRejoin.apply_join(
+           state,
+           user_id,
+           display_name,
+           channel_pid,
+           @reconnect_token_ttl
+         ) do
       {:ok, state, reply_state} ->
         state =
           if map_size(state.players) == length(state.expected_player_ids) do
@@ -290,7 +296,10 @@ defmodule GameServer.Rooms.Room do
       Logger.info("Player #{user_id} failed to reconnect in time, removing from game")
 
       # Broadcast player left (T091)
-      RoomBroadcast.broadcast_to_room(state.players, "player:left", %{user_id: user_id, reason: "reconnect_timeout"})
+      RoomBroadcast.broadcast_to_room(state.players, "player:left", %{
+        user_id: user_id,
+        reason: "reconnect_timeout"
+      })
 
       # Call game behaviour's on_player_removed
       if state.status == :playing && state.game_state do

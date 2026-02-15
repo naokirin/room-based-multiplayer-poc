@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-	AUTO_RECONNECT_DELAY_MS,
-	DEFAULT_CANVAS_HEIGHT,
-	DEFAULT_CANVAS_WIDTH,
-} from "../constants";
+import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH } from "../constants";
 import { GameRenderer } from "../game/GameRenderer";
 import { useAuthStore } from "../stores/authStore";
 import { useChatStore } from "../stores/chatStore";

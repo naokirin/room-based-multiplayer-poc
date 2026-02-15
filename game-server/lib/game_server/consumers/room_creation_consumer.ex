@@ -38,7 +38,9 @@ defmodule GameServer.Consumers.RoomCreationConsumer do
 
   @impl true
   def handle_info(:poll, state) do
-    case Redix.command(:redix_brpop, ["BRPOP", @queue_key, @brpop_timeout], timeout: @redix_timeout) do
+    case Redix.command(:redix_brpop, ["BRPOP", @queue_key, @brpop_timeout],
+           timeout: @redix_timeout
+         ) do
       {:ok, nil} ->
         # Timeout, no items in queue - reset backoff and continue polling
         send(self(), :poll)

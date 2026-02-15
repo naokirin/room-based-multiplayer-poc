@@ -1,6 +1,6 @@
 module Admin
   class SessionsController < ApplicationController
-    skip_before_action :require_admin!, only: [:new, :create]
+    skip_before_action :require_admin!, only: [ :new, :create ]
 
     # GET /admin/login
     def new

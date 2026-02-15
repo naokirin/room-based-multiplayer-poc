@@ -28,7 +28,7 @@ RSpec.describe GameType, type: :model do
       active = create(:game_type, active: true)
       create(:game_type, active: false)
 
-      expect(GameType.active).to eq([active])
+      expect(GameType.active).to eq([ active ])
     end
   end
 end

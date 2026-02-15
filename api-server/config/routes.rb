@@ -16,13 +16,13 @@ Rails.application.routes.draw do
       delete "matchmaking/cancel", to: "matchmaking#cancel"
 
       # Game types
-      resources :game_types, only: [:index]
+      resources :game_types, only: [ :index ]
 
       # Rooms
       get "rooms/:id/ws_endpoint", to: "rooms#ws_endpoint"
 
       # Announcements
-      resources :announcements, only: [:index]
+      resources :announcements, only: [ :index ]
 
       # Health
       get "health", to: "health#show"
@@ -45,13 +45,13 @@ Rails.application.routes.draw do
     delete "logout", to: "sessions#destroy"
 
     root to: "dashboard#index"
-    resources :users, only: [:index, :show] do
+    resources :users, only: [ :index, :show ] do
       member do
         post :freeze
         post :unfreeze
       end
     end
-    resources :rooms, only: [:index, :show] do
+    resources :rooms, only: [ :index, :show ] do
       member do
         post :terminate
       end

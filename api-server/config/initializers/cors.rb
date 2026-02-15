@@ -8,7 +8,7 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
     origins_env = ENV.fetch("CORS_ALLOWED_ORIGINS", nil)
     origins_list = if origins_env.present?
                      origins_env.split(",").map(&:strip).reject(&:empty?)
-                   else
+    else
                      # Dev defaults when not set (Vite, etc.)
                      %w[
                        http://localhost:5173
@@ -16,7 +16,7 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
                        http://127.0.0.1:5173
                        http://127.0.0.1:3000
                      ]
-                   end
+    end
 
     origins(*origins_list)
     resource "/api/*",

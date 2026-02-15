@@ -156,9 +156,15 @@ defmodule GameServerWeb.RoomChannel do
             room_id_str = to_string(room_id)
             user_id_str = to_string(user_id)
 
-            if stored_room_id == room_id_str and stored_user_id == user_id_str and status == "pending" do
+            if stored_room_id == room_id_str and stored_user_id == user_id_str and
+                 status == "pending" do
               # Mark token as used
-              Redis.command(["SETEX", redis_key, @reconnect_token_used_ttl_seconds, Jason.encode!(%{status: "used"})])
+              Redis.command([
+                "SETEX",
+                redis_key,
+                @reconnect_token_used_ttl_seconds,
+                Jason.encode!(%{status: "used"})
+              ])
 
               # Get display name from params or use default
               display_name = Map.get(params, "display_name", "Player")
@@ -170,7 +176,10 @@ defmodule GameServerWeb.RoomChannel do
                     socket
                     |> assign(:room_id, room_id)
                     |> assign(:chat_messages, [])
-                    |> assign(:last_action_at, System.monotonic_time(:millisecond) - @rate_limit_window)
+                    |> assign(
+                      :last_action_at,
+                      System.monotonic_time(:millisecond) - @rate_limit_window
+                    )
 
                   {:ok, room_state, socket}
 
@@ -243,9 +252,10 @@ defmodule GameServerWeb.RoomChannel do
     chat_messages = Map.get(socket.assigns, :chat_messages, [])
 
     # Remove messages older than rate limit window
-    recent_messages = Enum.filter(chat_messages, fn timestamp ->
-      now - timestamp < @chat_rate_limit_window
-    end)
+    recent_messages =
+      Enum.filter(chat_messages, fn timestamp ->
+        now - timestamp < @chat_rate_limit_window
+      end)
 
     if length(recent_messages) >= @chat_rate_limit_count do
       {:error, :rate_limited}

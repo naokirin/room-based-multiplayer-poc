@@ -100,7 +100,7 @@ RSpec.describe "Internal::Rooms", type: :request do
     context "with valid player_ids" do
       it "marks room as playing" do
         put "/internal/rooms/#{room.id}/started",
-            params: { player_ids: [user1.id, user2.id] },
+            params: { player_ids: [ user1.id, user2.id ] },
             headers: { "X-Internal-Api-Key" => api_key },
             as: :json
 
@@ -123,7 +123,7 @@ RSpec.describe "Internal::Rooms", type: :request do
     context "with player_ids in different order" do
       it "accepts players in any order" do
         put "/internal/rooms/#{room.id}/started",
-            params: { player_ids: [user2.id, user1.id] },
+            params: { player_ids: [ user2.id, user1.id ] },
             headers: { "X-Internal-Api-Key" => api_key },
             as: :json
 
@@ -138,7 +138,7 @@ RSpec.describe "Internal::Rooms", type: :request do
 
       it "returns 400 error" do
         put "/internal/rooms/#{room.id}/started",
-            params: { player_ids: [user1.id, user3.id] },
+            params: { player_ids: [ user1.id, user3.id ] },
             headers: { "X-Internal-Api-Key" => api_key },
             as: :json
 
@@ -154,7 +154,7 @@ RSpec.describe "Internal::Rooms", type: :request do
     context "with missing room" do
       it "returns 404 error" do
         put "/internal/rooms/99999/started",
-            params: { player_ids: [user1.id, user2.id] },
+            params: { player_ids: [ user1.id, user2.id ] },
             headers: { "X-Internal-Api-Key" => api_key },
             as: :json
 
@@ -165,7 +165,7 @@ RSpec.describe "Internal::Rooms", type: :request do
     context "without API key" do
       it "returns 401 error" do
         put "/internal/rooms/#{room.id}/started",
-            params: { player_ids: [user1.id, user2.id] },
+            params: { player_ids: [ user1.id, user2.id ] },
             as: :json
 
         expect(response).to have_http_status(:unauthorized)

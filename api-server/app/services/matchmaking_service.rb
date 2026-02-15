@@ -84,7 +84,7 @@ class MatchmakingService
         return players
       LUA
 
-      popped_entries = REDIS.eval(lua_script, keys: [queue_key], argv: [required_players])
+      popped_entries = REDIS.eval(lua_script, keys: [ queue_key ], argv: [ required_players ])
 
       if popped_entries.empty? || popped_entries.length < required_players
         # Put them back if we couldn't get enough

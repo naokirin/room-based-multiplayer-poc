@@ -20,7 +20,8 @@ defmodule GameServerWeb.UserSocket do
       {:ok, socket}
     else
       {:error, :unsupported_protocol_version} ->
-        {:error, %{reason: "unsupported_protocol_version", supported: @supported_protocol_versions}}
+        {:error,
+         %{reason: "unsupported_protocol_version", supported: @supported_protocol_versions}}
 
       {:error, _reason} ->
         {:error, %{reason: "unauthorized"}}

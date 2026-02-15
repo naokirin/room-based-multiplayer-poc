@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :announcement do
-    association :admin, factory: [:user, :admin]
+    association :admin, factory: [ :user, :admin ]
     title { "Test announcement" }
     body { "Body text" }
     published_at { 1.hour.ago }
