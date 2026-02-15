@@ -78,7 +78,6 @@ services:
       RAILS_INTERNAL_URL: http://api-server:3001
       NODE_NAME: game-server-1
       PORT: 4000
-      MIX_ENV: dev
     depends_on:
       redis:
         condition: service_healthy

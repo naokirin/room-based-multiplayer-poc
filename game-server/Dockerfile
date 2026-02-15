@@ -11,17 +11,17 @@ RUN mix local.hex --force && mix local.rebar --force
 
 # Copy mix files first for better layer caching
 COPY mix.exs mix.lock ./
-RUN mix deps.get
+RUN mix deps.get && MIX_ENV=test mix deps.get
 
 # Copy application code
 COPY config config
 COPY lib lib
 COPY priv priv
+COPY test test
 
 # Compile (no build in production sense; for dev we compile at runtime if needed)
 RUN mix compile
 
-ENV MIX_ENV=dev
 ENV PORT=4000
 
 EXPOSE 4000
