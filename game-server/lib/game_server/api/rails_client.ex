@@ -9,6 +9,8 @@ defmodule GameServer.Api.RailsClient do
   RAILS_INTERNAL_URL=http://api-server:3001) are applied correctly.
   """
 
+  @behaviour GameServer.Api.RailsClientBehaviour
+
   @max_retries 3
   @retry_delay_base_ms 500
   @retry_delay_exponent 2
@@ -24,6 +26,7 @@ defmodule GameServer.Api.RailsClient do
     - `{:ok, response}` on success
     - `{:error, reason}` on failure
   """
+  @impl GameServer.Api.RailsClientBehaviour
   def room_ready(room_id, node_name) do
     body = %{
       room_id: room_id,
@@ -46,6 +49,7 @@ defmodule GameServer.Api.RailsClient do
     - `{:ok, response}` on success
     - `{:error, reason}` on failure
   """
+  @impl GameServer.Api.RailsClientBehaviour
   def room_started(room_id, started_at, player_ids) do
     body = %{
       started_at: started_at,
@@ -66,6 +70,7 @@ defmodule GameServer.Api.RailsClient do
     - `{:ok, response}` on success
     - `{:error, reason}` on failure
   """
+  @impl GameServer.Api.RailsClientBehaviour
   def room_finished(room_id, result_data) do
     body = %{
       result: result_data
@@ -85,6 +90,7 @@ defmodule GameServer.Api.RailsClient do
     - `{:ok, response}` on success
     - `{:error, reason}` on failure
   """
+  @impl GameServer.Api.RailsClientBehaviour
   def room_aborted(room_id, reason) do
     body = %{
       reason: reason
@@ -103,6 +109,7 @@ defmodule GameServer.Api.RailsClient do
     - `{:ok, claims}` on success
     - `{:error, reason}` on failure
   """
+  @impl GameServer.Api.RailsClientBehaviour
   def verify_token(token) do
     body = %{
       token: token
