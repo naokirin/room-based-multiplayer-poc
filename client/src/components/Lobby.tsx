@@ -19,6 +19,8 @@ export function Lobby() {
 		fetchGameTypes,
 		joinQueue,
 		cancelQueue,
+		checkStatus,
+		restoreMatch,
 	} = useLobbyStore();
 
 	const { error: gameError } = useGameStore();
@@ -32,11 +34,12 @@ export function Lobby() {
 
 	useEffect(() => {
 		fetchGameTypes();
+		checkStatus();
 		api
 			.getAnnouncements()
 			.then((res) => setAnnouncements(res.announcements))
 			.catch((err) => console.error("Failed to fetch announcements:", err));
-	}, [fetchGameTypes]);
+	}, [fetchGameTypes, checkStatus]);
 
 	// Update elapsed time when queued and auto-cancel on timeout
 	useEffect(() => {
@@ -206,6 +209,44 @@ export function Lobby() {
 					>
 						Connecting to game...
 					</p>
+				</div>
+			)}
+
+			{matchmakingStatus === "restored" && (
+				<div
+					style={{
+						padding: "20px",
+						marginBottom: "20px",
+						backgroundColor: "#cfe2ff",
+						border: "1px solid #b6d4fe",
+						borderRadius: "var(--radius-card)",
+						textAlign: "center",
+					}}
+				>
+					<h3 style={{ margin: "0 0 10px 0", color: "#084298" }}>
+						Active Game Found
+					</h3>
+					<p
+						style={{ margin: "0 0 15px 0", fontSize: "14px", color: "#052c65" }}
+					>
+						You have an active game in progress.
+					</p>
+					<button
+						type="button"
+						onClick={() => restoreMatch()}
+						style={{
+							padding: "10px 24px",
+							backgroundColor: "#0d6efd",
+							color: "#fff",
+							border: "none",
+							borderRadius: "var(--radius-button)",
+							cursor: "pointer",
+							fontSize: "16px",
+							fontWeight: "bold",
+						}}
+					>
+						Reconnect
+					</button>
 				</div>
 			)}
 

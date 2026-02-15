@@ -7,7 +7,7 @@ import {
 import { ReconnectTokenPayloadSchema } from "../schemas/gameEvents";
 import { api } from "../services/api";
 import { socketManager } from "../services/socket";
-import type { Card, PlayerState } from "../types";
+import type { Card, GameState, PlayerState } from "../types";
 import { getErrorMessage } from "../utils/error";
 import { useAuthStore } from "./authStore";
 import * as gameHandlers from "./gameStoreHandlers";
@@ -16,6 +16,7 @@ import {
 	type GameStoreState,
 	RECONNECT_TOKEN_KEY,
 	ROOM_ID_KEY,
+	serverCardToCard,
 } from "./gameStoreTypes";
 
 // Re-export for consumers that import from gameStore
@@ -188,13 +189,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				const myUserId = useAuthStore.getState().user?.id;
 				const isMyTurn = fullState.current_turn === myUserId;
 
+				// Convert server cards to client Card type
+				// The type casting is a bit loose here; in reality fullState.your_hand is the server shape
+				// which is compatible with serverCardToCard input.
+				const myHandRaw =
+					(fullState.your_hand as unknown as Parameters<
+						typeof serverCardToCard
+					>[0][]) || [];
+				const myHand = myHandRaw.map((c) => serverCardToCard(c));
+
+				const players = fullState.players || {};
+
+				// Construct the GameState object so GameRenderer can use it
+				const gameState: GameState = {
+					current_turn: fullState.current_turn || "",
+					turn_number: fullState.turn_number || 0,
+					turn_time_remaining: fullState.turn_time_remaining || 0,
+					players: players,
+					your_hand: myHand,
+				};
+
 				set({
 					roomId,
-					myHand: fullState.your_hand || [],
+					gameState,
+					myHand,
 					currentTurn: fullState.current_turn || null,
 					turnNumber: fullState.turn_number || 0,
 					turnTimeRemaining: fullState.turn_time_remaining || 0,
-					players: fullState.players || {},
+					players,
 					isMyTurn,
 					status: fullState.status || "waiting",
 					isReconnecting: false,

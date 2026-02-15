@@ -61,7 +61,7 @@ export const MatchmakingJoinResponseSchema = z.union([
 ]);
 
 export const MatchmakingStatusResponseSchema = z.object({
-	status: z.enum(["queued", "matched", "timeout", "error"]),
+	status: z.enum(["queued", "matched", "timeout", "error", "not_queued"]),
 	room_id: z.string().optional(),
 	room_token: z.string().optional(),
 	ws_url: z.string().optional(),

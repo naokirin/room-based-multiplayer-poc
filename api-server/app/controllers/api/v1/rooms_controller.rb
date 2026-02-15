@@ -23,12 +23,9 @@ module Api
           )
         end
 
-        ws_url =
-          if room.node_name.present?
-            "ws://#{room.node_name}:#{Setting.default_game_server_ws_port}/socket"
-          else
-            Setting.game_server_ws_url
-          end
+        # For MVP/POC, we always use the configured LB/public URL.
+        # Using node_name (internal hostname/IP) is not reachable from client in many setups (e.g. Docker).
+        ws_url = Setting.game_server_ws_url
         payload = OpenStruct.new(ws_url: ws_url, node_name: room.node_name, room_status: room.status)
         render_with_serializer(Api::V1::RoomWsEndpointSerializer, payload, status: :ok)
       end

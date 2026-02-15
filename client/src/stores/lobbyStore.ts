@@ -2,8 +2,15 @@ import { create } from "zustand";
 import { api } from "../services/api";
 import type { GameType } from "../types";
 import { getErrorMessage } from "../utils/error";
+import { useGameStore } from "./gameStore";
 
-type MatchmakingStatus = "idle" | "queued" | "matched" | "timeout" | "error";
+type MatchmakingStatus =
+	| "idle"
+	| "queued"
+	| "matched"
+	| "timeout"
+	| "error"
+	| "restored";
 
 interface MatchInfo {
 	room_id: string;
@@ -28,6 +35,7 @@ interface LobbyActions {
 	cancelQueue: () => Promise<void>;
 	checkStatus: () => Promise<void>;
 	clearMatch: () => void;
+	restoreMatch: () => Promise<void>;
 }
 
 type LobbyStore = LobbyState & LobbyActions;
@@ -152,8 +160,13 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 					return;
 				}
 				clearPollTimer();
+				// If we were queued, this is a fresh match -> auto-join (matched).
+				// If we were idle (checking on mount), this is an existing game -> manual reconnect (restored).
+				const nextStatus =
+					get().matchmakingStatus === "queued" ? "matched" : "restored";
+
 				set({
-					matchmakingStatus: "matched",
+					matchmakingStatus: nextStatus,
 					currentMatch: { room_id, room_token, ws_url },
 					queuedAt: null,
 					queuedTimeoutSeconds: null,
@@ -173,6 +186,14 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 					queuedAt: null,
 					queuedTimeoutSeconds: null,
 					error: response.message || "Matchmaking error",
+				});
+			} else if (response.status === "not_queued") {
+				clearPollTimer();
+				set({
+					matchmakingStatus: "idle",
+					queuedAt: null,
+					queuedTimeoutSeconds: null,
+					error: null,
 				});
 			}
 			// If still queued, continue polling (timer keeps running)
@@ -195,5 +216,41 @@ export const useLobbyStore = create<LobbyStore>((set, get) => ({
 			queuedTimeoutSeconds: null,
 			error: null,
 		});
+	},
+
+	restoreMatch: async () => {
+		try {
+			const { currentMatch } = get();
+			// First try to reconnect if we have local data
+			try {
+				await useGameStore.getState().reconnectToRoom();
+			} catch (e) {
+				// If reconnection fails (e.g. missing token in LS), try joining with the room token we just got
+				// This handles cases where we have the room info from API but no local session logic yet
+				if (currentMatch) {
+					console.log(
+						"Reconnection failed, trying to join with room token...",
+						e,
+					);
+					await useGameStore
+						.getState()
+						.joinRoom(
+							currentMatch.room_id,
+							currentMatch.room_token,
+							currentMatch.ws_url,
+						);
+					// If join succeeds, we trigger the App.tsx effect via roomId change, or we can manually set "matched"
+					// actually joinRoom sets roomId in gameStore, which App.tsx watches.
+					// We should also update our status to matched to be safe/consistent?
+					// Actually App.tsx only watches gameStore.roomId to switch to game.
+					return;
+				}
+				throw e;
+			}
+		} catch (err: unknown) {
+			set({
+				error: getErrorMessage(err, "Failed to restore match"),
+			});
+		}
 	},
 }));
