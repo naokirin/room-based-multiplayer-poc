@@ -33,7 +33,7 @@ class RoomCreationService
         REDIS.setex("room_token:#{token}", ROOM_TOKEN_TTL, token_data)
 
         # Set active game for user
-        ws_url = ENV.fetch("GAME_SERVER_WS_URL", "ws://localhost:4000/socket")
+        ws_url = Setting.game_server_ws_url
         REDIS.hset("active_game:#{user_id}", "room_id", room.id)
         REDIS.hset("active_game:#{user_id}", "room_token", token)
         REDIS.hset("active_game:#{user_id}", "ws_url", ws_url)
@@ -61,7 +61,7 @@ class RoomCreationService
       {
         room: room,
         room_tokens: room_tokens,
-        ws_url: ENV.fetch("GAME_SERVER_WS_URL", "ws://localhost:4000/socket")
+        ws_url: Setting.game_server_ws_url
       }
     end
 

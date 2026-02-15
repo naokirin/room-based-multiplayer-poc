@@ -12,7 +12,7 @@ module Admin
       end
 
       @page = [params[:page].to_i, 1].max
-      @per_page = AppConstants::ADMIN_PER_PAGE
+      @per_page = Setting.admin_per_page
       @total_count = @users.count
       @users = @users.offset((@page - 1) * @per_page).limit(@per_page)
     end
@@ -24,7 +24,7 @@ module Admin
         .where(room_players: { user_id: @user.id })
         .includes(room: :game_type)
         .order(created_at: :desc)
-        .limit(AppConstants::ADMIN_USER_GAME_RESULTS_LIMIT)
+        .limit(Setting.admin_user_game_results_limit)
     end
 
     # POST /admin/users/:id/freeze

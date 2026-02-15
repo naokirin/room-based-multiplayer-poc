@@ -27,7 +27,7 @@ module Api
       end
 
       def internal_server_error(exception)
-        Rails.logger.error("[API Error] #{exception.class}: #{exception.message}\n#{exception.backtrace&.first(AppConstants::API_ERROR_BACKTRACE_LINES)&.join("\n")}")
+        Rails.logger.error("[API Error] #{exception.class}: #{exception.message}\n#{exception.backtrace&.first(Setting.api_error_backtrace_lines)&.join("\n")}")
         render_api_error("internal_server_error", I18n.t("api.v1.errors.internal_server_error"), :internal_server_error)
       end
 

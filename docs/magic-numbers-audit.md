@@ -9,18 +9,19 @@
 
 ### api-server（Rails）
 
-定数は `config/initializers/app_constants.rb` の `AppConstants` に定義しています。
+設定は `config/x/*.yml` に格納し、`Setting` モジュール（`lib/setting.rb`）で `config_for` をラップして `Setting.xxx` で参照します。YAML は環境別（default / development / test / production）でマージされます。
 
-| 定数 | 値 | 備考（他サービスとの整合） |
-|------|-----|-----------------------------|
-| `MATCHMAKING_USER_TTL_SECONDS` | 120 | クライアントの Lobby タイムアウトフォールバックと意味的に連動 |
-| `MATCHMAKING_QUEUE_TIMEOUT_SECONDS` | 60 | **client の `DEFAULT_QUEUE_TIMEOUT_SECONDS` と値を揃えること** |
-| `JWT_EXPIRATION` | 1.hour | - |
-| `DEFAULT_GAME_SERVER_WS_PORT` | 4000 | **game-server の Phoenix ポート・client の `DEFAULT_GAME_SERVER_WS_PORT` と揃えること** |
-| `ADMIN_PER_PAGE` | 25 | - |
-| `ADMIN_USER_GAME_RESULTS_LIMIT` | 20 | - |
-| `API_ERROR_BACKTRACE_LINES` | 5 | - |
-| `ANNOUNCEMENT_TITLE_MAX_LENGTH` | 255 | DB スキーマと一致 |
+| メソッド | 対応 YAML | 値（default） | 備考（他サービスとの整合） |
+|----------|-----------|----------------|-----------------------------|
+| `Setting.matchmaking_user_ttl_seconds` | config/x/matchmaking.yml | 120 | クライアントの Lobby タイムアウトフォールバックと意味的に連動 |
+| `Setting.matchmaking_queue_timeout_seconds` | config/x/matchmaking.yml | 60 | **client の `DEFAULT_QUEUE_TIMEOUT_SECONDS` と値を揃えること** |
+| `Setting.jwt_expiration_seconds` | config/x/auth.yml | 3600 | 呼び出し側で `.seconds` して利用 |
+| `Setting.default_game_server_ws_port` | config/x/game_server.yml | 4000 | **game-server の Phoenix ポート・client の `DEFAULT_GAME_SERVER_WS_PORT` と揃えること** |
+| `Setting.game_server_ws_url` | config/x/game_server.yml + ENV | - | `ENV["GAME_SERVER_WS_URL"]` または localhost:default_ws_port の URL |
+| `Setting.admin_per_page` | config/x/admin.yml | 25 | - |
+| `Setting.admin_user_game_results_limit` | config/x/admin.yml | 20 | - |
+| `Setting.api_error_backtrace_lines` | config/x/api.yml | 5 | - |
+| `Setting.announcement_title_max_length` | config/x/api.yml | 255 | DB スキーマと一致 |
 
 既存の `MatchmakingService::PREPARING_STALE_THRESHOLD`（30.seconds）と `ROOM_INACTIVE_STALE_THRESHOLD`（5.minutes）はそのまま利用しています。
 
@@ -73,10 +74,10 @@
 
 | 意味 | api-server | game-server | client |
 |------|------------|-------------|--------|
-| マッチングキュー待ちタイムアウト（秒） | `AppConstants::MATCHMAKING_QUEUE_TIMEOUT_SECONDS` (60) | - | `DEFAULT_QUEUE_TIMEOUT_SECONDS` (60) |
+| マッチングキュー待ちタイムアウト（秒） | `Setting.matchmaking_queue_timeout_seconds` (60) | - | `DEFAULT_QUEUE_TIMEOUT_SECONDS` (60) |
 | ターン制限／デフォルト残り時間（秒） | - | `Room` `@turn_time_limit` (30) | `DEFAULT_TURN_TIME_REMAINING` (30) |
 | チャット最大文字数 | - | `RoomChannel` `@max_chat_length` (500) | `MAX_CHAT_INPUT_LENGTH` (500) |
-| ゲームサーバ WS ポート | `AppConstants::DEFAULT_GAME_SERVER_WS_PORT` (4000) | Phoenix デフォルト | `DEFAULT_GAME_SERVER_WS_PORT` (4000) |
+| ゲームサーバ WS ポート | `Setting.default_game_server_ws_port` (4000) | Phoenix デフォルト | `DEFAULT_GAME_SERVER_WS_PORT` (4000) |
 | 最大 HP（simple_card_battle） | - | `SimpleCardBattle` `@max_hp` (10) | `MAX_HP` (10) in types |
 | ソケットプロトコルバージョン | - | user_socket `@supported_protocol_versions` ["1.0"] | `SOCKET_PROTOCOL_VERSION` "1.0" |
 

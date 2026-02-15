@@ -1,0 +1,12 @@
+default: &default
+  error_backtrace_lines: 5
+  announcement_title_max_length: 255
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default

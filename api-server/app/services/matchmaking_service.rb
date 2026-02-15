@@ -33,7 +33,7 @@ class MatchmakingService
       REDIS.lpush("matchmaking:queue:#{game_type_id}", queue_entry)
       REDIS.hset("matchmaking:user:#{user_id}", "game_type_id", game_type_id)
       REDIS.hset("matchmaking:user:#{user_id}", "queued_at", Time.current.iso8601)
-      REDIS.expire("matchmaking:user:#{user_id}", AppConstants::MATCHMAKING_USER_TTL_SECONDS)
+      REDIS.expire("matchmaking:user:#{user_id}", Setting.matchmaking_user_ttl_seconds)
 
       # Check if we can match immediately
       match_result = check_queue(game_type_id)
@@ -45,7 +45,7 @@ class MatchmakingService
           data: {
             game_type_id: game_type_id,
             queued_at: Time.current.iso8601,
-            timeout_seconds: AppConstants::MATCHMAKING_QUEUE_TIMEOUT_SECONDS
+            timeout_seconds: Setting.matchmaking_queue_timeout_seconds
           }
         }
       end
@@ -188,7 +188,7 @@ class MatchmakingService
       queue_info = get_queue_info(user_id)
       if queue_info
         queued_at = Time.parse(queue_info["queued_at"])
-        if Time.current - queued_at > AppConstants::MATCHMAKING_QUEUE_TIMEOUT_SECONDS
+        if Time.current - queued_at > Setting.matchmaking_queue_timeout_seconds
           # Timeout - remove from queue
           cancel_queue(user_id, queue_info["game_type_id"])
           return {

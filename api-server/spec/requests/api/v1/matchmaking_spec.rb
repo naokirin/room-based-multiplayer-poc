@@ -105,7 +105,7 @@ RSpec.describe "Api::V1::Matchmaking", type: :request do
         # Set active game in Redis with a real room (so it is not considered stale)
         REDIS.hset("active_game:#{user.id}", "room_id", room.id)
         REDIS.hset("active_game:#{user.id}", "room_token", "test-token")
-        REDIS.hset("active_game:#{user.id}", "ws_url", "ws://localhost:4000/socket")
+        REDIS.hset("active_game:#{user.id}", "ws_url", Setting.game_server_ws_url)
         REDIS.hset("active_game:#{user.id}", "game_type_id", game_type.id)
         REDIS.hset("active_game:#{user.id}", "status", "preparing")
       end
@@ -121,7 +121,7 @@ RSpec.describe "Api::V1::Matchmaking", type: :request do
         expect(json["status"]).to eq("already_in_game")
         expect(json["room_id"]).to eq(room.id)
         expect(json["room_token"]).to eq("test-token")
-        expect(json["ws_url"]).to eq("ws://localhost:4000/socket")
+        expect(json["ws_url"]).to eq(Setting.game_server_ws_url)
       end
     end
 
@@ -130,7 +130,7 @@ RSpec.describe "Api::V1::Matchmaking", type: :request do
         # Stale: room_id does not exist in DB (e.g. stack was restarted, Redis kept old key)
         REDIS.hset("active_game:#{user.id}", "room_id", "00000000-0000-0000-0000-000000000000")
         REDIS.hset("active_game:#{user.id}", "room_token", "old-token")
-        REDIS.hset("active_game:#{user.id}", "ws_url", "ws://localhost:4000/socket")
+        REDIS.hset("active_game:#{user.id}", "ws_url", Setting.game_server_ws_url)
         REDIS.hset("active_game:#{user.id}", "game_type_id", game_type.id)
         REDIS.hset("active_game:#{user.id}", "status", "preparing")
       end
@@ -223,7 +223,7 @@ RSpec.describe "Api::V1::Matchmaking", type: :request do
         # Set active game with a real room (so it is not considered stale)
         REDIS.hset("active_game:#{user.id}", "room_id", room.id)
         REDIS.hset("active_game:#{user.id}", "room_token", "test-token")
-        REDIS.hset("active_game:#{user.id}", "ws_url", "ws://localhost:4000/socket")
+        REDIS.hset("active_game:#{user.id}", "ws_url", Setting.game_server_ws_url)
         REDIS.hset("active_game:#{user.id}", "game_type_id", game_type.id)
         REDIS.hset("active_game:#{user.id}", "status", "ready")
       end
@@ -238,7 +238,7 @@ RSpec.describe "Api::V1::Matchmaking", type: :request do
         expect(json["status"]).to eq("matched")
         expect(json["room_id"]).to eq(room.id)
         expect(json["room_token"]).to eq("test-token")
-        expect(json["ws_url"]).to eq("ws://localhost:4000/socket")
+        expect(json["ws_url"]).to eq(Setting.game_server_ws_url)
       end
     end
 

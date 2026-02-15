@@ -22,12 +22,11 @@ module Api
         end
 
         # Build WebSocket URL
-        default_ws_url = "ws://localhost:#{AppConstants::DEFAULT_GAME_SERVER_WS_PORT}/socket/websocket"
         ws_url =
           if room.node_name.present?
-            "ws://#{room.node_name}:#{AppConstants::DEFAULT_GAME_SERVER_WS_PORT}/socket/websocket"
+            "ws://#{room.node_name}:#{Setting.default_game_server_ws_port}/socket/websocket"
           else
-            ENV.fetch("GAME_SERVER_WS_URL", default_ws_url)
+            Setting.game_server_ws_url
           end
 
         render json: {

@@ -1,0 +1,13 @@
+# 注意: client の Lobby タイムアウトフォールバック（DEFAULT_QUEUE_TIMEOUT_SECONDS）と値を揃えること。
+default: &default
+  user_ttl_seconds: 120
+  queue_timeout_seconds: 60
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default

@@ -1,0 +1,11 @@
+default: &default
+  jwt_expiration_seconds: 3600
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default
