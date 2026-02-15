@@ -30,6 +30,9 @@ gem "rack-attack"
 # Redis client
 gem "redis", "~> 5.0"
 
+# JSON serialization for API responses
+gem "alba"
+
 # UUID generation
 gem "uuid"
 

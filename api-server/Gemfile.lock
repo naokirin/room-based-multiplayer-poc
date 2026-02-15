@@ -75,6 +75,7 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
+    alba (3.10.0)
     ast (2.4.3)
     base64 (0.3.0)
     bcrypt (3.1.21)
@@ -382,6 +383,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
+  alba
   bcrypt (~> 3.1.7)
   bootsnap
   brakeman
