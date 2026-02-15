@@ -1,0 +1,66 @@
+name: Game Server CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "game-server/**"
+      - ".github/workflows/game-server.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "game-server/**"
+      - ".github/workflows/game-server.yml"
+
+defaults:
+  run:
+    working-directory: game-server
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      MIX_ENV: test
+      REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET: ci-test-secret
+      INTERNAL_API_KEY: ci-test-internal-key
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.17"
+          otp-version: "27"
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            game-server/deps
+            game-server/_build
+          key: mix-${{ runner.os }}-${{ hashFiles('game-server/mix.lock') }}
+          restore-keys: mix-${{ runner.os }}-
+
+      - run: mix deps.get
+
+      - name: Compile (warnings as errors)
+        run: mix compile --warnings-as-errors
+
+      - name: Format check
+        run: mix format --check-formatted
+
+      - name: Test (ExUnit)
+        run: mix test

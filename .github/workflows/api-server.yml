@@ -1,0 +1,74 @@
+name: API Server CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "api-server/**"
+      - ".github/workflows/api-server.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "api-server/**"
+      - ".github/workflows/api-server.yml"
+
+defaults:
+  run:
+    working-directory: api-server
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: game_platform_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      RAILS_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PASSWORD: password
+      REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET: ci-test-secret
+      INTERNAL_API_KEY: ci-test-internal-key
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+          working-directory: api-server
+
+      - name: Setup database
+        run: bin/rails db:create db:migrate
+
+      - name: Lint (RuboCop)
+        run: bundle exec rubocop
+
+      - name: Security audit (Brakeman)
+        run: bundle exec brakeman --no-pager -q
+
+      - name: Test (RSpec)
+        run: bundle exec rspec
