@@ -145,7 +145,8 @@ describe("lobbyStore", () => {
 	});
 
 	describe("checkStatus", () => {
-		it("sets matched and currentMatch when status is matched", async () => {
+		it("sets matched and currentMatch when status is matched (from queued)", async () => {
+			useLobbyStore.setState({ matchmakingStatus: "queued" });
 			vi.mocked(api.getMatchmakingStatus).mockResolvedValue({
 				status: "matched",
 				room_id: "room-2",
@@ -156,6 +157,25 @@ describe("lobbyStore", () => {
 			await useLobbyStore.getState().checkStatus();
 
 			expect(useLobbyStore.getState().matchmakingStatus).toBe("matched");
+			expect(useLobbyStore.getState().currentMatch).toEqual({
+				room_id: "room-2",
+				room_token: "token-2",
+				ws_url: "ws://localhost:4000/ws",
+			});
+		});
+
+		it("sets restored and currentMatch when status is matched (from idle)", async () => {
+			useLobbyStore.setState({ matchmakingStatus: "idle" });
+			vi.mocked(api.getMatchmakingStatus).mockResolvedValue({
+				status: "matched",
+				room_id: "room-2",
+				room_token: "token-2",
+				ws_url: "ws://localhost:4000/ws",
+			});
+
+			await useLobbyStore.getState().checkStatus();
+
+			expect(useLobbyStore.getState().matchmakingStatus).toBe("restored");
 			expect(useLobbyStore.getState().currentMatch).toEqual({
 				room_id: "room-2",
 				room_token: "token-2",
