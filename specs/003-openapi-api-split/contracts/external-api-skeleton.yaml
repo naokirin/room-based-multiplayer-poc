@@ -1,0 +1,86 @@
+# External API OpenAPI Skeleton
+# This is the target structure that rspec-openapi will auto-generate.
+# Included here as a reference contract for the expected output shape.
+
+openapi: "3.0.3"
+info:
+  title: "Room-Based Multiplayer Platform — External API"
+  version: "v1"
+  description: "Public-facing API for client applications (auth, matchmaking, profiles, game types, rooms, announcements, health)"
+
+servers:
+  - url: "/api/v1"
+    description: "External API base path"
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      security: []
+      # requestBody and responses auto-generated from tests
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with credentials
+      security: []
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+
+  /profile:
+    get:
+      tags: [Profile]
+      summary: Get current user profile
+
+  /matchmaking/join:
+    post:
+      tags: [Matchmaking]
+      summary: Join matchmaking queue
+
+  /matchmaking/status:
+    get:
+      tags: [Matchmaking]
+      summary: Get matchmaking status
+
+  /matchmaking/cancel:
+    delete:
+      tags: [Matchmaking]
+      summary: Cancel matchmaking
+
+  /game_types:
+    get:
+      tags: [GameTypes]
+      summary: List available game types
+      security: []
+
+  /rooms/{id}/ws_endpoint:
+    get:
+      tags: [Rooms]
+      summary: Get WebSocket endpoint for a room
+
+  /announcements:
+    get:
+      tags: [Announcements]
+      summary: List announcements
+      security: []
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      security: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JWT access token obtained from /auth/login or /auth/register"

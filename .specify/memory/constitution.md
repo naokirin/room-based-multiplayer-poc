@@ -1,13 +1,13 @@
 <!--
   SYNC IMPACT REPORT
-  Version change: 0.0.0 → 1.0.0 (MAJOR — initial ratification)
-  Modified principles: N/A (initial creation)
-  Added sections:
-    - Core Principles (5 principles)
-    - Technology & Architecture Constraints
-    - Development Workflow
-    - Governance
-  Removed sections: N/A
+  Version change: 1.0.0 → 1.0.1 (PATCH — technology version corrections)
+  Modified principles: None
+  Added sections: None
+  Removed sections: None
+  Changes:
+    - Technology & Architecture Constraints: Updated client stack versions
+      to match actual project state (TypeScript 5.x → 5.9+, React 18+ → 19+,
+      added Zustand 5.0+, Phoenix WS 1.8+)
   Templates requiring updates:
     - .specify/templates/plan-template.md — ✅ no update needed
       (Constitution Check section is generic; principles apply at review time)
@@ -15,8 +15,6 @@
       (template is generic; spec authors apply principles during drafting)
     - .specify/templates/tasks-template.md — ✅ no update needed
       (task structure aligns with phased delivery and test-first guidance)
-    - .specify/templates/agent-file-template.md — ✅ no update needed
-      (auto-generated from plans; no constitutional references)
   Follow-up TODOs: None
 -->
 
@@ -113,8 +111,8 @@ abstraction creates maintenance burden without proven value.
 
 ## Technology & Architecture Constraints
 
-- **Client**: TypeScript 5.x, React 18+, PixiJS 8+
-  (web browser only for MVP).
+- **Client**: TypeScript 5.9+, React 19+, PixiJS 8+,
+  Zustand 5.0+, Phoenix WS 1.8+ (web browser only for MVP).
 - **API Server**: Ruby 3.3+, Rails 8.0+ (full mode with
   server-rendered admin views).
 - **Game Server**: Elixir 1.17+, Phoenix 1.7+
@@ -161,4 +159,4 @@ conflicts arise between this constitution and other documents
   Constitution Check section verifying alignment with these
   principles before implementation begins.
 
-**Version**: 1.0.0 | **Ratified**: 2026-02-12 | **Last Amended**: 2026-02-12
+**Version**: 1.0.1 | **Ratified**: 2026-02-12 | **Last Amended**: 2026-02-19

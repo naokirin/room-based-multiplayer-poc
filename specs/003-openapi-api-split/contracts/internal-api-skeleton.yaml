@@ -1,0 +1,50 @@
+# Internal API OpenAPI Skeleton
+# This is the target structure that rspec-openapi will auto-generate.
+# Included here as a reference contract for the expected output shape.
+
+openapi: "3.0.3"
+info:
+  title: "Room-Based Multiplayer Platform — Internal API"
+  version: "v1"
+  description: "Internal service-to-service API for Phoenix game-server communication (auth verification, room lifecycle callbacks)"
+
+servers:
+  - url: "/internal"
+    description: "Internal API base path"
+
+security:
+  - apiKeyAuth: []
+
+paths:
+  /auth/verify:
+    post:
+      tags: [Auth]
+      summary: Verify JWT token (called by Phoenix on WebSocket connect)
+
+  /rooms:
+    post:
+      tags: [Rooms]
+      summary: Notify room created/ready
+
+  /rooms/{room_id}/started:
+    put:
+      tags: [Rooms]
+      summary: Notify game started
+
+  /rooms/{room_id}/finished:
+    put:
+      tags: [Rooms]
+      summary: Notify game finished
+
+  /rooms/{room_id}/aborted:
+    put:
+      tags: [Rooms]
+      summary: Notify game aborted
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Internal-Api-Key
+      description: "Shared secret key for internal service-to-service communication"
