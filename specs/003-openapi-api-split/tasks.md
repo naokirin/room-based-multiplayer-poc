@@ -53,12 +53,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Run `OPENAPI=1 bundle exec rspec spec/requests/internal/` to generate initial `api-server/doc/openapi/internal.yaml`
-- [ ] T012 [US2] Review generated `api-server/doc/openapi/internal.yaml` and verify all 5 endpoints are present: auth/verify, rooms (create), rooms/:room_id/started, rooms/:room_id/finished, rooms/:room_id/aborted
-- [ ] T013 [US2] If any endpoints are missing or incomplete, adjust request spec assertions in `api-server/spec/requests/internal/*_spec.rb` files to ensure rspec-openapi captures them
-- [ ] T014 [US2] Verify API Key header security scheme (`X-Internal-Api-Key`) is documented in `components/securitySchemes` of `api-server/doc/openapi/internal.yaml`
-- [ ] T015 [US2] Verify separation: confirm no external API endpoints appear in `internal.yaml` and no internal API endpoints appear in `external.yaml`
-- [ ] T016 [US2] Commit generated `api-server/doc/openapi/internal.yaml` to the repository
+- [x] T011 [US2] Run `OPENAPI=1 bundle exec rspec spec/requests/internal/` to generate initial `api-server/doc/openapi/internal.yaml`
+- [x] T012 [US2] Review generated `api-server/doc/openapi/internal.yaml` and verify all 5 endpoints are present: auth/verify, rooms (create), rooms/:room_id/started, rooms/:room_id/finished, rooms/:room_id/aborted
+- [x] T013 [US2] If any endpoints are missing or incomplete, adjust request spec assertions in `api-server/spec/requests/internal/*_spec.rb` files to ensure rspec-openapi captures them
+- [x] T014 [US2] Verify API Key header security scheme (`X-Internal-Api-Key`) is documented in `components/securitySchemes` of `api-server/doc/openapi/internal.yaml`
+- [x] T015 [US2] Verify separation: confirm no external API endpoints appear in `internal.yaml` and no internal API endpoints appear in `external.yaml`
+- [x] T016 [US2] Commit generated `api-server/doc/openapi/internal.yaml` to the repository
 
 **Checkpoint**: Internal API definition file is complete and committed. All 5 endpoints documented. Separation verified. SC-002 satisfied.
 

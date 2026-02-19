@@ -1,0 +1,413 @@
+---
+openapi: 3.0.3
+info:
+  title: Room-Based Multiplayer Platform — Internal API
+  version: v1
+servers: []
+paths:
+  "/internal/auth/verify":
+    post:
+      summary: verify
+      tags:
+      - Internal::Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+              required:
+              - token
+            example:
+              token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNzNlNWE0YTYtN2U3Yy00MjQ0LWIyZTItMTY4OTMxYWU5OGU4IiwiZXhwIjoxNzcxNTA2NzkzLCJpYXQiOjE3NzE1MTAzOTN9.IJOeJXDUEfWzcCDQI_YzFPWkIweJntEKl9txVBIfglM
+      responses:
+        '200':
+          description: returns invalid for expired token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  user_id:
+                    type: string
+                  display_name:
+                    type: string
+                  role:
+                    type: string
+                  status:
+                    type: string
+                  reason:
+                    type: string
+                required:
+                - valid
+              example:
+                valid: false
+                user_id: c1c54f7b-7abd-4f70-a1c6-8297ca83e4f0
+                display_name: TestUser
+                role: player
+                status: active
+                reason: invalid_token
+        '401':
+          description: returns 401 without api key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+              example:
+                error: unauthorized
+  "/internal/rooms":
+    post:
+      summary: create
+      tags:
+      - Internal::Room
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                room_id:
+                  type: string
+                node_name:
+                  type: string
+              required:
+              - room_id
+              - node_name
+            example:
+              room_id: 1d75728c-3afc-4e65-a5cd-f64f5b4b91dd
+              node_name: game-node-1
+      responses:
+        '200':
+          description: updates room status to ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  acknowledged:
+                    type: boolean
+                  room_id:
+                    type: string
+                  room_status:
+                    type: string
+                required:
+                - acknowledged
+                - room_id
+                - room_status
+              example:
+                acknowledged: true
+                room_id: 1d75728c-3afc-4e65-a5cd-f64f5b4b91dd
+                room_status: ready
+        '401':
+          description: returns 401 error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+              example:
+                error: unauthorized
+        '404':
+          description: returns 404 error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required:
+                - error
+                - message
+              example:
+                error: room_not_found
+                message: Room not found
+  "/internal/rooms/{room_id}/aborted":
+    put:
+      summary: aborted
+      tags:
+      - Internal::Room
+      parameters:
+      - name: room_id
+        in: path
+        required: true
+        schema:
+          oneOf:
+          - type: string
+          - type: integer
+        example: 63743117-f9a8-4a51-bc59-f148be580ee8
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+            example: {}
+      responses:
+        '200':
+          description: marks room as aborted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  acknowledged:
+                    type: boolean
+                  room_status:
+                    type: string
+                required:
+                - acknowledged
+                - room_status
+              example:
+                acknowledged: true
+                room_status: aborted
+        '401':
+          description: returns 401 error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+              example:
+                error: unauthorized
+        '404':
+          description: returns 404 error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+              example:
+                error: not_found
+  "/internal/rooms/{room_id}/finished":
+    put:
+      summary: finished
+      tags:
+      - Internal::Room
+      parameters:
+      - name: room_id
+        in: path
+        required: true
+        schema:
+          oneOf:
+          - type: string
+          - type: integer
+        example: 456a39ef-6c04-407e-95ff-d84c31dc7b00
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                winner_id:
+                  type: string
+                turns_played:
+                  type: integer
+                duration_seconds:
+                  type: integer
+                player_results:
+                  type: object
+                  properties:
+                    94b8e06f-e02e-4763-a99b-c2b9daa511b6:
+                      type: string
+                    e5abe5bf-752c-4af6-b32a-6b3926aff746:
+                      type: string
+                  required:
+                  - 94b8e06f-e02e-4763-a99b-c2b9daa511b6
+                  - e5abe5bf-752c-4af6-b32a-6b3926aff746
+              required:
+              - winner_id
+              - turns_played
+              - duration_seconds
+              - player_results
+            example:
+              winner_id: 94b8e06f-e02e-4763-a99b-c2b9daa511b6
+              turns_played: 10
+              duration_seconds: 300
+              player_results:
+                94b8e06f-e02e-4763-a99b-c2b9daa511b6: winner
+                e5abe5bf-752c-4af6-b32a-6b3926aff746: loser
+      responses:
+        '200':
+          description: creates game result and updates players
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  acknowledged:
+                    type: boolean
+                  game_result_id:
+                    type: string
+                required:
+                - acknowledged
+                - game_result_id
+              example:
+                acknowledged: true
+                game_result_id: d2e3b102-bc82-43b8-9a59-09936b4a8dbf
+        '401':
+          description: returns 401 error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+              example:
+                error: unauthorized
+        '404':
+          description: returns 404 error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+              example:
+                error: not_found
+  "/internal/rooms/{room_id}/started":
+    put:
+      summary: started
+      tags:
+      - Internal::Room
+      parameters:
+      - name: room_id
+        in: path
+        required: true
+        schema:
+          oneOf:
+          - type: string
+          - type: integer
+        example: e3bb15d5-3357-4a92-a933-c0f1b0982682
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                player_ids:
+                  type: array
+                  items:
+                    type: string
+              required:
+              - player_ids
+            example:
+              player_ids:
+              - e502dfcf-1dbe-40b8-9f8a-c740da970352
+              - 76d1ddd5-2722-493b-af22-fa3e10f2edb1
+      responses:
+        '200':
+          description: accepts players in any order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  acknowledged:
+                    type: boolean
+                  room_status:
+                    type: string
+                required:
+                - acknowledged
+                - room_status
+              example:
+                acknowledged: true
+                room_status: playing
+        '400':
+          description: returns 400 error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  expected:
+                    type: array
+                    items:
+                      type: string
+                  provided:
+                    type: array
+                    items:
+                      type: string
+                required:
+                - error
+                - message
+                - expected
+                - provided
+              example:
+                error: player_mismatch
+                message: Provided player_ids do not match room players
+                expected:
+                - 9bc0fa5d-ef81-449d-84a1-ca0790787e87
+                - f225143a-917e-4736-9b5c-a9c4a771e492
+                provided:
+                - 9bc0fa5d-ef81-449d-84a1-ca0790787e87
+                - c70493d4-1913-4622-88c2-a1a79aadb92d
+        '401':
+          description: returns 401 error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+              example:
+                error: unauthorized
+        '404':
+          description: returns 404 error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+              example:
+                error: not_found
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Internal-Api-Key
