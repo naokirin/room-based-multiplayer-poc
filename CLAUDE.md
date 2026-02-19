@@ -5,7 +5,7 @@ Auto-generated from all feature plans. Last updated: 2026-02-12
 ## Active Technologies
 
 - TypeScript 5.9, React 19, PixiJS 8.16, Zustand 5.0, Phoenix WS 1.8 (client)
-- Ruby 3.3+, Rails 8.0+ (api-server)
+- Ruby 3.3+, Rails 8.0+, rspec-openapi (api-server)
 - Elixir 1.17+, Phoenix 1.7+ (game-server)
 - MySQL 8.0+, Redis 7+ (datastores)
 - Docker / Docker Compose (infra)
@@ -30,6 +30,7 @@ docker compose up -d
 # Rails
 cd api-server && bin/rails server -p 3001
 cd api-server && bundle exec rspec
+cd api-server && OPENAPI=1 bundle exec rspec  # Regenerate OpenAPI definitions
 
 # Phoenix
 cd game-server && mix phx.server
@@ -57,6 +58,10 @@ cd client && npm test
 
 ## Recent Changes
 
+- 2026-02-19: OpenAPI support added (003-openapi-api-split)
+  - rspec-openapi gem generates OpenAPI 3.0.3 definitions from RSpec request specs
+  - External API: doc/openapi/external.yaml (11 endpoints)
+  - Internal API: doc/openapi/internal.yaml (5 endpoints)
 - 2026-02-12: All 8 phases of MVP implementation complete (T001-T122)
   - Phase 1-2: Infrastructure setup, Docker Compose, DB models, auth, matchmaking
   - Phase 3 (US1): Full match-and-play flow — Rails matchmaking, Phoenix rooms, client UI

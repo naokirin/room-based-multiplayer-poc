@@ -84,9 +84,9 @@
 
 **Purpose**: Documentation updates and final cleanup
 
-- [ ] T020 [P] Add `OPENAPI=1 bundle exec rspec` to the Commands section in project `CLAUDE.md`
-- [ ] T021 [P] Update project `CLAUDE.md` Active Technologies section to include `rspec-openapi` gem
-- [ ] T022 Verify all existing tests still pass with `bundle exec rspec` (without OPENAPI flag) — no regressions
+- [x] T020 [P] Add `OPENAPI=1 bundle exec rspec` to the Commands section in project `CLAUDE.md`
+- [x] T021 [P] Update project `CLAUDE.md` Active Technologies section to include `rspec-openapi` gem
+- [x] T022 Verify all existing tests still pass with `bundle exec rspec` (without OPENAPI flag) — no regressions
 
 ---
 
