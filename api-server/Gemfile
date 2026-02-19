@@ -69,6 +69,9 @@ group :development, :test do
   # RSpec testing
   gem "rspec-rails"
   gem "factory_bot_rails"
+
+  # OpenAPI definition generation from request specs
+  gem "rspec-openapi"
 end
 
 group :development do
