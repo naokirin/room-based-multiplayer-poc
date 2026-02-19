@@ -3,7 +3,8 @@ openapi: 3.0.3
 info:
   title: Room-Based Multiplayer Platform — Internal API
   version: v1
-servers: []
+servers:
+- url: http://localhost:3001
 paths:
   "/internal/auth/verify":
     post:
@@ -21,7 +22,7 @@ paths:
               required:
               - token
             example:
-              token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNzNlNWE0YTYtN2U3Yy00MjQ0LWIyZTItMTY4OTMxYWU5OGU4IiwiZXhwIjoxNzcxNTA2NzkzLCJpYXQiOjE3NzE1MTAzOTN9.IJOeJXDUEfWzcCDQI_YzFPWkIweJntEKl9txVBIfglM
+              token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiM2NlOTc3NjEtODFhMS00Njc0LTk3YWUtMmFmZDM0NTNlODc5IiwiZXhwIjoxNzcxNTA3MTk1LCJpYXQiOjE3NzE1MTA3OTV9.byRyBjLym558MOO3HB0opBeKq3DTn-3jF7xSnuJ4SAw
       responses:
         '200':
           description: returns invalid for expired token
@@ -46,7 +47,7 @@ paths:
                 - valid
               example:
                 valid: false
-                user_id: c1c54f7b-7abd-4f70-a1c6-8297ca83e4f0
+                user_id: 88a668c7-8803-4b94-b38a-cfd790ad47b7
                 display_name: TestUser
                 role: player
                 status: active
@@ -83,7 +84,7 @@ paths:
               - room_id
               - node_name
             example:
-              room_id: 1d75728c-3afc-4e65-a5cd-f64f5b4b91dd
+              room_id: 676e24b0-2091-4e7f-865a-74a18bdafb30
               node_name: game-node-1
       responses:
         '200':
@@ -105,7 +106,7 @@ paths:
                 - room_status
               example:
                 acknowledged: true
-                room_id: 1d75728c-3afc-4e65-a5cd-f64f5b4b91dd
+                room_id: 676e24b0-2091-4e7f-865a-74a18bdafb30
                 room_status: ready
         '401':
           description: returns 401 error
@@ -150,7 +151,7 @@ paths:
           oneOf:
           - type: string
           - type: integer
-        example: 63743117-f9a8-4a51-bc59-f148be580ee8
+        example: 5f43aeef-37ea-4a7c-a09e-bf519df84f1f
       requestBody:
         content:
           application/json:
@@ -215,7 +216,7 @@ paths:
           oneOf:
           - type: string
           - type: integer
-        example: 456a39ef-6c04-407e-95ff-d84c31dc7b00
+        example: 49b69727-e71d-4e6e-992f-24c5fcedfd61
       requestBody:
         content:
           application/json:
@@ -235,21 +236,33 @@ paths:
                       type: string
                     e5abe5bf-752c-4af6-b32a-6b3926aff746:
                       type: string
+                    e4274dcd-543b-4e6c-aff2-cea4b432587c:
+                      type: string
+                    6e7059ad-7f77-44d2-8b90-aae4dfc7ced0:
+                      type: string
+                    4196802c-1330-4851-a605-6be2935e1254:
+                      type: string
+                    ffe48860-6de7-42d6-bb67-df8318b03fdb:
+                      type: string
                   required:
-                  - 94b8e06f-e02e-4763-a99b-c2b9daa511b6
-                  - e5abe5bf-752c-4af6-b32a-6b3926aff746
+                  - 4196802c-1330-4851-a605-6be2935e1254
+                  - ffe48860-6de7-42d6-bb67-df8318b03fdb
               required:
               - winner_id
               - turns_played
               - duration_seconds
               - player_results
             example:
-              winner_id: 94b8e06f-e02e-4763-a99b-c2b9daa511b6
+              winner_id: 4196802c-1330-4851-a605-6be2935e1254
               turns_played: 10
               duration_seconds: 300
               player_results:
                 94b8e06f-e02e-4763-a99b-c2b9daa511b6: winner
                 e5abe5bf-752c-4af6-b32a-6b3926aff746: loser
+                e4274dcd-543b-4e6c-aff2-cea4b432587c: winner
+                6e7059ad-7f77-44d2-8b90-aae4dfc7ced0: loser
+                4196802c-1330-4851-a605-6be2935e1254: winner
+                ffe48860-6de7-42d6-bb67-df8318b03fdb: loser
       responses:
         '200':
           description: creates game result and updates players
@@ -267,7 +280,7 @@ paths:
                 - game_result_id
               example:
                 acknowledged: true
-                game_result_id: d2e3b102-bc82-43b8-9a59-09936b4a8dbf
+                game_result_id: ed30f438-a3e9-4af6-b73d-374fffde1380
         '401':
           description: returns 401 error
           content:
@@ -307,7 +320,7 @@ paths:
           oneOf:
           - type: string
           - type: integer
-        example: e3bb15d5-3357-4a92-a933-c0f1b0982682
+        example: ae84ab8c-ab80-44e1-82fb-6fbaa6e5036c
       requestBody:
         content:
           application/json:
@@ -322,8 +335,8 @@ paths:
               - player_ids
             example:
               player_ids:
-              - e502dfcf-1dbe-40b8-9f8a-c740da970352
-              - 76d1ddd5-2722-493b-af22-fa3e10f2edb1
+              - 9600a2ed-0844-44aa-8d4d-03424f3e1dac
+              - 19fdf530-d981-4aec-997b-e1f2cc788577
       responses:
         '200':
           description: accepts players in any order
@@ -370,11 +383,11 @@ paths:
                 error: player_mismatch
                 message: Provided player_ids do not match room players
                 expected:
-                - 9bc0fa5d-ef81-449d-84a1-ca0790787e87
-                - f225143a-917e-4736-9b5c-a9c4a771e492
+                - 6d5b6f9c-d792-49f1-92a9-a7438b714c98
+                - ac55daee-e92b-48c1-95be-d3d5e570ac21
                 provided:
-                - 9bc0fa5d-ef81-449d-84a1-ca0790787e87
-                - c70493d4-1913-4622-88c2-a1a79aadb92d
+                - 79edae2b-29eb-4b1c-82f3-6ac8b2b4b59c
+                - ac55daee-e92b-48c1-95be-d3d5e570ac21
         '401':
           description: returns 401 error
           content:
@@ -411,3 +424,5 @@ components:
       type: apiKey
       in: header
       name: X-Internal-Api-Key
+security:
+- apiKeyAuth: []

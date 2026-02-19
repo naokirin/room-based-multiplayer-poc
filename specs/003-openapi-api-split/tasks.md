@@ -72,9 +72,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T017 [US3] Run full `OPENAPI=1 bundle exec rspec` in `api-server/` and verify both `doc/openapi/external.yaml` and `doc/openapi/internal.yaml` are regenerated correctly
-- [ ] T018 [US3] Validate generated files with `npx @redocly/cli lint api-server/doc/openapi/external.yaml` and `npx @redocly/cli lint api-server/doc/openapi/internal.yaml` — fix any validation errors
-- [ ] T019 [US3] Document the generation command (`OPENAPI=1 bundle exec rspec`) in `api-server/README.md` under a new "OpenAPI Documentation" section
+- [x] T017 [US3] Run full `OPENAPI=1 bundle exec rspec` in `api-server/` and verify both `doc/openapi/external.yaml` and `doc/openapi/internal.yaml` are regenerated correctly
+- [x] T018 [US3] Validate generated files with `npx @redocly/cli lint api-server/doc/openapi/external.yaml` and `npx @redocly/cli lint api-server/doc/openapi/internal.yaml` — fix any validation errors
+- [x] T019 [US3] Document the generation command (`OPENAPI=1 bundle exec rspec`) in `api-server/README.md` under a new "OpenAPI Documentation" section
 
 **Checkpoint**: Regeneration workflow verified. Validation passes with zero errors. SC-003 and SC-005 satisfied.
 

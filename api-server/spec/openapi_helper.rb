@@ -20,6 +20,9 @@ RSpec::OpenAPI.title = ->(example) {
   end
 }
 
+# Server URLs
+RSpec::OpenAPI.servers = [{ url: "http://localhost:3001" }]
+
 # Security schemes
 RSpec::OpenAPI.security_schemes = {
   "bearerAuth" => {
@@ -36,3 +39,13 @@ RSpec::OpenAPI.security_schemes = {
 
 # Shared info (title is set per-API via the title lambda above)
 RSpec::OpenAPI.info = { version: "v1" }
+
+# Post-process hook to add root-level security based on file
+RSpec::OpenAPI.post_process_hook = ->(path, records, spec) {
+  case path
+  when /internal\.yaml/
+    spec["security"] = [{ "apiKeyAuth" => [] }]
+  else
+    spec["security"] = [{ "bearerAuth" => [] }]
+  end
+}
