@@ -1,0 +1,659 @@
+---
+openapi: 3.0.3
+info:
+  title: Room-Based Multiplayer Platform — External API
+  version: v1
+servers: []
+paths:
+  "/api/v1/announcements":
+    get:
+      summary: index
+      tags:
+      - Api::V1::Announcement
+      responses:
+        '200':
+          description: returns empty array when no visible announcements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  announcements:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        body:
+                          type: string
+                        published_at:
+                          type: string
+                      required:
+                      - id
+                      - title
+                      - body
+                      - published_at
+                required:
+                - announcements
+              example:
+                announcements: []
+  "/api/v1/auth/login":
+    post:
+      summary: login
+      tags:
+      - Api::V1::Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              required:
+              - email
+              - password
+            example:
+              email: test@example.com
+              password: password123
+      responses:
+        '200':
+          description: creates audit log with UUID and allows repeated logins without
+            duplicate key error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                      display_name:
+                        type: string
+                      role:
+                        type: string
+                      status:
+                        type: string
+                    required:
+                    - id
+                    - email
+                    - display_name
+                    - role
+                    - status
+                  access_token:
+                    type: string
+                  expires_at:
+                    type: string
+                required:
+                - user
+                - access_token
+                - expires_at
+              example:
+                user:
+                  id: cc8cb969-063f-4a39-affb-93ec096a40c7
+                  email: test@example.com
+                  display_name: TestUser
+                  role: player
+                  status: active
+                access_token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiY2M4Y2I5NjktMDYzZi00YTM5LWFmZmItOTNlYzA5NmE0MGM3IiwiZXhwIjoxNzcxNTEzNjc3LCJpYXQiOjE3NzE1MTAwNzd9.Idza2VhQXqGQIIzMgc8dKOyUzN2vYbHnNaGs7sngcmI
+                expires_at: '2026-02-19T15:07:57Z'
+        '401':
+          description: returns 401 for frozen account
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required:
+                - error
+                - message
+              example:
+                error: account_frozen
+                message: Your account has been suspended
+  "/api/v1/auth/refresh":
+    post:
+      summary: refresh
+      tags:
+      - Api::V1::Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+            example: {}
+      responses:
+        '200':
+          description: returns a new token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  expires_at:
+                    type: string
+                required:
+                - access_token
+                - expires_at
+              example:
+                access_token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiMDE1MGI5YWMtYWNhNy00MzQ3LWFhMDAtOThjNWIzZjE5ZDc0IiwiZXhwIjoxNzcxNTEzNjc3LCJpYXQiOjE3NzE1MTAwNzd9.aWli-7jpWbHPH1Cwj-YJhmreU4WyzCKV2PJOuETqa2Y
+                expires_at: '2026-02-19T15:07:57Z'
+        '401':
+          description: returns 401 without token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required:
+                - error
+                - message
+              example:
+                error: unauthorized
+                message: Invalid or expired token
+  "/api/v1/auth/register":
+    post:
+      summary: register
+      tags:
+      - Api::V1::Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    email:
+                      type: string
+                    password:
+                      type: string
+                    display_name:
+                      type: string
+                  required:
+                  - email
+                  - password
+                  - display_name
+              required:
+              - user
+            example:
+              user:
+                email: new@example.com
+                password: password123
+                display_name: NewUser
+      responses:
+        '201':
+          description: creates a new user and returns token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                      display_name:
+                        type: string
+                    required:
+                    - id
+                    - email
+                    - display_name
+                  access_token:
+                    type: string
+                  expires_at:
+                    type: string
+                required:
+                - user
+                - access_token
+                - expires_at
+              example:
+                user:
+                  id: 0b40c00f-06f6-4695-b485-e5c8b88c49a0
+                  email: new@example.com
+                  display_name: NewUser
+                access_token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiMGI0MGMwMGYtMDZmNi00Njk1LWI0ODUtZTVjOGI4OGM0OWEwIiwiZXhwIjoxNzcxNTEzNjc3LCJpYXQiOjE3NzE1MTAwNzd9.xE3ViB6Dpv68oAzuBCNH78J8TzSZbpEQCxPJmVdRsQM
+                expires_at: '2026-02-19T15:07:57Z'
+        '422':
+          description: returns 422 for short password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: object
+                    properties:
+                      email:
+                        type: array
+                        items:
+                          type: string
+                      password:
+                        type: array
+                        items:
+                          type: string
+                required:
+                - errors
+              example:
+                errors:
+                  email:
+                  - has already been taken
+                  password:
+                  - is too short (minimum is 8 characters)
+  "/api/v1/game_types":
+    get:
+      summary: index
+      tags:
+      - Api::V1::GameType
+      responses:
+        '200':
+          description: returns empty array when no game types
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  game_types:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        player_count:
+                          type: integer
+                        turn_time_limit:
+                          type: integer
+                      required:
+                      - id
+                      - name
+                      - player_count
+                      - turn_time_limit
+                required:
+                - game_types
+              example:
+                game_types: []
+  "/api/v1/health":
+    get:
+      summary: show
+      tags:
+      - Api::V1::Health
+      responses:
+        '200':
+          description: returns ok and expected response format (status, services)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  services:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                      redis:
+                        type: string
+                    required:
+                    - database
+                    - redis
+                required:
+                - status
+                - services
+              example:
+                status: ok
+                services:
+                  database: ok
+                  redis: ok
+  "/api/v1/matchmaking/cancel":
+    delete:
+      summary: cancel
+      tags:
+      - Api::V1::Matchmaking
+      responses:
+        '200':
+          description: returns ok with cancelled status (idempotent)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  user_id:
+                    type: string
+                required:
+                - status
+                - user_id
+              example:
+                status: cancelled
+                user_id: 84c4c3ee-128b-42a7-9a11-61327d65138c
+        '401':
+          description: returns 401 without token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required:
+                - error
+                - message
+              example:
+                error: unauthorized
+                message: Invalid or expired token
+  "/api/v1/matchmaking/join":
+    post:
+      summary: join
+      tags:
+      - Api::V1::Matchmaking
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                game_type_id:
+                  type: string
+              required:
+              - game_type_id
+            example:
+              game_type_id: 87fc4ef1-9c02-4699-8b20-ad2f16f91ab1
+      responses:
+        '200':
+          description: clears stale Redis and allows join (returns queued)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  game_type_id:
+                    type: string
+                  queued_at:
+                    type: string
+                  timeout_seconds:
+                    type: integer
+                  room_id:
+                    type: string
+                  room_token:
+                    type: string
+                  ws_url:
+                    type: string
+                required:
+                - status
+              example:
+                status: queued
+                game_type_id: 87fc4ef1-9c02-4699-8b20-ad2f16f91ab1
+                queued_at: '2026-02-19T14:07:57Z'
+                timeout_seconds: 60
+                room_id: dab3ae74-26d3-4aa7-9af1-f9fa5bd7408f
+                room_token: eyJhbGciOiJIUzI1NiJ9.eyJyb29tX2lkIjoiZGFiM2FlNzQtMjZkMy00YWE3LTlhZjEtZjlmYTViZDc0MDhmIiwidXNlcl9pZCI6Ijc0NjhiNGM3LTBiMWUtNDIzMy1hMmE0LTM1ZTc2MWM5YzE0ZiIsInR5cGUiOiJyb29tX3Rva2VuIiwiZXhwIjoxNzcxNTEwMzc3LCJpYXQiOjE3NzE1MTAwNzd9.tUk9-Hj8RH5TgVB8bXzUt7Jq_QDhHann4ZLSkrHM7Tg
+                ws_url: ws://localhost:4000/socket
+        '401':
+          description: returns 401 without token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required:
+                - error
+                - message
+              example:
+                error: unauthorized
+                message: Invalid or expired token
+        '404':
+          description: returns not_found error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required:
+                - error
+                - message
+              example:
+                error: invalid_game_type
+                message: Game type not found or inactive
+        '409':
+          description: returns already_in_game status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  queued_at:
+                    type: string
+                  room_id:
+                    type: string
+                  room_token:
+                    type: string
+                  ws_url:
+                    type: string
+                required:
+                - status
+              example:
+                status: already_in_game
+                queued_at: '2026-02-19T14:07:57Z'
+                room_id: 309fbe01-75ba-474e-94aa-fd5511fea9db
+                room_token: test-token
+                ws_url: ws://localhost:4000/socket
+  "/api/v1/matchmaking/status":
+    get:
+      summary: status
+      tags:
+      - Api::V1::Matchmaking
+      responses:
+        '200':
+          description: returns timeout status and cleans up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  queued_at:
+                    type: string
+                  game_type_id:
+                    type: string
+                  room_id:
+                    type: string
+                  room_token:
+                    type: string
+                  ws_url:
+                    type: string
+                  message:
+                    type: string
+                required:
+                - status
+              example:
+                status: timeout
+                queued_at: '2026-02-19T14:07:57Z'
+                game_type_id: 741116e0-6df6-42db-8f13-e46bde25bedc
+                room_id: b7d6d271-7aee-4a65-b162-48c4d45630a9
+                room_token: test-token
+                ws_url: ws://localhost:4000/socket
+                message: Matchmaking timeout
+        '401':
+          description: returns 401 without token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required:
+                - error
+                - message
+              example:
+                error: unauthorized
+                message: Invalid or expired token
+  "/api/v1/profile":
+    get:
+      summary: show
+      tags:
+      - Api::V1::Profile
+      responses:
+        '200':
+          description: returns current user profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                      display_name:
+                        type: string
+                      role:
+                        type: string
+                      status:
+                        type: string
+                      created_at:
+                        type: string
+                    required:
+                    - id
+                    - email
+                    - display_name
+                    - role
+                    - status
+                    - created_at
+                required:
+                - user
+              example:
+                user:
+                  id: 28baf69e-fcf3-4828-8e6c-4cac6c4e3206
+                  email: user3@example.com
+                  display_name: TestUser
+                  role: player
+                  status: active
+                  created_at: '2026-02-19T14:07:57Z'
+  "/api/v1/rooms/{id}/ws_endpoint":
+    get:
+      summary: ws_endpoint
+      tags:
+      - Api::V1::Room
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        example: d08908bf-b025-4542-9d38-8f30852136f5
+      responses:
+        '200':
+          description: returns ok and expected response format (ws_url, node_name,
+            room_status)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ws_url:
+                    type: string
+                  node_name:
+                    type: string
+                  room_status:
+                    type: string
+                required:
+                - ws_url
+                - node_name
+                - room_status
+              example:
+                ws_url: ws://localhost:4000/socket
+                node_name: game-node-1
+                room_status: ready
+        '401':
+          description: returns 401 without token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required:
+                - error
+                - message
+              example:
+                error: unauthorized
+                message: Invalid or expired token
+        '404':
+          description: returns 404 with error format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required:
+                - error
+                - message
+              example:
+                error: room_not_found
+                message: Room with ID 00000000-0000-0000-0000-000000000000 not found
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Internal-Api-Key

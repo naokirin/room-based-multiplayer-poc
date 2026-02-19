@@ -34,12 +34,5 @@ RSpec::OpenAPI.security_schemes = {
   }
 }
 
-# Additional configuration
-RSpec::OpenAPI.info = ->(example) {
-  case example.file_path
-  when %r{spec/requests/internal/}
-    { version: "v1", description: "Internal service-to-service API" }
-  else
-    { version: "v1", description: "Public-facing API for client applications" }
-  end
-}
+# Shared info (title is set per-API via the title lambda above)
+RSpec::OpenAPI.info = { version: "v1" }

@@ -34,12 +34,12 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Run `OPENAPI=1 bundle exec rspec spec/requests/api/v1/` to generate initial `api-server/doc/openapi/external.yaml`
-- [ ] T006 [US1] Review generated `api-server/doc/openapi/external.yaml` and verify all 11 endpoints are present: auth/register, auth/login, auth/refresh, profile, matchmaking/join, matchmaking/status, matchmaking/cancel, game_types, rooms/:id/ws_endpoint, announcements, health. For each endpoint, confirm request parameters, request body (where applicable), and response body type definitions are included (FR-004)
-- [ ] T007 [US1] If any endpoints are missing or incomplete, ensure the corresponding `api-server/spec/requests/api/v1/*_spec.rb` test examples actually make the HTTP request (rspec-openapi captures from real requests); add or fix test examples as needed
-- [ ] T008 [US1] Verify JWT Bearer Token security scheme is documented in `components/securitySchemes` of `api-server/doc/openapi/external.yaml`, and public endpoints (register, login, game_types, announcements, health) correctly show no auth required
-- [ ] T009 [US1] Verify response schemas include both success (2xx) and error (4xx) response formats with examples in `api-server/doc/openapi/external.yaml`
-- [ ] T010 [US1] Commit generated `api-server/doc/openapi/external.yaml` to the repository
+- [x] T005 [US1] Run `OPENAPI=1 bundle exec rspec spec/requests/api/v1/` to generate initial `api-server/doc/openapi/external.yaml`
+- [x] T006 [US1] Review generated `api-server/doc/openapi/external.yaml` and verify all 11 endpoints are present: auth/register, auth/login, auth/refresh, profile, matchmaking/join, matchmaking/status, matchmaking/cancel, game_types, rooms/:id/ws_endpoint, announcements, health. For each endpoint, confirm request parameters, request body (where applicable), and response body type definitions are included (FR-004)
+- [x] T007 [US1] If any endpoints are missing or incomplete, ensure the corresponding `api-server/spec/requests/api/v1/*_spec.rb` test examples actually make the HTTP request (rspec-openapi captures from real requests); add or fix test examples as needed
+- [x] T008 [US1] Verify JWT Bearer Token security scheme is documented in `components/securitySchemes` of `api-server/doc/openapi/external.yaml`, and public endpoints (register, login, game_types, announcements, health) correctly show no auth required
+- [x] T009 [US1] Verify response schemas include both success (2xx) and error (4xx) response formats with examples in `api-server/doc/openapi/external.yaml`
+- [x] T010 [US1] Commit generated `api-server/doc/openapi/external.yaml` to the repository
 
 **Checkpoint**: External API definition file is complete and committed. All 11 endpoints documented with schemas and auth. SC-001 satisfied.
 
