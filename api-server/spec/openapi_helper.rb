@@ -21,7 +21,7 @@ RSpec::OpenAPI.title = ->(example) {
 }
 
 # Server URLs
-RSpec::OpenAPI.servers = [{ url: "http://localhost:3001" }]
+RSpec::OpenAPI.servers = [ { url: "http://localhost:3001" } ]
 
 # Security schemes
 RSpec::OpenAPI.security_schemes = {
@@ -44,8 +44,8 @@ RSpec::OpenAPI.info = { version: "v1" }
 RSpec::OpenAPI.post_process_hook = ->(path, records, spec) {
   case path
   when /internal\.yaml/
-    spec["security"] = [{ "apiKeyAuth" => [] }]
+    spec["security"] = [ { "apiKeyAuth" => [] } ]
   else
-    spec["security"] = [{ "bearerAuth" => [] }]
+    spec["security"] = [ { "bearerAuth" => [] } ]
   end
 }

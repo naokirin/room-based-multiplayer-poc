@@ -1,6 +1,6 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'spec_helper'
-ENV['RAILS_ENV'] ||= 'test'
+ENV['RAILS_ENV'] = 'test'
 ENV['JWT_SECRET'] ||= 'test-jwt-secret'
 ENV['INTERNAL_API_KEY'] ||= 'test-internal-api-key'
 ENV['REDIS_URL'] ||= 'redis://localhost:6379/1'
@@ -28,7 +28,7 @@ require "openapi_helper" if ENV["OPENAPI"]
 # directory. Alternatively, in the individual `*_spec.rb` files, manually
 # require only the support files necessary.
 #
-# Rails.root.glob('spec/support/**/*.rb').sort_by(&:to_s).each { |f| require f }
+Rails.root.glob('spec/support/**/*.rb').sort_by(&:to_s).each { |f| require f }
 
 # Ensures that the test database schema matches the current schema file.
 # If there are pending migrations it will invoke `db:test:prepare` to

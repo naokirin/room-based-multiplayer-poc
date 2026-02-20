@@ -72,6 +72,9 @@ group :development, :test do
 
   # OpenAPI definition generation from request specs
   gem "rspec-openapi"
+
+  # OpenAPI response validation in request specs
+  gem "committee-rails"
 end
 
 group :development do
