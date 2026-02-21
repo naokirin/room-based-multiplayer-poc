@@ -58,6 +58,11 @@ cd client && npm test
 
 ## Recent Changes
 
+- 2026-02-21: Volume mounts added to docker-compose.yml for live code reload
+  - api-server: `../api-server:/rails` + `bundle_gems` named volume for `/usr/local/bundle`; set `BUNDLE_DEPLOYMENT: ""` and `BUNDLE_WITHOUT: ""`
+  - game-server: `../game-server:/app` + anonymous volumes for `/app/deps` and `/app/_build`
+  - client: `../client:/app` + anonymous volume for `/app/node_modules` (replaces individual file mounts)
+  - First run with empty `bundle_gems` requires: `docker compose -f infra/docker-compose.yml run --rm api-server bundle install`
 - 2026-02-19: OpenAPI support added (003-openapi-api-split)
   - rspec-openapi gem generates OpenAPI 3.0.3 definitions from RSpec request specs
   - External API: doc/openapi/external.yaml (11 endpoints)

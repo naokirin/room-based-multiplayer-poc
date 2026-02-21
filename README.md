@@ -62,6 +62,29 @@ Startup failure or partial service failure is visible on CLI (stdout/stderr, exi
 | MySQL       | 3306      | DB (internal)        |
 | Redis       | 6379      | Cache/queue (internal) |
 
+### Volume Mounts (source code live reload)
+
+All three application services mount host source directories into their containers, so code changes on the host are reflected without rebuilding images:
+
+| Service     | Host path      | Container path | Protected (anonymous volume) |
+|-------------|---------------|----------------|------------------------------|
+| api-server  | `api-server/` | `/rails`       | `/usr/local/bundle` (named: `bundle_gems`) |
+| game-server | `game-server/`| `/app`         | `/app/deps`, `/app/_build` |
+| client      | `client/`     | `/app`         | `/app/node_modules` |
+
+**Notes and caveats:**
+
+- **api-server – first run with empty `bundle_gems` volume**: On the very first `docker compose up`, the `bundle_gems` named volume is empty and Gem binaries are not yet available. Run bundle install inside the container before starting the server:
+  ```bash
+  docker compose -f infra/docker-compose.yml run --rm api-server bundle install
+  docker compose -f infra/docker-compose.yml up
+  ```
+- **api-server – code changes**: Rails does **not** auto-reload in production mode. Since `RAILS_ENV=development` is set, code changes are reloaded automatically (Rails development mode reloader).
+- **game-server – deps/_build are anonymous volumes**: These volumes are tied to the container lifecycle. If you remove the container (`docker compose down`), the compiled artifacts are lost and Mix will recompile on next start. This is expected behavior for development.
+- **game-server – code changes**: Phoenix reloads Elixir modules automatically in development via the code reloader.
+- **client – code changes**: Vite HMR (hot module replacement) reflects changes instantly in the browser.
+- **node_modules / bundle / deps are never overwritten by host mounts**: The anonymous/named volumes take precedence over the host directory for those paths, keeping container-installed packages isolated from the host.
+
 ### Start Infrastructure only (then run apps locally)
 
 ```bash

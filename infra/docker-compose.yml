@@ -57,6 +57,11 @@ services:
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-me}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-api-key}
+      BUNDLE_DEPLOYMENT: ""
+      BUNDLE_WITHOUT: ""
+    volumes:
+      - ../api-server:/rails
+      - bundle_gems:/usr/local/bundle
     depends_on:
       mysql:
         condition: service_healthy
@@ -79,6 +84,10 @@ services:
       RAILS_INTERNAL_URL: http://api-server:3001
       NODE_NAME: game-server-1
       PORT: 4000
+    volumes:
+      - ../game-server:/app
+      - /app/deps
+      - /app/_build
     depends_on:
       redis:
         condition: service_healthy
@@ -96,10 +105,8 @@ services:
       VITE_API_URL: http://localhost:3001/api/v1
       VITE_WS_URL: ws://localhost:4000/socket
     volumes:
-      - ../client/src:/app/src
-      - ../client/public:/app/public
-      - ../client/index.html:/app/index.html
-      - ../client/vite.config.ts:/app/vite.config.ts
+      - ../client:/app
+      - /app/node_modules
     depends_on:
       - api-server
       - game-server
@@ -109,6 +116,7 @@ services:
 volumes:
   mysql_data:
   redis_data:
+  bundle_gems:
 
 networks:
   app-network:
